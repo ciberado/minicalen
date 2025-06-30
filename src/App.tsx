@@ -2,7 +2,8 @@ import {
   Typography, 
   Paper,
   AppBar,
-  Toolbar
+  Toolbar,
+  Stack
 } from '@mui/material'
 import Layout from './components/Layout'
 import './App.css'
@@ -26,17 +27,19 @@ function App() {
         </Toolbar>
       </AppBar>
 
-      <Paper elevation={2} sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Welcome to MiniCalen
-        </Typography>
-        <Typography paragraph>
-          This is a single page application with a 20-character wide sidebar on the left and the main content area on the right.
-        </Typography>
-        <Typography paragraph>
-          Select an option from the sidebar to get started.
-        </Typography>
-      </Paper>
+      <Stack spacing={3}>
+        <Paper elevation={2} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Welcome to MiniCalen
+          </Typography>
+          <Typography paragraph>
+            This is a single page application with a 20-character wide sidebar on the left and the main content area on the right.
+          </Typography>
+          <Typography paragraph>
+            Select an option from the sidebar to get started.
+          </Typography>
+        </Paper>
+      </Stack>
     </Layout>
   )
 }

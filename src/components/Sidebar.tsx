@@ -2,6 +2,7 @@ import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper,
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import EventIcon from '@mui/icons-material/Event';
 import SettingsIcon from '@mui/icons-material/Settings';
+import CategoryDemo from './CategoryDemo';
 
 interface SidebarProps {
   width: string;
@@ -21,6 +22,8 @@ const Sidebar = ({ width }: SidebarProps) => {
         zIndex: 1000,
         overflowY: 'auto',
         backgroundColor: (theme) => theme.palette.background.paper,
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <Box sx={{ p: 2 }}>
@@ -29,35 +32,12 @@ const Sidebar = ({ width }: SidebarProps) => {
         </Typography>
       </Box>
       <Divider />
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon>
-              <CalendarMonthIcon />
-            </ListItemIcon>
-            <ListItemText primary="Calendar" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon>
-              <EventIcon />
-            </ListItemIcon>
-            <ListItemText primary="Events" />
-          </ListItemButton>
-        </ListItem>
-      </List>
       <Divider />
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon>
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Settings" />
-          </ListItemButton>
-        </ListItem>
-      </List>
+      
+      {/* Categories section */}
+      <Box sx={{ p: 2, flexGrow: 1, overflowY: 'auto' }}>
+        <CategoryDemo />
+      </Box>
     </Paper>
   );
 };
