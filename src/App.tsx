@@ -1,64 +1,43 @@
-import { useState } from 'react'
 import { 
-  Container, 
   Typography, 
-  Box, 
-  Button, 
   Paper,
   AppBar,
-  Toolbar,
-  Card,
-  CardContent
+  Toolbar
 } from '@mui/material'
-import AddIcon from '@mui/icons-material/Add'
+import Layout from './components/Layout'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <Container maxWidth="sm">
-      <AppBar position="static" sx={{ mb: 4 }}>
+    <Layout>
+      <AppBar 
+        position="static" 
+        elevation={0}
+        sx={{ 
+          mb: 3, 
+          backgroundColor: 'transparent', 
+          color: 'text.primary'
+        }}
+      >
         <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            MiniCalen
+          <Typography variant="h5" component="div" sx={{ flexGrow: 1 }}>
+            Dashboard
           </Typography>
         </Toolbar>
       </AppBar>
 
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          React + TypeScript + MUI
+      <Paper elevation={2} sx={{ p: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          Welcome to MiniCalen
         </Typography>
-        
-        <Box sx={{ my: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <Card sx={{ minWidth: 275, mb: 2 }}>
-            <CardContent>
-              <Typography variant="h5" component="div">
-                Count: {count}
-              </Typography>
-              <Button 
-                variant="contained" 
-                color="primary" 
-                startIcon={<AddIcon />}
-                onClick={() => setCount((count) => count + 1)}
-                sx={{ mt: 2 }}
-              >
-                Increment
-              </Button>
-            </CardContent>
-          </Card>
-          
-          <Typography variant="body1" sx={{ mt: 2 }}>
-            Edit <code>src/App.tsx</code> and save to test HMR
-          </Typography>
-        </Box>
+        <Typography paragraph>
+          This is a single page application with a 20-character wide sidebar on the left and the main content area on the right.
+        </Typography>
+        <Typography paragraph>
+          Select an option from the sidebar to get started.
+        </Typography>
       </Paper>
-      
-      <Typography variant="body2" color="text.secondary" align="center">
-        Click on the React logo to learn more
-      </Typography>
-    </Container>
+    </Layout>
   )
 }
 
