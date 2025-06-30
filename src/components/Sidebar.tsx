@@ -26,10 +26,10 @@ const Sidebar = ({ width }: SidebarProps) => {
   ]);
   
   const [tagCategories, setTagCategories] = useState<Category[]>([
-    { id: '1', label: 'Home', color: '#9C27B0', active: true },
-    { id: '2', label: 'Office', color: '#009688', active: true },
-    { id: '3', label: 'Travel', color: '#673AB7', active: true },
-    { id: '4', label: 'Call', color: '#3F51B5', active: false }
+    { id: '1', label: 'Home', color: null, active: true },
+    { id: '2', label: 'Office', color: null, active: true },
+    { id: '3', label: 'Travel', color: null, active: true },
+    { id: '4', label: 'Call', color: null, active: false }
   ]);
 
   // Handler functions for category changes
@@ -110,6 +110,7 @@ const Sidebar = ({ width }: SidebarProps) => {
             title="" 
             categories={tagCategories} 
             onCategoriesChange={handleTagsChange}
+            showColorPicker={false}
           />
         </Box>
       </Box>

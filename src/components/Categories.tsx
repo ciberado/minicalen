@@ -20,7 +20,7 @@ const DEFAULT_COLORS = [
 export interface Category {
   id: string;
   label: string;
-  color: string;
+  color: string | null;  // Make color optional by allowing null
   active: boolean;
 }
 
@@ -29,13 +29,15 @@ interface CategoriesProps {
   categories?: Category[];
   onCategoriesChange?: (categories: Category[]) => void;
   readOnly?: boolean;
+  showColorPicker?: boolean;  // Add option to hide color picker
 }
 
 const Categories = ({
   title = 'Categories',
   categories: initialCategories,
   onCategoriesChange,
-  readOnly = false
+  readOnly = false,
+  showColorPicker = true
 }: CategoriesProps) => {
   // If external categories are provided, use them. Otherwise, use internal state
   const [internalCategories, setInternalCategories] = useState<Category[]>([
@@ -63,7 +65,7 @@ const Categories = ({
     updateCategories(newCategories);
   };
 
-  const handleColorChange = (id: string, newColor: string) => {
+  const handleColorChange = (id: string, newColor: string | null) => {
     const newCategories = categories.map(cat => 
       cat.id === id ? { ...cat, color: newColor } : cat
     );
@@ -141,6 +143,7 @@ const Categories = ({
             onLabelChange={handleLabelChange}
             onColorChange={handleColorChange}
             onActiveChange={handleActiveChange}
+            showColorPicker={showColorPicker}
           />
         ))}
       </Box>

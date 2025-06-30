@@ -28,11 +28,12 @@ const DEFAULT_COLORS = [
 interface CategoryValueProps {
   id: string;
   initialLabel?: string;
-  initialColor?: string;
+  initialColor?: string | null;  // Make color optional by allowing null
   initialActive?: boolean;
   onLabelChange?: (id: string, newLabel: string) => void;
-  onColorChange?: (id: string, newColor: string) => void;
+  onColorChange?: (id: string, newColor: string | null) => void;
   onActiveChange?: (id: string, isActive: boolean) => void;
+  showColorPicker?: boolean;  // Add option to hide color picker
 }
 
 const CategoryValue = ({
@@ -42,7 +43,8 @@ const CategoryValue = ({
   initialActive = true,
   onLabelChange,
   onColorChange,
-  onActiveChange
+  onActiveChange,
+  showColorPicker = true
 }: CategoryValueProps) => {
   const [label, setLabel] = useState(initialLabel);
   const [color, setColor] = useState(initialColor);
@@ -123,75 +125,79 @@ const CategoryValue = ({
         my: 1,
       }}
     >
-      {/* Color square */}
-      <Tooltip title="Change color">
-        <IconButton 
-          size="small" 
-          onClick={handleColorClick}
-          sx={{ 
-            mr: 1,
-            p: 0,
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 1,
-            overflow: 'hidden',
-          }}
-        >
-          <Box 
+      {/* Color square - only show if showColorPicker is true */}
+      {showColorPicker && (
+        <Tooltip title="Change color">
+          <IconButton 
+            size="small" 
+            onClick={handleColorClick}
             sx={{ 
-              width: 24, 
-              height: 24, 
-              backgroundColor: color,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              mr: 1,
+              p: 0,
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 1,
+              overflow: 'hidden',
             }}
           >
-            <PaletteIcon 
-              fontSize="small" 
+            <Box 
               sx={{ 
-                opacity: 0, 
-                transition: 'opacity 0.2s',
-                color: 'white',
-                '&:hover': { opacity: 0.8 } 
-              }} 
-            />
-          </Box>
-        </IconButton>
-      </Tooltip>
-
-      {/* Color selection menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleColorClose}
-      >
-        <Paper sx={{ p: 1 }}>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', width: 120 }}>
-            {DEFAULT_COLORS.map((colorOption) => (
-              <Box 
-                key={colorOption}
-                onClick={() => handleColorSelect(colorOption)}
-                sx={{
-                  width: 24,
-                  height: 24,
-                  m: 0.5,
-                  backgroundColor: colorOption,
-                  borderRadius: 0.5,
-                  cursor: 'pointer',
-                  border: color === colorOption ? '2px solid black' : '1px solid #ddd',
-                  '&:hover': {
-                    transform: 'scale(1.1)',
-                  },
-                }}
+                width: 24, 
+                height: 24, 
+                backgroundColor: color || 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <PaletteIcon 
+                fontSize="small" 
+                sx={{ 
+                  opacity: 0, 
+                  transition: 'opacity 0.2s',
+                  color: 'white',
+                  '&:hover': { opacity: 0.8 } 
+                }} 
               />
-            ))}
-          </Box>
-        </Paper>
-      </Menu>
+            </Box>
+          </IconButton>
+        </Tooltip>
+      )}
+
+      {/* Color selection menu - only show if showColorPicker is true */}
+      {showColorPicker && (
+        <Menu
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleColorClose}
+        >
+          <Paper sx={{ p: 1 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', width: 120 }}>
+              {DEFAULT_COLORS.map((colorOption) => (
+                <Box 
+                  key={colorOption}
+                  onClick={() => handleColorSelect(colorOption)}
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    m: 0.5,
+                    backgroundColor: colorOption,
+                    borderRadius: 0.5,
+                    cursor: 'pointer',
+                    border: color === colorOption ? '2px solid black' : '1px solid #ddd',
+                    '&:hover': {
+                      transform: 'scale(1.1)',
+                    },
+                  }}
+                />
+              ))}
+            </Box>
+          </Paper>
+        </Menu>
+      )}
 
       {/* Editable label */}
-      <Box sx={{ flexGrow: 1 }}>
+      <Box sx={{ flexGrow: 1, ml: showColorPicker ? 0 : 1 }}>
         {isEditing ? (
           <ClickAwayListener onClickAway={handleLabelBlur}>
             <TextField
