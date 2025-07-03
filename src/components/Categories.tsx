@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CategoryValue from './CategoryValue';
@@ -22,32 +22,74 @@ export interface Category {
   label: string;
   color: string | null;  // Make color optional by allowing null
   active: boolean;
+  selected?: boolean;  // Add selected property
 }
 
 interface CategoriesProps {
   title?: string;
   categories?: Category[];
   onCategoriesChange?: (categories: Category[]) => void;
+  onSelectionChange?: (selectedCategories: Category[]) => void;  // Add selection change handler
   readOnly?: boolean;
   showColorPicker?: boolean;  // Add option to hide color picker
+  exclusive?: boolean;  // Whether only one category can be selected at a time
 }
 
-const Categories = ({
+// Component handle type - expose public methods for parent components
+export interface CategoriesHandle {
+  getSelectedCategories: () => Category[];
+}
+
+const Categories = forwardRef<CategoriesHandle, CategoriesProps>(({
   title = 'Categories',
   categories: initialCategories,
   onCategoriesChange,
+  onSelectionChange,
   readOnly = false,
-  showColorPicker = true
-}: CategoriesProps) => {
+  showColorPicker = true,
+  exclusive = false  // Default to non-exclusive mode
+}, ref) => {
   // If external categories are provided, use them. Otherwise, use internal state
   const [internalCategories, setInternalCategories] = useState<Category[]>([
-    { id: '1', label: 'Work', color: DEFAULT_COLORS[0], active: true },
-    { id: '2', label: 'Personal', color: DEFAULT_COLORS[5], active: true },
-    { id: '3', label: 'Errands', color: DEFAULT_COLORS[8], active: false }
+    { id: '1', label: 'Work', color: DEFAULT_COLORS[0], active: true, selected: false },
+    { id: '2', label: 'Personal', color: DEFAULT_COLORS[5], active: true, selected: false },
+    { id: '3', label: 'Errands', color: DEFAULT_COLORS[8], active: false, selected: false }
   ]);
 
   // Determine which categories to use (external or internal)
   const categories = initialCategories || internalCategories;
+  
+  // If in exclusive mode, ensure only one category is selected
+  useEffect(() => {
+    if (exclusive && !initialCategories) {
+      const selectedCount = internalCategories.filter(cat => cat.selected).length;
+      
+      if (selectedCount > 1) {
+        // If multiple items are selected, keep only the first one selected
+        const newCategories = [...internalCategories];
+        let foundSelected = false;
+        
+        for (let i = 0; i < newCategories.length; i++) {
+          if (newCategories[i].selected) {
+            if (foundSelected) {
+              newCategories[i].selected = false;
+            } else {
+              foundSelected = true;
+            }
+          }
+        }
+        
+        setInternalCategories(newCategories);
+      }
+    }
+  }, [exclusive, internalCategories, initialCategories]);
+  
+  // Expose methods via ref
+  useImperativeHandle(ref, () => ({
+    getSelectedCategories: () => {
+      return categories.filter(cat => cat.selected && cat.active);
+    }
+  }));
   
   // Update either external state via callback or internal state
   const updateCategories = (newCategories: Category[]) => {
@@ -55,6 +97,12 @@ const Categories = ({
       onCategoriesChange(newCategories);
     } else {
       setInternalCategories(newCategories);
+    }
+    
+    // Notify about selection changes
+    if (onSelectionChange) {
+      const selectedCategories = newCategories.filter(cat => cat.selected && cat.active);
+      onSelectionChange(selectedCategories);
     }
   };
 
@@ -76,6 +124,25 @@ const Categories = ({
     const newCategories = categories.map(cat => 
       cat.id === id ? { ...cat, active: isActive } : cat
     );
+    updateCategories(newCategories);
+  };
+
+  const handleSelectedChange = (id: string, isSelected: boolean) => {
+    let newCategories;
+    
+    if (exclusive && isSelected) {
+      // In exclusive mode, deselect all other categories when one is selected
+      newCategories = categories.map(cat => ({
+        ...cat,
+        selected: cat.id === id // Only the clicked item will be selected
+      }));
+    } else {
+      // In non-exclusive mode, or when deselecting in exclusive mode
+      newCategories = categories.map(cat => 
+        cat.id === id ? { ...cat, selected: isSelected } : cat
+      );
+    }
+    
     updateCategories(newCategories);
   };
 
@@ -105,22 +172,34 @@ const Categories = ({
       newId = '1';
     }
     
-    const newCategories = [
-      ...categories,
-      { 
-        id: newId, 
-        label: 'New Category', 
-        color: getNextColor(), 
-        active: true 
-      }
-    ];
+    let newCategories;
     
-    updateCategories(newCategories);
-  };
-  
-  // Allow deletion of categories if needed
-  const handleDeleteCategory = (id: string) => {
-    const newCategories = categories.filter(cat => cat.id !== id);
+    if (exclusive) {
+      // In exclusive mode, deselect all existing categories when adding a new one
+      newCategories = [
+        ...categories.map(cat => ({ ...cat, selected: false })),
+        { 
+          id: newId, 
+          label: 'New Category', 
+          color: getNextColor(), 
+          active: true,
+          selected: true // Auto-select the new category in exclusive mode
+        }
+      ];
+    } else {
+      // In non-exclusive mode, just add the new category without selecting it
+      newCategories = [
+        ...categories,
+        { 
+          id: newId, 
+          label: 'New Category', 
+          color: getNextColor(), 
+          active: true,
+          selected: false
+        }
+      ];
+    }
+    
     updateCategories(newCategories);
   };
 
@@ -140,9 +219,11 @@ const Categories = ({
             initialLabel={category.label}
             initialColor={category.color}
             initialActive={category.active}
+            initialSelected={category.selected}
             onLabelChange={handleLabelChange}
             onColorChange={handleColorChange}
             onActiveChange={handleActiveChange}
+            onSelectedChange={handleSelectedChange}
             showColorPicker={showColorPicker}
           />
         ))}
@@ -160,6 +241,6 @@ const Categories = ({
       )}
     </Box>
   );
-};
+});
 
 export default Categories;

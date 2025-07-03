@@ -82,6 +82,7 @@ const Sidebar = ({ width }: SidebarProps) => {
             title="" 
             categories={forecolorCategories} 
             onCategoriesChange={handleForecolorChange}
+            exclusive={true} // Only one foreground color can be selected at a time
           />
         </Box>
         
@@ -96,6 +97,7 @@ const Sidebar = ({ width }: SidebarProps) => {
             title="" 
             categories={backcolorCategories} 
             onCategoriesChange={handleBackcolorChange}
+            exclusive={true} // Only one background color can be selected at a time
           />
         </Box>
         
@@ -111,6 +113,7 @@ const Sidebar = ({ width }: SidebarProps) => {
             categories={tagCategories} 
             onCategoriesChange={handleTagsChange}
             showColorPicker={false}
+            exclusive={false} // Multiple tags can be selected at once
           />
         </Box>
       </Box>

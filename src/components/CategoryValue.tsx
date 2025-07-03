@@ -30,9 +30,11 @@ interface CategoryValueProps {
   initialLabel?: string;
   initialColor?: string | null;  // Make color optional by allowing null
   initialActive?: boolean;
+  initialSelected?: boolean;  // Add selected state
   onLabelChange?: (id: string, newLabel: string) => void;
   onColorChange?: (id: string, newColor: string | null) => void;
   onActiveChange?: (id: string, isActive: boolean) => void;
+  onSelectedChange?: (id: string, isSelected: boolean) => void;  // Add selection handler
   showColorPicker?: boolean;  // Add option to hide color picker
 }
 
@@ -41,14 +43,17 @@ const CategoryValue = ({
   initialLabel = 'Category',
   initialColor = DEFAULT_COLORS[0],
   initialActive = true,
+  initialSelected = false,  // Add selected prop with default false
   onLabelChange,
   onColorChange,
   onActiveChange,
+  onSelectedChange,  // Add selection handler
   showColorPicker = true
 }: CategoryValueProps) => {
   const [label, setLabel] = useState(initialLabel);
   const [color, setColor] = useState(initialColor);
   const [active, setActive] = useState(initialActive);
+  const [selected, setSelected] = useState(initialSelected);  // Add selected state
   const [isEditing, setIsEditing] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -58,7 +63,8 @@ const CategoryValue = ({
     setLabel(initialLabel);
     setColor(initialColor);
     setActive(initialActive);
-  }, [initialLabel, initialColor, initialActive]);
+    setSelected(initialSelected);
+  }, [initialLabel, initialColor, initialActive, initialSelected]);
 
   const handleColorClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -77,6 +83,15 @@ const CategoryValue = ({
   };
 
   const handleLabelClick = () => {
+    // Single click toggles selection
+    const newSelected = !selected;
+    setSelected(newSelected);
+    if (onSelectedChange) {
+      onSelectedChange(id, newSelected);
+    }
+  };
+  
+  const handleLabelDoubleClick = () => {
     setIsEditing(true);
   };
 
@@ -116,11 +131,14 @@ const CategoryValue = ({
         borderRadius: 1,
         border: '1px solid',
         borderColor: 'divider',
-        backgroundColor: active ? 'background.paper' : 'action.disabledBackground',
+        backgroundColor: active 
+          ? (selected ? 'rgba(241, 215, 19, 0.28)' : 'background.paper') 
+          : 'action.disabledBackground',
         opacity: active ? 1 : 0.7,
         transition: 'all 0.2s',
         '&:hover': {
           borderColor: 'primary.main',
+          backgroundColor: active && !selected ? 'rgba(25, 118, 210, 0.04)' : undefined,
         },
         my: 1,
       }}
@@ -219,13 +237,16 @@ const CategoryValue = ({
         ) : (
           <Box 
             onClick={handleLabelClick}
+            onDoubleClick={handleLabelDoubleClick}
             sx={{ 
               cursor: 'text',
               py: 1,
               px: 0.5,
               borderRadius: 1,
               '&:hover': { 
-                backgroundColor: 'action.hover' 
+                backgroundColor: 'action.hover',
+                // Show dotted underline on hover to indicate editability
+                textDecoration: 'underline dotted'
               },
               color: active ? 'text.primary' : 'text.disabled',
               fontWeight: 500,
