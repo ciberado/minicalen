@@ -1,5 +1,6 @@
-import { Box, Container, Paper, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import { ReactNode } from 'react';
+import Calendar from './Calendar';
 
 interface MainContentProps {
   children?: ReactNode;
@@ -12,23 +13,26 @@ const MainContent = ({ children, marginLeft }: MainContentProps) => {
       component="main"
       sx={{
         flexGrow: 1,
-        minHeight: '100vh',
+        height: '100vh',
+        width: `calc(100% - ${marginLeft})`,
         ml: marginLeft,
-        pt: 3,
-        pb: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden', // Prevent scrolling
+        position: 'relative',
       }}
     >
-      <Container maxWidth="xl">
-        <Paper elevation={2} sx={{ p: 3, minHeight: 'calc(100vh - 48px)' }}>
-          {children || (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-              <Typography variant="h4" color="text.secondary">
-                Select an option from the sidebar
-              </Typography>
-            </Box>
-          )}
-        </Paper>
-      </Container>
+      <Box sx={{ 
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        overflow: 'hidden'
+      }}>
+        {children || <Calendar />}
+      </Box>
     </Box>
   );
 };
