@@ -20,6 +20,7 @@ const Calendar = ({}: CalendarProps) => {
   const { 
     foregroundCategories, 
     selectedDates,
+    dateInfoMap,
     setSelectedDate
   } = useCategories();
   
@@ -31,6 +32,10 @@ const Calendar = ({}: CalendarProps) => {
   // Convert selectedDates Map to FullCalendar events
   const events = useMemo(() => {
     const eventArray: any[] = [];
+    
+    console.log('Building events from selectedDates:', 
+      Array.from(selectedDates.entries()).map(([date, color]) => ({ date, color }))
+    );
     
     // Convert each date entry to an event object
     selectedDates.forEach((color, dateStr) => {
@@ -45,6 +50,7 @@ const Calendar = ({}: CalendarProps) => {
       }
     });
     
+    console.log('Generated events:', eventArray);
     return eventArray;
   }, [selectedDates]);
 
@@ -115,12 +121,19 @@ const Calendar = ({}: CalendarProps) => {
     console.log('Date clicked:', dateStr);
     console.log('Selected category:', selectedForegroundCategory);
     
-    // Toggle the date - if it's already marked with this color, remove it; otherwise, add it
+    // Get the current information about the date
     const currentColor = selectedDates.get(dateStr);
-    console.log('Current color:', currentColor);
+    const dateInfo = dateInfoMap.get(dateStr);
+    const currentCategoryId = dateInfo ? dateInfo.categoryId : null;
     
-    if (currentColor === selectedForegroundCategory.color) {
-      console.log('Removing color');
+    console.log('Current color:', currentColor);
+    console.log('Current category ID:', currentCategoryId);
+    console.log('Selected category ID:', selectedForegroundCategory.id);
+    
+    // If the date is already marked with the same category that's currently selected,
+    // remove the color (toggle behavior)
+    if (currentCategoryId === selectedForegroundCategory.id) {
+      console.log('Removing color - same category clicked again');
       setSelectedDate(dateStr, null, null); // Remove the date
     } else {
       console.log('Adding color:', selectedForegroundCategory.color);

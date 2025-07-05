@@ -76,12 +76,19 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
     const newSelectedDates = new Map<string, string>();
     const newDateInfoMap = new Map<string, DateInfo>();
     
+    let hasChanges = false;
+    
     // Check each date and update its color based on the category's current color
     dateInfoMap.forEach((dateInfo, dateStr) => {
       // Find the category in foreground categories
       const category = foregroundCategories.find(cat => cat.id === dateInfo.categoryId);
       
       if (category && category.color) {
+        // Check if color has changed
+        if (dateInfo.color !== category.color) {
+          hasChanges = true;
+        }
+        
         // Update the color in both maps
         newSelectedDates.set(dateStr, category.color);
         newDateInfoMap.set(dateStr, { 
@@ -90,6 +97,10 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     });
+    
+    console.log('New selectedDates:', Array.from(newSelectedDates.entries()));
+    console.log('New dateInfoMap:', Array.from(newDateInfoMap.entries()));
+    console.log('Has changes:', hasChanges);
     
     // Always update to ensure changes are reflected
     setSelectedDates(newSelectedDates);
