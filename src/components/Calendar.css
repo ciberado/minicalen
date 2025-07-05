@@ -1,0 +1,54 @@
+/* Custom FullCalendar styles to force 4 columns layout */
+
+/* Main Calendar Container */
+.fc {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* Force grid layout for multi-month view */
+.fc .fc-multimonth {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 8px !important;
+  width: 100% !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+
+/* Handle rows in the grid layout */
+.fc .fc-multimonth-row {
+  display: contents !important;
+}
+
+/* Style individual months */
+.fc .fc-multimonth-month {
+  min-width: 0 !important; /* Allow shrinking */
+  width: auto !important;
+  margin: 4px !important;
+  padding: 4px !important;
+  box-sizing: border-box !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border-radius: 4px !important;
+}
+
+/* Make days more compact */
+.fc .fc-daygrid-day {
+  min-height: 1.2em !important;
+  padding: 0 !important;
+}
+
+/* Responsive tweaks for smaller screens */
+@media (max-width: 1200px) {
+  .fc .fc-multimonth-monthheader {
+    font-size: 0.85rem !important;
+  }
+  
+  .fc .fc-daygrid-day-top {
+    font-size: 0.7rem !important;
+  }
+  
+  .fc .fc-col-header-cell {
+    font-size: 0.7rem !important;
+  }
+}

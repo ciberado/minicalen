@@ -20,16 +20,18 @@ const MainContent = ({ children, marginLeft }: MainContentProps) => {
         flexDirection: 'column',
         overflow: 'hidden', // Prevent scrolling
         position: 'relative',
+        padding: '16px', // Add padding around the content
+        boxSizing: 'border-box',
       }}
     >
       <Box sx={{ 
         position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        top: '16px',
+        left: '16px',
+        right: '16px',
+        bottom: '16px',
         display: 'flex',
-        overflow: 'hidden'
+        overflow: 'hidden',
       }}>
         {children || <Calendar />}
       </Box>

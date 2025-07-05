@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { Box } from '@mui/material';
 import FullCalendar from '@fullcalendar/react';
 import multiMonthPlugin from '@fullcalendar/multimonth';
+import './Calendar.css'; // Import custom calendar styles
 
 interface CalendarProps {
   // Add any props you might need in the future
@@ -9,37 +10,53 @@ interface CalendarProps {
 
 const Calendar = ({}: CalendarProps) => {
   const calendarRef = useRef<FullCalendar>(null);
-  const [monthCount, setMonthCount] = useState(12); // Default to 12 months
-  const [aspectRatio, setAspectRatio] = useState(1.35); // Default aspect ratio
-
-  // Calculate optimal size based on container
+  const [monthCount] = useState(12); // Always 12 months
+  const [aspectRatio, setAspectRatio] = useState(1.5); // Starting aspect ratio
+  
+  // Force 4 columns layout after render
   useEffect(() => {
-    const resizeCalendar = () => {
-      // Calculate the aspect ratio based on the window size
-      // Lower aspect ratio makes calendar cells wider
-      const windowWidth = window.innerWidth;
+    const applyFourColumnLayout = () => {
+      // Force the correct layout via direct DOM manipulation if needed
+      const fcMultimonth = document.querySelector('.fc-multimonth');
       
-      // Adjust aspect ratio based on available width
-      // This helps to stretch the calendar horizontally
-      if (windowWidth > 1600) {
-        setAspectRatio(1.1);  // Very wide screen - make cells wider
-      } else if (windowWidth > 1200) {
-        setAspectRatio(1.25); // Wide screen
-      } else {
-        setAspectRatio(1.35); // Normal/small screen
+      if (fcMultimonth) {
+        // Force the multimonth container to use grid layout
+        (fcMultimonth as HTMLElement).style.display = 'grid';
+        (fcMultimonth as HTMLElement).style.gridTemplateColumns = 'repeat(4, 1fr)';
+        (fcMultimonth as HTMLElement).style.gridAutoRows = 'auto';
+        (fcMultimonth as HTMLElement).style.width = '100%';
+        
+        // Apply styles to each month to ensure equal width
+        const months = document.querySelectorAll('.fc-multimonth-month');
+        months.forEach((month) => {
+          (month as HTMLElement).style.width = 'auto';
+          (month as HTMLElement).style.margin = '8px';
+          (month as HTMLElement).style.minWidth = '0';
+        });
       }
       
-      // Update the calendar's monthCount if needed
-      if (calendarRef.current) {
-        setMonthCount(12); // Always show 12 months
+      // Adjust aspect ratio based on container size for best fit
+      const container = document.querySelector('.fc');
+      if (container) {
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+        const newAspectRatio = containerWidth / containerHeight;
+        
+        // Limit to reasonable range while favoring width to ensure 4 columns
+        setAspectRatio(Math.max(1.2, Math.min(newAspectRatio, 2.0)));
       }
     };
 
-    resizeCalendar();
-    window.addEventListener('resize', resizeCalendar);
+    // Apply layout after initial render and on resize
+    applyFourColumnLayout();
+    window.addEventListener('resize', applyFourColumnLayout);
+    
+    // Also apply after a slight delay to ensure calendar is fully rendered
+    const layoutTimer = setTimeout(applyFourColumnLayout, 200);
     
     return () => {
-      window.removeEventListener('resize', resizeCalendar);
+      window.removeEventListener('resize', applyFourColumnLayout);
+      clearTimeout(layoutTimer);
     };
   }, []);
 
@@ -60,24 +77,48 @@ const Calendar = ({}: CalendarProps) => {
         left: 0,
         right: 0,
         bottom: 0,
+        padding: '8px', // Add some padding around the calendar
       },
       '.fc .fc-toolbar': {
-        marginBottom: 1,
+        marginBottom: '8px',
       },
       '.fc .fc-multimonth': { // Target FullCalendar's multimonth container
         height: 'auto !important',
         width: '100% !important',
         overflowY: 'hidden', // Prevent scrolling
+        maxWidth: 'none !important', // Ensure it can expand to full width
+        display: 'grid !important', // Use CSS grid for layout
+        gridTemplateColumns: 'repeat(4, 1fr) !important', // Force 4 columns
+        gap: '4px !important', // Add gap between grid items
+      },
+      '.fc .fc-multimonth-row': { // Target month rows
+        display: 'contents !important', // Let grid layout handle the rows
       },
       '.fc .fc-multimonth-month': { // Target each month
-        marginBottom: 0,
-        padding: 0,
+        margin: '4px !important',
+        padding: '4px !important',
+        minWidth: '0 !important', // Allow shrinking
+        width: 'auto !important',
+        boxSizing: 'border-box !important',
+        border: '1px solid rgba(0, 0, 0, 0.1)',
+        borderRadius: '4px',
       },
       '.fc .fc-multimonth-monthheader': {
-        padding: '4px 0',
+        padding: '2px 0',
+        fontSize: '0.9rem',
+        fontWeight: 'bold',
       },
       '.fc .fc-daygrid-day-top': {
         justifyContent: 'center', // Center day numbers
+        fontSize: '0.8rem',
+      },
+      '.fc .fc-daygrid-day': {
+        minHeight: '1.2em', // Make day cells smaller in height
+        padding: '0 !important',
+      },
+      '.fc .fc-col-header-cell': {
+        padding: '2px 0',
+        fontSize: '0.75rem',
       },
       '.fc .fc-day-today': { // Highlight today
         backgroundColor: 'rgba(25, 118, 210, 0.08)'
@@ -88,8 +129,8 @@ const Calendar = ({}: CalendarProps) => {
         plugins={[multiMonthPlugin]}
         initialView="multiMonth"
         headerToolbar={{
-          left: 'title',
-          center: '',
+          left: '',
+          center: 'title',
           right: 'today prev,next'
         }}
         height="100%"
@@ -98,14 +139,17 @@ const Calendar = ({}: CalendarProps) => {
         stickyHeaderDates={true}
         handleWindowResize={true}
         aspectRatio={aspectRatio}
-        multiMonthTitleFormat={{ year: 'numeric' }}
+        multiMonthTitleFormat={{ month: 'long' }}
         views={{
           multiMonth: {
-            multiMonthMaxColumns: 6, // Allow up to 6 months per row to fill wider screens
-            multiMonthMinWidth: 150, // Allow smaller months to fit more in a row
+            multiMonthMaxColumns: 4, // Force exactly 4 months per row
+            multiMonthMinWidth: 0, // Set to very small value to ensure 4 months fit
+            multiMonthMaxRows: 3, // Force 3 rows
             duration: { months: monthCount }
           }
         }}
+        dayHeaderFormat={{ weekday: 'narrow' }} // Use single letter for weekday names
+        firstDay={1} // Start weeks on Monday to save space (Optional, remove if you prefer Sunday)
       />
     </Box>
   );
