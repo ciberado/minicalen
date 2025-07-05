@@ -1,0 +1,37 @@
+/* Add these styles to override any remaining borders */
+.fc-theme-standard .fc-scrollgrid {
+  border: none !important;
+}
+
+.fc table {
+  border-collapse: separate !important;
+  border-spacing: 1px !important;
+  border: none !important;
+}
+
+.fc .fc-scrollgrid-section > * {
+  border: none !important;
+}
+
+.fc-theme-standard td, 
+.fc-theme-standard th,
+.fc-theme-standard .fc-scrollgrid,
+.fc-theme-standard .fc-list,
+.fc-theme-standard .fc-list-day > *,
+.fc table, .fc tr, .fc td, .fc th {
+  border: none !important;
+}
+
+/* Override borders for week number cells if present */
+.fc-theme-standard .fc-scrollgrid-section-header > *,
+.fc-theme-standard .fc-scrollgrid-section-body > *,
+.fc-theme-standard .fc-scrollgrid-section-footer > * {
+  border: none !important;
+}
+
+/* Also target specific elements that might have borders */
+.fc .fc-multimonth-header,
+.fc .fc-multimonth-daygrid,
+.fc .fc-multimonth-footer {
+  border: none !important;
+}

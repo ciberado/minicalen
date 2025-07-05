@@ -3,6 +3,7 @@ import { Box } from '@mui/material';
 import FullCalendar from '@fullcalendar/react';
 import multiMonthPlugin from '@fullcalendar/multimonth';
 import './Calendar.css'; // Import custom calendar styles
+import './noBorders.css'; // Import border removal styles
 
 interface CalendarProps {
   // Add any props you might need in the future
@@ -40,7 +41,7 @@ const Calendar = ({}: CalendarProps) => {
       if (container) {
         const containerWidth = container.clientWidth;
         const containerHeight = container.clientHeight;
-        const newAspectRatio = containerWidth / containerHeight;
+        const newAspectRatio = containerWidth / (containerHeight *0.9);
         
         // Limit to reasonable range while favoring width to ensure 4 columns
         setAspectRatio(Math.max(1.2, Math.min(newAspectRatio, 2.0)));
@@ -78,6 +79,13 @@ const Calendar = ({}: CalendarProps) => {
         right: 0,
         bottom: 0,
         padding: '8px', // Add some padding around the calendar
+        '& .fc-theme-standard .fc-scrollgrid, & .fc-theme-standard td, & .fc-theme-standard th': {
+          border: 'none !important', // Remove all borders
+        },
+        '& .fc-scrollgrid': {
+          borderRadius: 0,
+          border: 'none !important',
+        },
       },
       '.fc .fc-toolbar': {
         marginBottom: '8px',
@@ -100,8 +108,8 @@ const Calendar = ({}: CalendarProps) => {
         minWidth: '0 !important', // Allow shrinking
         width: 'auto !important',
         boxSizing: 'border-box !important',
-        border: '1px solid rgba(0, 0, 0, 0.1)',
-        borderRadius: '4px',
+        // Border removed
+        boxShadow: '0 0 8px rgba(0, 0, 0, 0.08)', // Subtle shadow for separation
       },
       '.fc .fc-multimonth-monthheader': {
         padding: '2px 0',
@@ -115,14 +123,21 @@ const Calendar = ({}: CalendarProps) => {
       '.fc .fc-daygrid-day': {
         minHeight: '1.2em', // Make day cells smaller in height
         padding: '0 !important',
+        border: 'none !important',
       },
       '.fc .fc-col-header-cell': {
         padding: '2px 0',
         fontSize: '0.75rem',
+        border: 'none !important',
       },
       '.fc .fc-day-today': { // Highlight today
-        backgroundColor: 'rgba(25, 118, 210, 0.08)'
-      }
+        backgroundColor: 'rgba(25, 118, 210, 0.04)',
+        borderRadius: '0',
+      },
+      // Remove all table borders
+      '.fc table, .fc tr, .fc td, .fc th': {
+        border: 'none !important',
+      },
     }}>
       <FullCalendar
         ref={calendarRef}
