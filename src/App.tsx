@@ -1,16 +1,15 @@
-import { 
-  Typography, 
-  Paper,
-  AppBar,
-  Toolbar,
-  Stack
-} from '@mui/material'
 import Layout from './components/Layout'
+import { CategoryProvider } from './components/CategoryContext'
 import './App.css'
+
+// Add debugging helper to track React renders
+console.log('App is initializing');
 
 function App() {
   return (
-    <Layout/>
+    <CategoryProvider>
+      <Layout/>
+    </CategoryProvider>
   )
 }
 

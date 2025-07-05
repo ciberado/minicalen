@@ -1,9 +1,11 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useMemo } from 'react';
 import { Box } from '@mui/material';
 import FullCalendar from '@fullcalendar/react';
 import multiMonthPlugin from '@fullcalendar/multimonth';
+import interactionPlugin from '@fullcalendar/interaction'; // Import the interaction plugin
 import './Calendar.css'; // Import custom calendar styles
 import './noBorders.css'; // Import border removal styles
+import { useCategories } from './CategoryContext'; // Import our context
 
 interface CalendarProps {
   // Add any props you might need in the future
@@ -14,6 +16,45 @@ const Calendar = ({}: CalendarProps) => {
   const [monthCount] = useState(12); // Always 12 months
   const [aspectRatio, setAspectRatio] = useState(1.5); // Starting aspect ratio
   
+  // Get the categories context
+  const { 
+    foregroundCategories, 
+    selectedDates,
+    setSelectedDate
+  } = useCategories();
+  
+  // Get the currently selected foreground category (if any)
+  const selectedForegroundCategory = useMemo(() => {
+    return foregroundCategories.find(cat => cat.selected === true);
+  }, [foregroundCategories]);
+  
+  // Convert selectedDates Map to FullCalendar events
+  const events = useMemo(() => {
+    const eventArray: any[] = [];
+    
+    // Convert each date entry to an event object
+    selectedDates.forEach((color, dateStr) => {
+      if (color) {
+        eventArray.push({
+          id: dateStr,
+          start: dateStr,
+          allDay: true,
+          display: 'background',
+          backgroundColor: color
+        });
+      }
+    });
+    
+    return eventArray;
+  }, [selectedDates]);
+
+  // Force calendar to refresh when dates change
+  useEffect(() => {
+    if (calendarRef.current) {
+      calendarRef.current.getApi().refetchEvents();
+    }
+  }, [selectedDates]);
+
   // Force 4 columns layout after render
   useEffect(() => {
     const applyFourColumnLayout = () => {
@@ -60,6 +101,40 @@ const Calendar = ({}: CalendarProps) => {
       clearTimeout(layoutTimer);
     };
   }, []);
+
+  // Handle date clicks
+  const handleDateClick = (arg: any) => {
+    const dateStr = arg.dateStr; // Format: YYYY-MM-DD
+    
+    // If no foreground category is selected, do nothing
+    if (!selectedForegroundCategory || !selectedForegroundCategory.color) {
+      console.log('No foreground category selected or it has no color');
+      return;
+    }
+    
+    console.log('Date clicked:', dateStr);
+    console.log('Selected category:', selectedForegroundCategory);
+    
+    // Toggle the date - if it's already marked with this color, remove it; otherwise, add it
+    const currentColor = selectedDates.get(dateStr);
+    console.log('Current color:', currentColor);
+    
+    if (currentColor === selectedForegroundCategory.color) {
+      console.log('Removing color');
+      setSelectedDate(dateStr, null, null); // Remove the date
+    } else {
+      console.log('Adding color:', selectedForegroundCategory.color);
+      // Add/update the date with both color and category ID
+      setSelectedDate(dateStr, selectedForegroundCategory.color, selectedForegroundCategory.id);
+    }
+    
+    // Force calendar to refresh
+    if (calendarRef.current) {
+      setTimeout(() => {
+        calendarRef.current?.getApi().refetchEvents();
+      }, 0);
+    }
+  };
 
   return (
     <Box sx={{ 
@@ -138,10 +213,15 @@ const Calendar = ({}: CalendarProps) => {
       '.fc table, .fc tr, .fc td, .fc th': {
         border: 'none !important',
       },
+      // Hover effect for days
+      '.fc .fc-daygrid-day:hover': {
+        backgroundColor: 'rgba(0, 0, 0, 0.04)',
+        cursor: 'pointer',
+      },
     }}>
       <FullCalendar
         ref={calendarRef}
-        plugins={[multiMonthPlugin]}
+        plugins={[multiMonthPlugin, interactionPlugin]}
         initialView="multiMonth"
         headerToolbar={{
           left: '',
@@ -165,6 +245,19 @@ const Calendar = ({}: CalendarProps) => {
         }}
         dayHeaderFormat={{ weekday: 'narrow' }} // Use single letter for weekday names
         firstDay={1} // Start weeks on Monday to save space (Optional, remove if you prefer Sunday)
+        events={events} // Add events from selectedDates
+        eventClick={(info) => {
+          // Handle event click (optional)
+          console.log('Event clicked:', info.event);
+          const dateStr = info.event.startStr;
+          setSelectedDate(dateStr, null, null); // Remove the date properly with null categoryId
+          
+          // Use setTimeout to allow state update to complete
+          setTimeout(() => {
+            calendarRef.current?.getApi().refetchEvents();
+          }, 0);
+        }}
+        dateClick={handleDateClick} // Use our date click handler
       />
     </Box>
   );

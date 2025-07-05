@@ -1,119 +1,83 @@
-import { useState } from 'react';
-import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper, Typography, Divider } from '@mui/material';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import EventIcon from '@mui/icons-material/Event';
-import SettingsIcon from '@mui/icons-material/Settings';
-import FormatColorTextIcon from '@mui/icons-material/FormatColorText';
-import FormatColorFillIcon from '@mui/icons-material/FormatColorFill';
-import LabelIcon from '@mui/icons-material/Label';
-import Categories, { Category } from './Categories';
+import { useRef } from 'react';
+import { Box, Paper, Typography, Divider } from '@mui/material';
+import Categories, { CategoriesHandle } from './Categories';
+import { useCategories } from './CategoryContext';
 
 interface SidebarProps {
   width: string;
 }
 
 const Sidebar = ({ width }: SidebarProps) => {
-  // Initial category data for each group
-  const [forecolorCategories, setForecolorCategories] = useState<Category[]>([
-    { id: '1', label: 'Important', color: '#F44336', active: true },
-    { id: '2', label: 'Work', color: '#2196F3', active: true },
-    { id: '3', label: 'Personal', color: '#4CAF50', active: true }
-  ]);
+  // Use the categories context
+  const { 
+    foregroundCategories, 
+    setForegroundCategories,
+    backgroundCategories,
+    setBackgroundCategories,
+    tagCategories,
+    setTagCategories
+  } = useCategories();
   
-  const [backcolorCategories, setBackcolorCategories] = useState<Category[]>([
-    { id: '1', label: 'Urgent', color: '#E91E63', active: true },
-    { id: '2', label: 'Waiting', color: '#FF9800', active: true }
-  ]);
-  
-  const [tagCategories, setTagCategories] = useState<Category[]>([
-    { id: '1', label: 'Home', color: null, active: true },
-    { id: '2', label: 'Office', color: null, active: true },
-    { id: '3', label: 'Travel', color: null, active: true },
-    { id: '4', label: 'Call', color: null, active: false }
-  ]);
+  // Refs to access the Categories component methods
+  const foregroundCategoriesRef = useRef<CategoriesHandle>(null);
+  const backgroundCategoriesRef = useRef<CategoriesHandle>(null);
+  const tagCategoriesRef = useRef<CategoriesHandle>(null);
 
-  // Handler functions for category changes
-  const handleForecolorChange = (newCategories: Category[]) => {
-    setForecolorCategories(newCategories);
-    // You could also save to localStorage or send to a backend API here
-  };
-
-  const handleBackcolorChange = (newCategories: Category[]) => {
-    setBackcolorCategories(newCategories);
-  };
-
-  const handleTagsChange = (newCategories: Category[]) => {
-    setTagCategories(newCategories);
-  };
   return (
     <Paper 
       elevation={2}
-      sx={{ 
-        width,
-        height: '100vh',
-        borderRadius: 0,
+      sx={{
+        width: width,
+        height: '100%',
+        overflow: 'auto',
         position: 'fixed',
-        left: 0,
         top: 0,
-        zIndex: 1000,
-        overflowY: 'auto',
-        backgroundColor: (theme) => theme.palette.background.paper,
-        display: 'flex',
-        flexDirection: 'column',
+        left: 0,
+        bottom: 0,
+        zIndex: 1200,
+        borderRadius: 0,
       }}
     >
-      <Box sx={{ p: 2 }}>
-        <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', mb: 2 }}>
+      <Box p={2}>
+        <Typography variant="h6" component="div" sx={{ mb: 2 }}>
           MiniCalen
         </Typography>
-      </Box>
-      <Divider />
-      
-      {/* Categories section */}
-      <Box sx={{ p: 2, flexGrow: 1, overflowY: 'auto' }}>
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <FormatColorTextIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-            <Typography variant="subtitle2" color="text.secondary">
-              FOREGROUND COLOR
-            </Typography>
-          </Box>
-          <Categories 
-            title="" 
-            categories={forecolorCategories} 
-            onCategoriesChange={handleForecolorChange}
-            exclusive={true} // Only one foreground color can be selected at a time
+        
+        <Divider sx={{ mb: 2 }} />
+        
+        {/* Foreground Color Categories */}
+        <Box mb={3}>
+          <Categories
+            ref={foregroundCategoriesRef}
+            title="Foreground"
+            categories={foregroundCategories}
+            onCategoriesChange={setForegroundCategories}
+            exclusive={true} // Only one foreground category can be selected
+            showColorPicker={true}
           />
         </Box>
         
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <FormatColorFillIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-            <Typography variant="subtitle2" color="text.secondary">
-              BACKGROUND COLOR
-            </Typography>
-          </Box>
-          <Categories 
-            title="" 
-            categories={backcolorCategories} 
-            onCategoriesChange={handleBackcolorChange}
-            exclusive={true} // Only one background color can be selected at a time
+        {/* Background Color Categories */}
+        <Box mb={3}>
+          <Categories
+            ref={backgroundCategoriesRef}
+            title="Background"
+            categories={backgroundCategories}
+            onCategoriesChange={setBackgroundCategories}
+            exclusive={true} // Only one background category can be selected
+            showColorPicker={true}
           />
         </Box>
         
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <LabelIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-            <Typography variant="subtitle2" color="text.secondary">
-              TAGS
-            </Typography>
-          </Box>
-          <Categories 
-            title="" 
-            categories={tagCategories} 
-            onCategoriesChange={handleTagsChange}
+        {/* Tag Categories */}
+        <Box mb={3}>
+          <Categories
+            ref={tagCategoriesRef}
+            title="Tags"
+            categories={tagCategories}
+            onCategoriesChange={setTagCategories}
+            exclusive={false} // Multiple tags can be selected
             showColorPicker={false}
-            exclusive={false} // Multiple tags can be selected at once
           />
         </Box>
       </Box>

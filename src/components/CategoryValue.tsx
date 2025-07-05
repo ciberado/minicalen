@@ -87,6 +87,7 @@ const CategoryValue = ({
     const newSelected = !selected;
     setSelected(newSelected);
     if (onSelectedChange) {
+      console.log('Setting selection for category', id, 'to', newSelected);
       onSelectedChange(id, newSelected);
     }
   };
@@ -130,9 +131,9 @@ const CategoryValue = ({
         p: 0.75,
         borderRadius: 1,
         border: '1px solid',
-        borderColor: 'divider',
+        borderColor: selected ? 'primary.main' : 'divider',
         backgroundColor: active 
-          ? (selected ? 'rgba(241, 215, 19, 0.28)' : 'background.paper') 
+          ? (selected ? 'rgba(25, 118, 210, 0.12)' : 'background.paper') 
           : 'action.disabledBackground',
         opacity: active ? 1 : 0.7,
         transition: 'all 0.2s',

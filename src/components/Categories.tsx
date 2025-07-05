@@ -81,6 +81,13 @@ const Categories = forwardRef<CategoriesHandle, CategoriesProps>(({
         
         setInternalCategories(newCategories);
       }
+      
+      // Ensure at least one category is selected
+      if (selectedCount === 0 && internalCategories.length > 0) {
+        const newCategories = [...internalCategories];
+        newCategories[0].selected = true;
+        setInternalCategories(newCategories);
+      }
     }
   }, [exclusive, internalCategories, initialCategories]);
   
