@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react';
 import { Box, Paper, Typography, Divider } from '@mui/material';
 import Categories, { CategoriesHandle } from './Categories';
 import { useCategories } from './CategoryContext';
+import SaveButton from './SaveButton';
 
 interface SidebarProps {
   width: string;
@@ -64,9 +65,12 @@ const Sidebar = ({ width }: SidebarProps) => {
       }}
     >
       <Box p={2}>
-        <Typography variant="h6" component="div" sx={{ mb: 2 }}>
-          MiniCalen
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            MiniCalen
+          </Typography>
+          <SaveButton />
+        </Box>
         
         <Divider sx={{ mb: 2 }} />
         
