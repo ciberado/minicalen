@@ -2,6 +2,7 @@ import { Box } from '@mui/material';
 import { ReactNode } from 'react';
 import Sidebar from './Sidebar';
 import MainContent from './MainContent';
+import { GlobalExclusiveProvider } from './GlobalExclusiveContext';
 
 // Calculate width for a 20-character column
 // Using approximately 8px per character for a standard font
@@ -13,17 +14,19 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   return (
-    <Box sx={{ 
-      display: 'flex',
-      width: '100vw',
-      height: '100vh',
-      overflow: 'hidden'
-    }}>
-      <Sidebar width={SIDEBAR_WIDTH} />
-      <MainContent marginLeft={SIDEBAR_WIDTH}>
-        {children}
-      </MainContent>
-    </Box>
+    <GlobalExclusiveProvider>
+      <Box sx={{ 
+        display: 'flex',
+        width: '100vw',
+        height: '100vh',
+        overflow: 'hidden'
+      }}>
+        <Sidebar width={SIDEBAR_WIDTH} />
+        <MainContent marginLeft={SIDEBAR_WIDTH}>
+          {children}
+        </MainContent>
+      </Box>
+    </GlobalExclusiveProvider>
   );
 };
 
