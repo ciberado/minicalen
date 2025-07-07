@@ -15,6 +15,7 @@ interface SessionContextType {
   timestamp: string | null; // ISO timestamp when the session was saved
   saveSession: () => void;
   loadSession: (id: string) => Promise<boolean>;
+  listSessions: () => Promise<Array<{id: string, timestamp: string}>>;
   isLoading: boolean;
 }
 
@@ -24,6 +25,7 @@ const SessionContext = createContext<SessionContextType>({
   timestamp: null,
   saveSession: () => {},
   loadSession: async () => false,
+  listSessions: async () => [],
   isLoading: false,
 });
 
@@ -37,19 +39,23 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     backgroundCategories,
     tagCategories,
     dateInfoMap,
+    setForegroundCategories,
+    setBackgroundCategories,
+    setTagCategories,
+    setSelectedDate
   } = useCategories();
 
   // Check for session ID in the URL hash when the component mounts
   useEffect(() => {
     const hash = window.location.hash.substring(1);
-    if (hash) {
+    if (hash && hash.length > 0) {
       loadSession(hash);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Save the current application state
-  const saveSession = () => {
+  const saveSession = async () => {
     // Generate a new UUID if one doesn't exist
     const newSessionId = sessionId || uuidv4();
     setSessionId(newSessionId);
@@ -57,7 +63,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     // Update the URL hash
     window.location.hash = newSessionId;
     
-    // Convert Map to an array for better logging
+    // Convert Map to an array for better logging and storage
     const dateInfoArray = Array.from(dateInfoMap.entries());
     
     // Get current timestamp in ISO format
@@ -73,37 +79,50 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       timestamp
     };
     
-    // Log detailed state information
-    console.log('Session saved with ID:', newSessionId);
-    console.log('Session saved at:', new Date(timestamp).toLocaleString());
-    console.log('Session state:', sessionState);
-    console.log('Foreground Categories:', foregroundCategories);
-    console.log('Background Categories:', backgroundCategories);
-    console.log('Tag Categories:', tagCategories);
-    console.log('Date Info Map (key-value pairs):', dateInfoArray);
-    
-    // Check if selected dates are captured
-    const selectedDatesInfo = foregroundCategories
-      .filter(cat => cat.selected)
-      .map(cat => `${cat.label} (${cat.id}): ${cat.color}`);
-    console.log('Selected foreground categories:', selectedDatesInfo);
-    
-    // Check if date backgrounds are captured
-    if (dateInfoArray.length > 0) {
-      console.log('Dates with backgrounds:');
-      dateInfoArray.forEach(([date, info]) => {
-        console.log(`- ${date}: color=${info.color}, categoryId=${info.categoryId}`);
+    try {
+      // Save the session to the backend
+      const response = await fetch('http://localhost:3001/api/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: newSessionId,
+          state: sessionState
+        }),
       });
-    } else {
-      console.log('No dates with backgrounds found');
+      
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+      }
+      
+      // Log detailed state information
+      console.log('Session saved with ID:', newSessionId);
+      console.log('Session saved at:', new Date(timestamp).toLocaleString());
+      console.log('Session state:', sessionState);
+      console.log('Foreground Categories:', foregroundCategories);
+      console.log('Background Categories:', backgroundCategories);
+      console.log('Tag Categories:', tagCategories);
+      console.log('Date Info Map (key-value pairs):', dateInfoArray);
+      
+      // Check if selected dates are captured
+      const selectedDatesInfo = foregroundCategories
+        .filter(cat => cat.selected)
+        .map(cat => `${cat.label} (${cat.id}): ${cat.color}`);
+      console.log('Selected foreground categories:', selectedDatesInfo);
+      
+      // Check if date backgrounds are captured
+      if (dateInfoArray.length > 0) {
+        console.log('Dates with backgrounds:');
+        dateInfoArray.forEach(([date, info]) => {
+          console.log(`- ${date}: color=${info.color}, categoryId=${info.categoryId}`);
+        });
+      } else {
+        console.log('No dates with backgrounds found');
+      }
+    } catch (error) {
+      console.error('Failed to save session:', error);
     }
-    
-    // In a real implementation, you might send this to a server
-    // fetch('/api/save-session', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ id: newSessionId, state: sessionState })
-    // });
   };
 
   // Load a session by ID
@@ -111,27 +130,49 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     
     try {
-      // In a real implementation, you would fetch from a server
-      // const response = await fetch(`/api/sessions/${id}`);
-      // const data = await response.json();
+      // Load the session from the backend
+      const response = await fetch(`http://localhost:3001/api/sessions/${id}`);
       
-      // For now, we'll just set the session ID and return true
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.error('Session not found:', id);
+          setIsLoading(false);
+          return false;
+        }
+        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      const sessionData = data.state;
+      
+      if (!sessionData) {
+        console.error('Invalid session data:', id);
+        setIsLoading(false);
+        return false;
+      }
+      
+      // Set session ID and timestamp
       setSessionId(id);
+      setTimestamp(sessionData.timestamp);
       
-      // Set a timestamp for when the session was loaded
-      const loadTimestamp = new Date().toISOString();
-      setTimestamp(loadTimestamp);
+      // Restore categories
+      setForegroundCategories(sessionData.foregroundCategories);
+      setBackgroundCategories(sessionData.backgroundCategories);
+      setTagCategories(sessionData.tagCategories);
       
-      // In a real implementation, you would restore the state:
-      // setForegroundCategories(data.state.foregroundCategories);
-      // setBackgroundCategories(data.state.backgroundCategories);
-      // setTagCategories(data.state.tagCategories);
-      // 
-      // // Restore dateInfoMap
-      // const newDateInfoMap = new Map(data.state.dateInfoMap);
-      // newDateInfoMap.forEach((info, dateStr) => {
-      //   setSelectedDate(dateStr, info.color, info.categoryId);
-      // });
+      // Restore date info
+      const dateInfoEntries = sessionData.dateInfoMap;
+      
+      // Clear existing date info first (to avoid duplicates)
+      // This will need to be done carefully to avoid UI flickering
+      
+      // Restore each date's info
+      dateInfoEntries.forEach(([dateStr, info]: [string, { color: string, categoryId: string }]) => {
+        setSelectedDate(dateStr, info.color, info.categoryId);
+      });
+      
+      console.log('Session loaded with ID:', id);
+      console.log('Session timestamp:', new Date(sessionData.timestamp).toLocaleString());
       
       setIsLoading(false);
       return true;
@@ -139,6 +180,22 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       console.error('Failed to load session:', error);
       setIsLoading(false);
       return false;
+    }
+  };
+  
+  // List all available sessions
+  const listSessions = async (): Promise<Array<{id: string, timestamp: string}>> => {
+    try {
+      const response = await fetch('http://localhost:3001/api/sessions');
+      
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to list sessions:', error);
+      return [];
     }
   };
 
@@ -149,6 +206,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         timestamp,
         saveSession,
         loadSession,
+        listSessions,
         isLoading,
       }}
     >

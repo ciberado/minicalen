@@ -13,7 +13,8 @@
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "commit": "git-cz"
+    "commit": "git-cz",
+    "server": "node server/index.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -24,11 +25,16 @@
     "@fullcalendar/react": "^6.1.18",
     "@mui/icons-material": "^7.2.0",
     "@mui/material": "^7.2.0",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@types/uuid": "^10.0.0",
