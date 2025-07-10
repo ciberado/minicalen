@@ -3,9 +3,18 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const server = createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173", // Vite default port
+    methods: ["GET", "POST"]
+  }
+});
 
 // Get the directory name
 const __filename = fileURLToPath(import.meta.url);
@@ -28,6 +37,46 @@ const sessionsDir = join(dataDir, 'sessions');
 if (!fs.existsSync(sessionsDir)) {
   fs.mkdirSync(sessionsDir);
 }
+
+// WebSocket connection handling
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  // Handle joining a session room
+  socket.on('join-session', (sessionId: string) => {
+    console.log(`User ${socket.id} joining session: ${sessionId}`);
+    socket.join(sessionId);
+    
+    // Notify others in the room that a new user joined
+    socket.to(sessionId).emit('user-joined', {
+      userId: socket.id,
+      message: `User ${socket.id} joined the session`
+    });
+    
+    // Send confirmation to the user
+    socket.emit('session-joined', {
+      sessionId,
+      message: `Successfully joined session ${sessionId}`
+    });
+  });
+
+  // Handle leaving a session room
+  socket.on('leave-session', (sessionId: string) => {
+    console.log(`User ${socket.id} leaving session: ${sessionId}`);
+    socket.leave(sessionId);
+    
+    // Notify others in the room that a user left
+    socket.to(sessionId).emit('user-left', {
+      userId: socket.id,
+      message: `User ${socket.id} left the session`
+    });
+  });
+
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
 
 // Define types for session data
 interface SessionState {
@@ -157,6 +206,7 @@ app.delete('/api/sessions/:id', (req: Request, res: Response): void => {
 });
 
 // Start the server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT} - with auto-reload enabled`);
+  console.log(`WebSocket server ready for connections`);
 });

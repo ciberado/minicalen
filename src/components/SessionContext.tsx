@@ -1,6 +1,7 @@
 import { createContext, useState, useContext, ReactNode, useEffect, useRef, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useCategories } from './CategoryContext';
+import { useWebSocket } from './WebSocketContext';
 
 interface SessionState {
   foregroundCategories: any[];
@@ -43,6 +44,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     setForegroundCategories,
     setSelectedDate
   } = useCategories();
+  const { joinSession, leaveSession, isConnected } = useWebSocket();
 
   // Check for session ID in the URL hash when the component mounts
   useEffect(() => {
@@ -52,6 +54,14 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Join WebSocket room when connection is established and we have a session
+  useEffect(() => {
+    if (isConnected && sessionId) {
+      console.log('WebSocket connected, joining room for session:', sessionId);
+      joinSession(sessionId);
+    }
+  }, [isConnected, sessionId, joinSession]);
 
   // Helper function to compare states (excluding timestamp for meaningful change detection)
   const statesEqual = useCallback((state1: any, state2: any): boolean => {
@@ -193,6 +203,12 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     // Update the URL hash
     window.location.hash = newSessionId;
     
+    // Join the WebSocket room for collaboration
+    if (isConnected) {
+      console.log('Joining WebSocket room for session:', newSessionId);
+      joinSession(newSessionId);
+    }
+    
     // Convert Map to an array for better logging and storage
     const dateInfoArray = Array.from(dateInfoMap.entries());
     
@@ -245,6 +261,12 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       // Set session ID and timestamp
       setSessionId(id);
       setTimestamp(sessionData.timestamp);
+      
+      // Join the WebSocket room for collaboration
+      if (isConnected) {
+        console.log('Joining WebSocket room for loaded session:', id);
+        joinSession(id);
+      }
       
       // Restore categories
       setForegroundCategories(sessionData.foregroundCategories);
