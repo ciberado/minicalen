@@ -82,7 +82,6 @@ const Sidebar = ({ width }: SidebarProps) => {
             categories={foregroundCategories}
             onCategoriesChange={setForegroundCategories}
             exclusive={true} // Only one foreground category can be selected
-            globalExclusive={true}
             showColorPicker={true}
           />
         </Box>
@@ -95,7 +94,6 @@ const Sidebar = ({ width }: SidebarProps) => {
             categories={backgroundCategories}
             onCategoriesChange={setBackgroundCategories}
             exclusive={true} // Only one background category can be selected
-            globalExclusive={true}
             showColorPicker={true}
           />
         </Box>
@@ -108,7 +106,6 @@ const Sidebar = ({ width }: SidebarProps) => {
             categories={tagCategories}
             onCategoriesChange={setTagCategories}
             exclusive={false} // Multiple tags can be selected
-            globalExclusive={true}
             showColorPicker={false}
           />
         </Box>
