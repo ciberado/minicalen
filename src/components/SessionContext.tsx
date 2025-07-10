@@ -16,7 +16,6 @@ interface SessionContextType {
   loadSession: (id: string) => Promise<boolean>;
   listSessions: () => Promise<Array<{id: string, timestamp: string}>>;
   isLoading: boolean;
-  autoSaveEnabled: boolean;
 }
 
 // Create the context with default values
@@ -27,7 +26,6 @@ const SessionContext = createContext<SessionContextType>({
   loadSession: async () => false,
   listSessions: async () => [],
   isLoading: false,
-  autoSaveEnabled: false,
 });
 
 // Create a provider component
@@ -35,10 +33,8 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [timestamp, setTimestamp] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
   const [isApplyingRemoteState, setIsApplyingRemoteState] = useState(false);
   const lastSavedStateRef = useRef<SessionState | null>(null);
-  const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { 
     foregroundCategories, 
     dateInfoMap,
@@ -101,8 +97,8 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [sessionId, isConnected, isApplyingRemoteState, foregroundCategories, dateInfoMap, broadcastStateChange]);
 
-  // Internal save function that can be called manually or automatically
-  const saveSessionInternal = useCallback(async (sessionIdToSave: string, sessionState: SessionState, isManualSave: boolean = true) => {
+  // Internal save function that can be called manually
+  const saveSessionInternal = useCallback(async (sessionIdToSave: string, sessionState: SessionState) => {
     try {
       // Save the session to the backend
       const response = await fetch('http://localhost:3001/api/sessions', {
@@ -126,88 +122,13 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       // Update timestamp
       setTimestamp(sessionState.timestamp);
       
-      // Log detailed state information
-      if (isManualSave) {
-        console.log('Session manually saved with ID:', sessionIdToSave);
-        console.log('Session saved at:', new Date(sessionState.timestamp).toLocaleString());
-      } else {
-        console.log('Session auto-saved with ID:', sessionIdToSave);
-        console.log('Session auto-saved at:', new Date(sessionState.timestamp).toLocaleString());
-      }
+      console.log('Session saved with ID:', sessionIdToSave);
+      console.log('Session saved at:', new Date(sessionState.timestamp).toLocaleString());
       
     } catch (error) {
       console.error('Failed to save session:', error);
     }
   }, []);
-
-  // Function to check if state has changed and auto-save if needed
-  const autoSaveIfChanged = useCallback(async () => {
-    if (!sessionId || !lastSavedStateRef.current) {
-      console.log('No session ID or last saved state, skipping auto-save check');
-      return;
-    }
-    
-    // Create current state snapshot for comparison (excluding timestamp)
-    const currentStateData = {
-      foregroundCategories,
-      dateInfoMap: Array.from(dateInfoMap.entries())
-    };
-    
-    const lastSavedStateData = {
-      foregroundCategories: lastSavedStateRef.current.foregroundCategories,
-      dateInfoMap: lastSavedStateRef.current.dateInfoMap
-    };
-    
-    console.log('Comparing states:', {
-      current: currentStateData,
-      lastSaved: lastSavedStateData
-    });
-    
-    // Compare with last saved state (excluding timestamp)
-    const hasChanged = !statesEqual(currentStateData, lastSavedStateData);
-    
-    if (hasChanged) {
-      console.log('Auto-saving due to state changes...');
-      // Create the actual state to save with new timestamp
-      const currentStateToSave: SessionState = {
-        foregroundCategories,
-        dateInfoMap: Array.from(dateInfoMap.entries()),
-        timestamp: new Date().toISOString()
-      };
-      await saveSessionInternal(sessionId, currentStateToSave, false);
-    } else {
-      console.log('No changes detected, skipping auto-save');
-    }
-  }, [sessionId, foregroundCategories, dateInfoMap, statesEqual, saveSessionInternal]);
-
-  // Set up auto-save interval when session is active
-  useEffect(() => {
-    if (autoSaveEnabled && sessionId) {
-      console.log('Setting up auto-save interval for session:', sessionId);
-      
-      // Clear any existing interval
-      if (autoSaveIntervalRef.current) {
-        clearInterval(autoSaveIntervalRef.current);
-      }
-      
-      // Set up new interval for auto-save every 5 seconds
-      autoSaveIntervalRef.current = setInterval(() => {
-        console.log('Auto-save interval triggered');
-        autoSaveIfChanged();
-      }, 5000);
-      
-      // Clean up interval on unmount or when auto-save is disabled
-      return () => {
-        console.log('Cleaning up auto-save interval');
-        if (autoSaveIntervalRef.current) {
-          clearInterval(autoSaveIntervalRef.current);
-          autoSaveIntervalRef.current = null;
-        }
-      };
-    } else {
-      console.log('Auto-save not enabled or no session ID:', { autoSaveEnabled, sessionId });
-    }
-  }, [autoSaveEnabled, sessionId, autoSaveIfChanged]);
 
   // Save the current application state
   const saveSession = async () => {
@@ -238,13 +159,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     };
     
     // Save the session using the internal function
-    await saveSessionInternal(newSessionId, sessionState, true);
-    
-    // Enable auto-save after the first manual save
-    if (!autoSaveEnabled) {
-      setAutoSaveEnabled(true);
-      console.log('Auto-save enabled - session will be automatically saved every 5 seconds when changes are detected');
-    }
+    await saveSessionInternal(newSessionId, sessionState);
   };
 
   // Load a session by ID
@@ -297,19 +212,15 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         setSelectedDate(dateStr, info.color, info.categoryId);
       });
       
-      // Initialize the last saved state for auto-save comparison
+      // Initialize the last saved state for state comparison
       lastSavedStateRef.current = {
         foregroundCategories: sessionData.foregroundCategories,
         dateInfoMap: sessionData.dateInfoMap,
         timestamp: sessionData.timestamp
       };
       
-      // Enable auto-save for loaded sessions
-      setAutoSaveEnabled(true);
-      
       console.log('Session loaded with ID:', id);
       console.log('Session timestamp:', new Date(sessionData.timestamp).toLocaleString());
-      console.log('Auto-save enabled for loaded session');
       
       setIsLoading(false);
       return true;
@@ -427,7 +338,6 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         loadSession,
         listSessions,
         isLoading,
-        autoSaveEnabled,
       }}
     >
       {children}
