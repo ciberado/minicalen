@@ -72,6 +72,18 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Handle state changes (real-time synchronization)
+  socket.on('state-change', (data: { sessionId: string; state: any; fromUser: string }) => {
+    console.log(`State change from user ${data.fromUser} in session ${data.sessionId}`);
+    
+    // Broadcast the state change to all other users in the session (excluding sender)
+    socket.to(data.sessionId).emit('state-update', {
+      sessionId: data.sessionId,
+      state: data.state,
+      fromUser: data.fromUser
+    });
+  });
+
   // Handle disconnection
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);

@@ -1,5 +1,11 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
+
+interface SessionState {
+  foregroundCategories: any[];
+  dateInfoMap: any;
+  timestamp: string;
+}
 
 interface WebSocketContextType {
   socket: Socket | null;
@@ -7,6 +13,9 @@ interface WebSocketContextType {
   joinSession: (sessionId: string) => void;
   leaveSession: (sessionId: string) => void;
   currentSessionId: string | null;
+  broadcastStateChange: (sessionId: string, state: SessionState) => void;
+  onStateUpdate: (callback: (state: SessionState) => void) => void;
+  offStateUpdate: (callback: (state: SessionState) => void) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType>({
@@ -15,12 +24,16 @@ const WebSocketContext = createContext<WebSocketContextType>({
   joinSession: () => {},
   leaveSession: () => {},
   currentSessionId: null,
+  broadcastStateChange: () => {},
+  onStateUpdate: () => {},
+  offStateUpdate: () => {},
 });
 
 export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const stateUpdateCallbacksRef = useRef<Set<(state: SessionState) => void>>(new Set());
 
   useEffect(() => {
     // Initialize socket connection
@@ -49,13 +62,24 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       console.log('User left session:', data);
     });
 
+    // Listen for state updates from other clients
+    newSocket.on('state-update', (data: { sessionId: string; state: SessionState; fromUser: string }) => {
+      console.log('Received state update from user:', data.fromUser, 'for session:', data.sessionId);
+      console.log('State update:', data.state);
+      
+      // Notify all registered callbacks
+      stateUpdateCallbacksRef.current.forEach((callback: (state: SessionState) => void) => {
+        callback(data.state);
+      });
+    });
+
     setSocket(newSocket);
 
     // Cleanup on unmount
     return () => {
       newSocket.close();
     };
-  }, []);
+  }, []); // Remove stateUpdateCallbacks dependency to prevent constant re-renders
 
   const joinSession = (sessionId: string) => {
     if (socket && sessionId) {
@@ -80,6 +104,25 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const broadcastStateChange = (sessionId: string, state: SessionState) => {
+    if (socket && sessionId && isConnected) {
+      console.log('Broadcasting state change for session:', sessionId);
+      socket.emit('state-change', {
+        sessionId,
+        state,
+        fromUser: socket.id
+      });
+    }
+  };
+
+  const onStateUpdate = (callback: (state: SessionState) => void) => {
+    stateUpdateCallbacksRef.current.add(callback);
+  };
+
+  const offStateUpdate = (callback: (state: SessionState) => void) => {
+    stateUpdateCallbacksRef.current.delete(callback);
+  };
+
   return (
     <WebSocketContext.Provider
       value={{
@@ -88,6 +131,9 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         joinSession,
         leaveSession,
         currentSessionId,
+        broadcastStateChange,
+        onStateUpdate,
+        offStateUpdate,
       }}
     >
       {children}
