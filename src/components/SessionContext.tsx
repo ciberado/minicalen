@@ -2,6 +2,7 @@ import { createContext, useState, useContext, ReactNode, useEffect, useRef, useC
 import { v4 as uuidv4 } from 'uuid';
 import { useCategories } from './CategoryContext';
 import { useWebSocket } from './WebSocketContext';
+import { getApiUrl } from '../config/api';
 
 interface SessionState {
   foregroundCategories: any[];
@@ -101,7 +102,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const saveSessionInternal = useCallback(async (sessionIdToSave: string, sessionState: SessionState) => {
     try {
       // Save the session to the backend
-      const response = await fetch('http://localhost:3001/api/sessions', {
+      const response = await fetch(getApiUrl('/sessions'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -168,7 +169,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       // Load the session from the backend
-      const response = await fetch(`http://localhost:3001/api/sessions/${id}`);
+      const response = await fetch(getApiUrl(`/sessions/${id}`));
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -234,7 +235,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   // List all available sessions
   const listSessions = async (): Promise<Array<{id: string, timestamp: string}>> => {
     try {
-      const response = await fetch('http://localhost:3001/api/sessions');
+      const response = await fetch(getApiUrl('/sessions'));
       
       if (!response.ok) {
         throw new Error(`Server responded with ${response.status}: ${response.statusText}`);

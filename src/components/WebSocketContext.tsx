@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { getWebSocketUrl, debugApiConfig } from '../config/api';
 
 interface SessionState {
   foregroundCategories: any[];
@@ -36,8 +37,20 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   const stateUpdateCallbacksRef = useRef<Set<(state: SessionState) => void>>(new Set());
 
   useEffect(() => {
-    // Initialize socket connection
-    const newSocket = io('http://localhost:3001');
+    // Debug API configuration in development
+    if (import.meta.env.DEV) {
+      debugApiConfig();
+    }
+    
+    // Initialize socket connection with dynamic URL
+    const wsUrl = getWebSocketUrl();
+    console.log('Connecting to WebSocket at:', wsUrl);
+    
+    const newSocket = io(wsUrl, {
+      transports: ['websocket', 'polling'], // Fallback to polling if WebSocket fails
+      timeout: 20000, // 20 second timeout
+      autoConnect: true
+    });
     
     newSocket.on('connect', () => {
       console.log('Connected to WebSocket server:', newSocket.id);

@@ -4,15 +4,73 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs';
 import { createServer } from 'http';
+import { createServer as createHttpsServer } from 'https';
 import { Server } from 'socket.io';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const server = createServer(app);
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const USE_HTTPS = process.env.USE_HTTPS === 'true';
+
+// Dynamic CORS configuration based on environment
+const getAllowedOrigins = (): string[] | boolean => {
+  const origins: string[] = [];
+  
+  // Add custom origins from environment variable
+  if (process.env.ALLOWED_ORIGINS) {
+    origins.push(...process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()));
+  }
+  
+  // Default development origins
+  if (NODE_ENV === 'development') {
+    origins.push('http://localhost:5173'); // Vite default
+    origins.push('http://localhost:3000'); // React default
+    origins.push('http://127.0.0.1:5173');
+    origins.push('http://127.0.0.1:3000');
+  }
+  
+  // For production, require explicit ALLOWED_ORIGINS
+  if (NODE_ENV === 'production' && !process.env.ALLOWED_ORIGINS) {
+    console.warn('WARNING: No ALLOWED_ORIGINS set for production environment');
+  }
+  
+  return origins.length > 0 ? origins : true; // true allows all origins (development fallback)
+};
+
+// Create server (HTTP or HTTPS based on configuration)
+let server;
+if (USE_HTTPS) {
+  try {
+    const keyPath = process.env.SSL_KEY_PATH || 'key.pem';
+    const certPath = process.env.SSL_CERT_PATH || 'cert.pem';
+    
+    if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
+      console.error(`❌ SSL files not found: ${keyPath} or ${certPath}`);
+      console.log('💡 Generate SSL certificates with: openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes');
+      process.exit(1);
+    }
+    
+    server = createHttpsServer({
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPath)
+    }, app);
+  } catch (error) {
+    console.error('❌ Failed to create HTTPS server:', error);
+    process.exit(1);
+  }
+} else {
+  server = createServer(app);
+}
+
+const allowedOrigins = getAllowedOrigins();
+
+console.log(`CORS configuration for ${NODE_ENV}:`, allowedOrigins);
+
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // Vite default port
-    methods: ["GET", "POST"]
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
@@ -20,11 +78,27 @@ const io = new Server(server, {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Enable CORS for all routes
-app.use(cors());
+// Enable CORS for all routes with dynamic configuration
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Parse JSON bodies
 app.use(express.json({ limit: '10mb' }));
+
+// Health check endpoint
+app.get('/health', (_req: Request, res: Response): void => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    environment: NODE_ENV,
+    https: USE_HTTPS,
+    version: process.env.npm_package_version || '1.0.0'
+  });
+});
 
 // Create data directory if it doesn't exist
 const dataDir = join(dirname(__dirname), 'data');
@@ -239,6 +313,33 @@ app.delete('/api/sessions/:id', (req: Request, res: Response): void => {
 
 // Start the server
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} - with auto-reload enabled`);
-  console.log(`WebSocket server ready for connections`);
+  const protocol = USE_HTTPS ? 'https' : 'http';
+  const wsProtocol = USE_HTTPS ? 'wss' : 'ws';
+  
+  console.log(`🚀 Server running on port ${PORT} (${NODE_ENV} mode, ${protocol.toUpperCase()})`);
+  console.log(`📡 WebSocket server ready for connections`);
+  console.log(`🌐 CORS origins:`, allowedOrigins);
+  console.log(`📂 Data directory: ${dataDir}`);
+  
+  if (NODE_ENV === 'development') {
+    console.log(`🔗 Local API URL: ${protocol}://localhost:${PORT}/api`);
+    console.log(`🔗 Local WebSocket URL: ${wsProtocol}://localhost:${PORT}`);
+  }
+  
+  if (USE_HTTPS) {
+    console.log(`🔒 HTTPS enabled with SSL certificates`);
+  }
+  
+  if (NODE_ENV === 'production' && !process.env.ALLOWED_ORIGINS) {
+    console.warn('⚠️  WARNING: Consider setting ALLOWED_ORIGINS for better security in production');
+  }
+}).on('error', (error: NodeJS.ErrnoException) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use`);
+  } else if (error.code === 'ENOENT' && USE_HTTPS) {
+    console.error(`❌ SSL certificate files not found. Please check SSL_KEY_PATH and SSL_CERT_PATH`);
+  } else {
+    console.error(`❌ Server failed to start:`, error.message);
+  }
+  process.exit(1);
 });
