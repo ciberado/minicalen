@@ -76,6 +76,13 @@ io.on('connection', (socket) => {
   socket.on('state-change', (data: { sessionId: string; state: any; fromUser: string }) => {
     console.log(`State change from user ${data.fromUser} in session ${data.sessionId}`);
     
+    // Save the state change to the session file automatically
+    const saved = saveSessionToFile(data.sessionId, data.state, 'WebSocket');
+    
+    if (!saved) {
+      console.error(`Failed to auto-save session ${data.sessionId} via WebSocket`);
+    }
+    
     // Broadcast the state change to all other users in the session (excluding sender)
     socket.to(data.sessionId).emit('state-update', {
       sessionId: data.sessionId,
@@ -107,6 +114,33 @@ const getSessionFilePath = (id: string): string => {
   return join(sessionsDir, `${id}.json`);
 };
 
+// Helper function to save session (used by both WebSocket and API)
+const saveSessionToFile = (sessionId: string, sessionState: SessionState, source: string = 'API'): boolean => {
+  try {
+    // Ensure timestamp is present
+    if (!sessionState.timestamp) {
+      sessionState.timestamp = new Date().toISOString();
+    }
+    
+    // Create the session object
+    const session: Session = {
+      id: sessionId,
+      timestamp: sessionState.timestamp,
+      state: sessionState
+    };
+    
+    // Save to file
+    const filePath = getSessionFilePath(sessionId);
+    fs.writeFileSync(filePath, JSON.stringify(session, null, 2));
+    console.log(`Session saved via ${source}: ${sessionId} at ${new Date(sessionState.timestamp).toLocaleString()}`);
+    
+    return true;
+  } catch (error) {
+    console.error(`Error saving session ${sessionId} via ${source}:`, error);
+    return false;
+  }
+};
+
 // Route to save a session
 app.post('/api/sessions', (req: Request, res: Response): void => {
   const { id, state }: { id: string; state: SessionState } = req.body;
@@ -116,26 +150,12 @@ app.post('/api/sessions', (req: Request, res: Response): void => {
     return;
   }
   
-  // Add timestamp if not provided
-  if (!state.timestamp) {
-    state.timestamp = new Date().toISOString();
-  }
+  // Save using the helper function
+  const saved = saveSessionToFile(id, state, 'API');
   
-  // Create the session object
-  const session: Session = {
-    id,
-    timestamp: state.timestamp,
-    state
-  };
-  
-  // Save directly to file
-  try {
-    const filePath = getSessionFilePath(id);
-    fs.writeFileSync(filePath, JSON.stringify(session, null, 2));
-    console.log(`Session saved: ${id}`);
-    res.json({ id, timestamp: state.timestamp });
-  } catch (error) {
-    console.error(`Error saving session ${id}:`, error);
+  if (saved) {
+    res.json({ id, timestamp: state.timestamp || new Date().toISOString() });
+  } else {
     res.status(500).json({ error: 'Failed to save session' });
   }
 });
