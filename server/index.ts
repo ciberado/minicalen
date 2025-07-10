@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -31,8 +31,24 @@ if (!fs.existsSync(sessionsFile)) {
   fs.writeFileSync(sessionsFile, JSON.stringify({}));
 }
 
+// Define types for session data
+interface SessionState {
+  timestamp?: string;
+  [key: string]: any;
+}
+
+interface Session {
+  id: string;
+  timestamp: string;
+  state: SessionState;
+}
+
+interface SessionsStorage {
+  [key: string]: Session;
+}
+
 // Load sessions
-let sessions = {};
+let sessions: SessionsStorage = {};
 try {
   const data = fs.readFileSync(sessionsFile, 'utf8');
   sessions = JSON.parse(data);
@@ -42,7 +58,7 @@ try {
 }
 
 // Save sessions to file
-const saveSessions = () => {
+const saveSessions = (): void => {
   try {
     fs.writeFileSync(sessionsFile, JSON.stringify(sessions, null, 2));
   } catch (error) {
@@ -51,11 +67,12 @@ const saveSessions = () => {
 };
 
 // Route to save a session
-app.post('/api/sessions', (req, res) => {
-  const { id, state } = req.body;
+app.post('/api/sessions', (req: Request, res: Response): void => {
+  const { id, state }: { id: string; state: SessionState } = req.body;
   
   if (!id || !state) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    res.status(400).json({ error: 'Missing required fields' });
+    return;
   }
   
   // Add timestamp if not provided
@@ -78,11 +95,12 @@ app.post('/api/sessions', (req, res) => {
 });
 
 // Route to get a session
-app.get('/api/sessions/:id', (req, res) => {
+app.get('/api/sessions/:id', (req: Request, res: Response): void => {
   const { id } = req.params;
   
   if (!sessions[id]) {
-    return res.status(404).json({ error: 'Session not found' });
+    res.status(404).json({ error: 'Session not found' });
+    return;
   }
   
   console.log(`Session loaded: ${id}`);
@@ -90,7 +108,7 @@ app.get('/api/sessions/:id', (req, res) => {
 });
 
 // Route to list all sessions
-app.get('/api/sessions', (req, res) => {
+app.get('/api/sessions', (_req: Request, res: Response): void => {
   const sessionsList = Object.values(sessions).map(session => ({
     id: session.id,
     timestamp: session.timestamp
@@ -100,11 +118,12 @@ app.get('/api/sessions', (req, res) => {
 });
 
 // Route to delete a session
-app.delete('/api/sessions/:id', (req, res) => {
+app.delete('/api/sessions/:id', (req: Request, res: Response): void => {
   const { id } = req.params;
   
   if (!sessions[id]) {
-    return res.status(404).json({ error: 'Session not found' });
+    res.status(404).json({ error: 'Session not found' });
+    return;
   }
   
   delete sessions[id];
