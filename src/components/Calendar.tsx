@@ -33,10 +33,6 @@ const Calendar = ({}: CalendarProps) => {
   const events = useMemo(() => {
     const eventArray: any[] = [];
     
-    console.log('Building events from selectedDates:', 
-      Array.from(selectedDates.entries()).map(([date, color]) => ({ date, color }))
-    );
-    
     // Convert each date entry to an event object
     selectedDates.forEach((color, dateStr) => {
       if (color) {
@@ -50,7 +46,6 @@ const Calendar = ({}: CalendarProps) => {
       }
     });
     
-    console.log('Generated events:', eventArray);
     return eventArray;
   }, [selectedDates]);
 
