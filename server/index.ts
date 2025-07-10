@@ -23,12 +23,10 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir);
 }
 
-// Sessions storage file
-const sessionsFile = join(dataDir, 'sessions.json');
-
-// Initialize sessions storage if it doesn't exist
-if (!fs.existsSync(sessionsFile)) {
-  fs.writeFileSync(sessionsFile, JSON.stringify({}));
+// Create sessions directory if it doesn't exist
+const sessionsDir = join(dataDir, 'sessions');
+if (!fs.existsSync(sessionsDir)) {
+  fs.mkdirSync(sessionsDir);
 }
 
 // Define types for session data
@@ -43,27 +41,9 @@ interface Session {
   state: SessionState;
 }
 
-interface SessionsStorage {
-  [key: string]: Session;
-}
-
-// Load sessions
-let sessions: SessionsStorage = {};
-try {
-  const data = fs.readFileSync(sessionsFile, 'utf8');
-  sessions = JSON.parse(data);
-} catch (error) {
-  console.error('Error loading sessions:', error);
-  sessions = {};
-}
-
-// Save sessions to file
-const saveSessions = (): void => {
-  try {
-    fs.writeFileSync(sessionsFile, JSON.stringify(sessions, null, 2));
-  } catch (error) {
-    console.error('Error saving sessions:', error);
-  }
+// Helper function to get session file path
+const getSessionFilePath = (id: string): string => {
+  return join(sessionsDir, `${id}.json`);
 };
 
 // Route to save a session
@@ -80,57 +60,100 @@ app.post('/api/sessions', (req: Request, res: Response): void => {
     state.timestamp = new Date().toISOString();
   }
   
-  // Store the session
-  sessions[id] = {
+  // Create the session object
+  const session: Session = {
     id,
     timestamp: state.timestamp,
     state
   };
   
-  // Save to file
-  saveSessions();
-  
-  console.log(`Session saved: ${id}`);
-  res.json({ id, timestamp: state.timestamp });
+  // Save directly to file
+  try {
+    const filePath = getSessionFilePath(id);
+    fs.writeFileSync(filePath, JSON.stringify(session, null, 2));
+    console.log(`Session saved: ${id}`);
+    res.json({ id, timestamp: state.timestamp });
+  } catch (error) {
+    console.error(`Error saving session ${id}:`, error);
+    res.status(500).json({ error: 'Failed to save session' });
+  }
 });
 
 // Route to get a session
 app.get('/api/sessions/:id', (req: Request, res: Response): void => {
   const { id } = req.params;
   
-  if (!sessions[id]) {
-    res.status(404).json({ error: 'Session not found' });
-    return;
+  try {
+    const filePath = getSessionFilePath(id);
+    if (!fs.existsSync(filePath)) {
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+    
+    const data = fs.readFileSync(filePath, 'utf8');
+    const session = JSON.parse(data);
+    
+    console.log(`Session loaded: ${id}`);
+    res.json(session);
+  } catch (error) {
+    console.error(`Error loading session ${id}:`, error);
+    res.status(500).json({ error: 'Failed to load session' });
   }
-  
-  console.log(`Session loaded: ${id}`);
-  res.json(sessions[id]);
 });
 
 // Route to list all sessions
+// TODO - Make this endpoint private (SECURITY)
 app.get('/api/sessions', (_req: Request, res: Response): void => {
-  const sessionsList = Object.values(sessions).map(session => ({
-    id: session.id,
-    timestamp: session.timestamp
-  }));
-  
-  res.json(sessionsList);
+  try {
+    const sessionsList: Array<{ id: string; timestamp: string }> = [];
+    const files = fs.readdirSync(sessionsDir);
+    
+    for (const file of files) {
+      if (file.endsWith('.json')) {
+        const id = file.replace('.json', '');
+        const filePath = getSessionFilePath(id);
+        
+        try {
+          const data = fs.readFileSync(filePath, 'utf8');
+          const session = JSON.parse(data);
+          sessionsList.push({
+            id: session.id,
+            timestamp: session.timestamp
+          });
+        } catch (error) {
+          console.error(`Error reading session file ${file}:`, error);
+        }
+      }
+    }
+    
+    // Sort by timestamp (newest first)
+    sessionsList.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    
+    res.json(sessionsList);
+  } catch (error) {
+    console.error('Error listing sessions:', error);
+    res.status(500).json({ error: 'Failed to list sessions' });
+  }
 });
 
 // Route to delete a session
 app.delete('/api/sessions/:id', (req: Request, res: Response): void => {
   const { id } = req.params;
   
-  if (!sessions[id]) {
-    res.status(404).json({ error: 'Session not found' });
-    return;
+  try {
+    const filePath = getSessionFilePath(id);
+    if (!fs.existsSync(filePath)) {
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+    
+    fs.unlinkSync(filePath);
+    console.log(`Session deleted: ${id}`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error(`Error deleting session ${id}:`, error);
+    res.status(500).json({ error: 'Failed to delete session' });
   }
-  
-  delete sessions[id];
-  saveSessions();
-  
-  console.log(`Session deleted: ${id}`);
-  res.json({ success: true });
 });
 
 // Start the server
