@@ -13,16 +13,10 @@ const Sidebar = ({ width }: SidebarProps) => {
   const { 
     foregroundCategories, 
     setForegroundCategories,
-    backgroundCategories,
-    setBackgroundCategories,
-    tagCategories,
-    setTagCategories
   } = useCategories();
   
   // Refs to access the Categories component methods
   const foregroundCategoriesRef = useRef<CategoriesHandle>(null);
-  const backgroundCategoriesRef = useRef<CategoriesHandle>(null);
-  const tagCategoriesRef = useRef<CategoriesHandle>(null);
   
   // Debug helper to track category selection changes
   useEffect(() => {
@@ -33,22 +27,6 @@ const Sidebar = ({ width }: SidebarProps) => {
     }
   }, [foregroundCategories]);
   
-  useEffect(() => {
-    console.log('Background categories updated:', backgroundCategories);
-    const selectedBackground = backgroundCategories.filter(cat => cat.selected);
-    if (selectedBackground.length > 0) {
-      console.log('Selected background category:', selectedBackground[0].label);
-    }
-  }, [backgroundCategories]);
-  
-  useEffect(() => {
-    console.log('Tag categories updated:', tagCategories);
-    const selectedTags = tagCategories.filter(cat => cat.selected);
-    if (selectedTags.length > 0) {
-      console.log('Selected tag categories:', selectedTags.map(cat => cat.label));
-    }
-  }, [tagCategories]);
-
   return (
     <Paper 
       elevation={2}
@@ -84,31 +62,7 @@ const Sidebar = ({ width }: SidebarProps) => {
             exclusive={true} // Only one foreground category can be selected
             showColorPicker={true}
           />
-        </Box>
-        
-        {/* Background Color Categories */}
-        <Box mb={3}>
-          <Categories
-            ref={backgroundCategoriesRef}
-            title="Background"
-            categories={backgroundCategories}
-            onCategoriesChange={setBackgroundCategories}
-            exclusive={true} // Only one background category can be selected
-            showColorPicker={true}
-          />
-        </Box>
-        
-        {/* Tag Categories */}
-        <Box mb={3}>
-          <Categories
-            ref={tagCategoriesRef}
-            title="Tags"
-            categories={tagCategories}
-            onCategoriesChange={setTagCategories}
-            exclusive={false} // Multiple tags can be selected
-            showColorPicker={false}
-          />
-        </Box>
+        </Box>        
       </Box>
     </Paper>
   );
