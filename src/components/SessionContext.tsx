@@ -4,8 +4,6 @@ import { useCategories } from './CategoryContext';
 
 interface SessionState {
   foregroundCategories: any[];
-  backgroundCategories: any[];
-  tagCategories: any[];
   dateInfoMap: any;
   timestamp: string; // ISO timestamp when the session was saved
 }
@@ -36,12 +34,8 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { 
     foregroundCategories, 
-    backgroundCategories,
-    tagCategories,
     dateInfoMap,
     setForegroundCategories,
-    setBackgroundCategories,
-    setTagCategories,
     setSelectedDate
   } = useCategories();
 
@@ -73,8 +67,6 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     // Prepare the state to be saved
     const sessionState: SessionState = {
       foregroundCategories,
-      backgroundCategories,
-      tagCategories,
       dateInfoMap: dateInfoArray,
       timestamp
     };
@@ -99,27 +91,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       // Log detailed state information
       console.log('Session saved with ID:', newSessionId);
       console.log('Session saved at:', new Date(timestamp).toLocaleString());
-      console.log('Session state:', sessionState);
-      console.log('Foreground Categories:', foregroundCategories);
-      console.log('Background Categories:', backgroundCategories);
-      console.log('Tag Categories:', tagCategories);
-      console.log('Date Info Map (key-value pairs):', dateInfoArray);
       
-      // Check if selected dates are captured
-      const selectedDatesInfo = foregroundCategories
-        .filter(cat => cat.selected)
-        .map(cat => `${cat.label} (${cat.id}): ${cat.color}`);
-      console.log('Selected foreground categories:', selectedDatesInfo);
-      
-      // Check if date backgrounds are captured
-      if (dateInfoArray.length > 0) {
-        console.log('Dates with backgrounds:');
-        dateInfoArray.forEach(([date, info]) => {
-          console.log(`- ${date}: color=${info.color}, categoryId=${info.categoryId}`);
-        });
-      } else {
-        console.log('No dates with backgrounds found');
-      }
     } catch (error) {
       console.error('Failed to save session:', error);
     }
@@ -157,8 +129,6 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       
       // Restore categories
       setForegroundCategories(sessionData.foregroundCategories);
-      setBackgroundCategories(sessionData.backgroundCategories);
-      setTagCategories(sessionData.tagCategories);
       
       // Restore date info
       const dateInfoEntries = sessionData.dateInfoMap;

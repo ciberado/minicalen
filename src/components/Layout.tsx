@@ -5,7 +5,7 @@ import MainContent from './MainContent';
 
 // Calculate width for a 20-character column
 // Using approximately 8px per character for a standard font
-const SIDEBAR_WIDTH = '200px'; // Approximating 20 characters × ~10px per character
+const SIDEBAR_WIDTH = '300px'; // Approximating 20 characters × ~10px per character
 
 interface LayoutProps {
   children?: ReactNode;

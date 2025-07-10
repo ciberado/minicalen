@@ -18,7 +18,7 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 // Create data directory if it doesn't exist
-const dataDir = join(__dirname, 'data');
+const dataDir = join(dirname(__dirname), 'data');
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir);
 }

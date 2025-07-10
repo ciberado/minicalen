@@ -24,7 +24,7 @@ dist-ssr
 *.sw?
 
 # Database files
-server/data
+data
 *.db
 *.sqlite
 *.sqlite3
