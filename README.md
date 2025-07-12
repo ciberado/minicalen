@@ -1,113 +1,129 @@
-# Minicalen
+# MiniCalen
 
-A barebones React application built with TypeScript and Vite with real-time collaboration support.
+A lightweight, modern calendar application built with React and Node.js.
 
-## Getting Started
+## 📦 Packages
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
+This is a monorepo containing two independent packages:
 
-2. Start the backend server:
-   ```bash
-   npm run server
-   ```
+- **[@minicalen/frontend](./packages/frontend)** - React frontend application
+- **[@minicalen/server](./packages/server)** - Node.js backend server
 
-3. In a separate terminal, start the development server:
-   ```bash
-   npm run dev
-   ```
+## 🚀 Quick Start
 
-4. Open your browser and navigate to `http://localhost:5173`
+### Development
 
-## Configuration
+```bash
+# Install all dependencies
+npm install
 
-### Environment Variables
+# Start both frontend and server in development mode
+npm run dev:all
 
-Copy `.env.example` to `.env` and configure as needed:
+# Or start them separately:
+npm run dev:server  # Start backend server
+npm run dev         # Start frontend application
+```
 
-#### Client Configuration (Vite environment variables)
-- `VITE_API_URL` - API server URL (default: `http://localhost:3001`)
-- `VITE_WS_URL` - WebSocket server URL (default: `http://localhost:3001`)
+### Production Build
 
-#### Server Configuration
-- `NODE_ENV` - Environment mode (`development` or `production`)
-- `PORT` - Server port (default: `3001`)
+```bash
+# Build both packages
+npm run build
+
+# Or build them separately:
+npm run build:frontend
+npm run build:server
+
+# Start production server
+npm run start
+```
+
+## 🏗️ Architecture
+
+```
+minicalen/
+├── packages/
+│   ├── frontend/          # React frontend package
+│   │   ├── src/          # React components and logic
+│   │   ├── public/       # Static assets
+│   │   └── dist/         # Built frontend assets
+│   └── server/           # Node.js backend package
+│       ├── src/          # Server source code
+│       ├── data/         # Session storage
+│       └── dist/         # Built server code
+├── scripts/              # Utility scripts
+└── DEPLOYMENT.md         # Deployment guide
+```
+
+## 🛠️ Development Workflow
+
+Each package is independently managed with its own:
+- Dependencies (`package.json`)
+- Build configuration
+- TypeScript configuration
+- ESLint configuration
+- README documentation
+
+### Working with Packages
+
+```bash
+# Install dependencies for a specific package
+npm install --workspace=@minicalen/frontend
+npm install --workspace=@minicalen/server
+
+# Run scripts in a specific package
+npm run build --workspace=@minicalen/frontend
+npm run dev --workspace=@minicalen/server
+
+# Add dependencies to a specific package
+npm install react --workspace=@minicalen/frontend
+npm install express --workspace=@minicalen/server
+```
+
+## 🌐 Environment Configuration
+
+### Frontend Environment Variables
+- `VITE_API_URL` - Backend API URL (default: http://localhost:3001)
+- `VITE_WS_URL` - WebSocket URL (default: http://localhost:3001)
+
+### Server Environment Variables
+- `PORT` - Server port (default: 3001)
+- `NODE_ENV` - Environment (development/production)
 - `ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins
-- `USE_HTTPS` - Enable HTTPS (`true` or `false`)
-- `SSL_KEY_PATH` - Path to SSL private key file (when using HTTPS)
-- `SSL_CERT_PATH` - Path to SSL certificate file (when using HTTPS)
+- `MINICALEN_HOST` - Host for proxy configuration
 
-### Examples
+## 📚 Documentation
 
-#### Development (default)
-No configuration needed. The app will use `localhost:3001` for both API and WebSocket.
+- [Frontend Documentation](./packages/frontend/README.md)
+- [Server Documentation](./packages/server/README.md)
+- [Deployment Guide](./DEPLOYMENT.md)
 
-#### Production (same domain)
-```bash
-# Client
-VITE_API_URL=https://yourdomain.com
-VITE_WS_URL=wss://yourdomain.com
+## 🔧 Scripts
 
-# Server
-NODE_ENV=production
-ALLOWED_ORIGINS=https://yourdomain.com
-```
+- `npm run dev` - Start frontend development server
+- `npm run dev:server` - Start backend development server
+- `npm run dev:all` - Start both frontend and backend
+- `npm run build` - Build both packages
+- `npm run start` - Start production server
+- `npm run lint` - Lint all packages
 
-#### Production (separate API domain)
-```bash
-# Client
-VITE_API_URL=https://api.yourdomain.com
-VITE_WS_URL=wss://api.yourdomain.com
+## 🏗️ Technology Stack
 
-# Server
-NODE_ENV=production
-ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
-```
+### Frontend
+- React 18 with TypeScript
+- Vite for build and development
+- Material-UI for components
+- FullCalendar for calendar functionality
+- Socket.IO client for real-time updates
 
-#### HTTPS Support
-```bash
-USE_HTTPS=true
-SSL_KEY_PATH=/path/to/private-key.pem
-SSL_CERT_PATH=/path/to/certificate.pem
-```
+### Backend
+- Node.js with Express
+- TypeScript
+- Socket.IO for real-time communication
+- File-based session storage
+- CORS support for cross-origin requests
 
-## Available Scripts
+## 📄 License
 
-- `npm run dev` - Start the development server
-- `npm run server` - Start the backend server for state storage
-- `npm run build` - Build the project for production
-- `npm run lint` - Run ESLint to check for code issues
-- `npm run preview` - Preview the production build locally
-
-## Tech Stack
-
-- **React** - UI library
-- **TypeScript** - Type-safe JavaScript
-- **Vite** - Fast build tool and dev server
-- **Express** - Backend server for state storage
-- **Socket.IO** - Real-time communication
-
-## Features
-
-### State Management
-
-MiniCalen uses a server-side state storage system:
-
-1. **Client-Side**: The application state is managed in React context providers
-2. **Server-Side**: When saving, the state is sent to an Express server
-3. **Persistence**: Sessions are stored in JSON files on the server
-4. **URL Sharing**: Each session has a unique ID in the URL hash for easy sharing
-
-### Real-time Collaboration
-
-- **WebSocket Connection**: Real-time synchronization between multiple clients
-- **Automatic State Sync**: Changes are broadcast to all connected clients in the same session
-- **Conflict Resolution**: Last-write-wins conflict resolution with timestamps
-
-### Security Features
-
-- **CORS Protection**: Configurable CORS origins for production security
-- **HTTPS Support**: Optional SSL/TLS encryption
-- **Environment-based Configuration**: Separate settings for development and production
+[Add your license here]

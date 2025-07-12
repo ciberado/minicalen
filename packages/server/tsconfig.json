@@ -9,8 +9,8 @@
     "skipLibCheck": true,
     "strict": true,
     "resolveJsonModule": true,
-    "outDir": "./dist/server",
-    "rootDir": "./server",
+    "outDir": "./dist",
+    "rootDir": "./src",
     "declaration": true,
     "sourceMap": true,
     "noUnusedLocals": true,
@@ -19,7 +19,7 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "server/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",

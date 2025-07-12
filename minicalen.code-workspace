@@ -1,0 +1,19 @@
+{
+  "folders": [
+    {
+      "name": "Root",
+      "path": "."
+    },
+    {
+      "name": "Frontend",
+      "path": "./packages/frontend"
+    },
+    {
+      "name": "Server", 
+      "path": "./packages/server"
+    }
+  ],
+  "settings": {
+    "typescript.preferences.includePackageJsonAutoImports": "auto"
+  }
+}

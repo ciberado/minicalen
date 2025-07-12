@@ -24,7 +24,10 @@ dist-ssr
 *.sw?
 
 # Database files
-data
+/data
+!packages/server/data
+packages/server/data/sessions/*.json
+!packages/server/data/sessions/.gitkeep
 *.db
 *.sqlite
 *.sqlite3

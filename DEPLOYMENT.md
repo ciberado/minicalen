@@ -57,18 +57,22 @@ caddy run --config Caddyfile
 version: '3.8'
 services:
   backend:
-    build: .
-    command: npm run server:build
+    build: 
+      context: .
+      dockerfile: packages/server/Dockerfile
+    command: npm run start --workspace=@minicalen/server
     environment:
       - NODE_ENV=production
       - PORT=3001
       - MINICALEN_HOST=yourdomain.com
     volumes:
-      - ./data:/app/data
+      - ./packages/server/data:/app/data
 
   frontend:
-    build: .
-    command: npm run preview
+    build:
+      context: .
+      dockerfile: packages/frontend/Dockerfile
+    command: npm run preview --workspace=@minicalen/frontend
     environment:
       - VITE_API_URL=https://yourdomain.com
       - VITE_WS_URL=wss://yourdomain.com
@@ -94,8 +98,11 @@ services:
 
 **Default setup** - No configuration needed:
 ```bash
-npm run server    # Starts server on http://localhost:3001
-npm run dev       # Starts client on http://localhost:5173
+npm run dev:server  # Starts server on http://localhost:3001
+npm run dev         # Starts client on http://localhost:5173
+
+# Or start both at once:
+npm run dev:all
 ```
 
 The client will automatically connect to `http://localhost:3001` for both API and WebSocket.
@@ -280,13 +287,14 @@ ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
 
 ## 🚀 Build and Deploy
 
-1. **Build the client**:
+1. **Build both packages**:
    ```bash
    npm run build
    ```
 
-2. **Build the server**:
+2. **Or build them separately**:
    ```bash
+   npm run build:frontend
    npm run build:server
    ```
 

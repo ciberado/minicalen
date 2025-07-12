@@ -2,59 +2,31 @@
   "name": "minicalen",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
+  "description": "MiniCalen - A lightweight calendar application",
+  "workspaces": [
+    "packages/server",
+    "packages/frontend"
+  ],
   "config": {
     "commitizen": {
       "path": "node_modules/cz-git"
     }
   },
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
-    "build": "tsc && vite build",
-    "build:server": "tsc -p tsconfig.server.json",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview",
-    "commit": "git-cz",
-    "server": "nodemon --exec \"npx tsx server/index.ts\" --watch server --ext ts",
-    "server:build": "npm run build:server && node dist/server/index.js"
-  },
-  "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@fullcalendar/core": "^6.1.18",
-    "@fullcalendar/interaction": "^6.1.18",
-    "@fullcalendar/multimonth": "^6.1.18",
-    "@fullcalendar/react": "^6.1.18",
-    "@mui/icons-material": "^7.2.0",
-    "@mui/material": "^7.2.0",
-    "body-parser": "^2.2.0",
-    "cors": "^2.8.5",
-    "express": "^5.1.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1",
-    "uuid": "^11.1.0"
+    "dev": "npm run dev --workspace=@minicalen/frontend",
+    "dev:server": "npm run dev --workspace=@minicalen/server",
+    "dev:all": "concurrently \"npm run dev:server\" \"npm run dev\"",
+    "build": "npm run build --workspace=@minicalen/frontend && npm run build --workspace=@minicalen/server",
+    "build:server": "npm run build --workspace=@minicalen/server",
+    "build:frontend": "npm run build --workspace=@minicalen/frontend",
+    "start": "npm run start --workspace=@minicalen/server",
+    "lint": "npm run lint --workspace=@minicalen/frontend && npm run lint --workspace=@minicalen/server",
+    "preview": "npm run preview --workspace=@minicalen/frontend",
+    "commit": "git-cz"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
-    "@types/react": "^18.2.66",
-    "@types/react-dom": "^18.2.22",
-    "@types/socket.io": "^3.0.1",
-    "@types/uuid": "^10.0.0",
-    "@typescript-eslint/eslint-plugin": "^7.2.0",
-    "@typescript-eslint/parser": "^7.2.0",
-    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.2",
     "cz-git": "^1.11.2",
-    "eslint": "^8.57.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.6",
-    "git-cz": "^4.9.0",
-    "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2",
-    "tsx": "^4.20.3",
-    "typescript": "^5.2.2",
-    "vite": "^5.2.0"
+    "git-cz": "^4.9.0"
   }
 }
