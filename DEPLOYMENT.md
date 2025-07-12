@@ -2,6 +2,94 @@
 
 This guide explains how to deploy MiniCalen in different environments with proper configuration.
 
+## 🚀 Caddy Reverse Proxy Deployment (Recommended)
+
+MiniCalen includes a pre-configured `Caddyfile` for easy deployment with Caddy as a reverse proxy. This setup handles SSL termination, WebSocket connections, and routing.
+
+### Environment Setup
+
+Set these environment variables for Caddy:
+
+```bash
+# Required: Caddy proxy hostname
+export MINICALEN_HOST=yourdomain.com
+
+# Required: Backend service (Node.js server)
+export MINICALEN_BACKEND=localhost  # or backend-container-name
+
+# Required: Frontend service (Vite dev server or static files)
+export MINICALEN_FRONTEND=localhost  # or frontend-container-name
+```
+
+### Backend Configuration
+
+For the Node.js server, set:
+
+```bash
+export NODE_ENV=production
+export PORT=3001
+export MINICALEN_HOST=yourdomain.com  # For CORS configuration
+```
+
+### Frontend Configuration
+
+Build the frontend with proxy-aware settings:
+
+```bash
+export VITE_API_URL=https://yourdomain.com
+export VITE_WS_URL=wss://yourdomain.com
+npm run build
+```
+
+### Running with Caddy
+
+```bash
+# Start the backend server
+npm run server:build
+
+# Start Caddy with the configuration
+caddy run --config Caddyfile
+```
+
+### Docker Compose Example
+
+```yaml
+version: '3.8'
+services:
+  backend:
+    build: .
+    command: npm run server:build
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - MINICALEN_HOST=yourdomain.com
+    volumes:
+      - ./data:/app/data
+
+  frontend:
+    build: .
+    command: npm run preview
+    environment:
+      - VITE_API_URL=https://yourdomain.com
+      - VITE_WS_URL=wss://yourdomain.com
+    ports:
+      - "5173:5173"
+
+  proxy:
+    image: caddy:alpine
+    ports:
+      - "443:443"
+    environment:
+      - MINICALEN_HOST=yourdomain.com
+      - MINICALEN_BACKEND=backend
+      - MINICALEN_FRONTEND=frontend
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+      - backend
+      - frontend
+```
+
 ## 🏠 Development Environment
 
 **Default setup** - No configuration needed:

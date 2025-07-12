@@ -1,0 +1,32 @@
+{$MINICALEN_HOST}:443 {
+	# Handle Socket.IO WebSocket connections first (most specific)
+	handle /socket.io/* {
+		reverse_proxy {$MINICALEN_BACKEND}:3001 {
+			# Enable WebSocket support for Socket.IO
+			header_up Upgrade {>Upgrade}
+			header_up Connection {>Connection}
+			header_up Sec-WebSocket-Key {>Sec-WebSocket-Key}
+			header_up Sec-WebSocket-Version {>Sec-WebSocket-Version}
+			header_up Sec-WebSocket-Protocol {>Sec-WebSocket-Protocol}
+			header_up Sec-WebSocket-Extensions {>Sec-WebSocket-Extensions}
+			header_up Origin {>Origin}
+		}
+	}
+	
+	# Handle API requests
+	handle /api/* {
+		reverse_proxy {$MINICALEN_BACKEND}:3001
+	}
+	
+	# Handle health check
+	handle /health {
+		reverse_proxy {$MINICALEN_BACKEND}:3001
+	}
+	
+	# Handle all other requests (frontend)
+	handle {
+		# Forward to frontend (build files or dev server)
+		reverse_proxy {$MINICALEN_FRONTEND}:5173
+	}
+	
+}

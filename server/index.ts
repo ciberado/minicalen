@@ -29,9 +29,16 @@ const getAllowedOrigins = (): string[] | boolean => {
     origins.push('http://127.0.0.1:3000');
   }
   
-  // For production, require explicit ALLOWED_ORIGINS
-  if (NODE_ENV === 'production' && !process.env.ALLOWED_ORIGINS) {
-    console.warn('WARNING: No ALLOWED_ORIGINS set for production environment');
+  // Add proxy host for production (Caddy proxy)
+  if (process.env.MINICALEN_HOST) {
+    const proxyHost = process.env.MINICALEN_HOST;
+    origins.push(`https://${proxyHost}`);
+    origins.push(`http://${proxyHost}`);
+  }
+  
+  // For production, require explicit ALLOWED_ORIGINS or MINICALEN_HOST
+  if (NODE_ENV === 'production' && !process.env.ALLOWED_ORIGINS && !process.env.MINICALEN_HOST) {
+    console.warn('WARNING: No ALLOWED_ORIGINS or MINICALEN_HOST set for production environment');
   }
   
   return origins.length > 0 ? origins : true; // true allows all origins (development fallback)

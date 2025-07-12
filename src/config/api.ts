@@ -21,12 +21,12 @@ const getApiConfig = (): ApiConfig => {
     // If no custom WebSocket URL is provided, derive it from API URL
     websocketUrl = customWsUrl || customApiUrl;
   } else if (!isDevelopment) {
-    // In production without custom URLs, try to derive from current location
-    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    // In production with proxy, use the same host as the current page
+    const protocol = window.location.protocol;
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
     
-    // Assume API is on the same host, different port or path
+    // API and WebSocket go through the proxy on the same host
     baseUrl = `${protocol}//${host}`;
     websocketUrl = customWsUrl || `${wsProtocol}//${host}`;
   }
