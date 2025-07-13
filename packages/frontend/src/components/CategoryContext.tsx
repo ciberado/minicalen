@@ -12,10 +12,6 @@ interface DateInfo {
 interface CategoryContextType {
   foregroundCategories: Category[];
   setForegroundCategories: (categories: Category[]) => void;
-  backgroundCategories: Category[];
-  setBackgroundCategories: (categories: Category[]) => void;
-  tagCategories: Category[];
-  setTagCategories: (categories: Category[]) => void;
   selectedDates: Map<string, string>; // Map of date strings to color strings (for backward compatibility)
   dateInfoMap: Map<string, DateInfo>; // Map of date strings to DateInfo objects
   setSelectedDate: (dateStr: string, color: string | null, categoryId?: string | null) => void; // Function to set/unset a date's color
@@ -26,10 +22,6 @@ interface CategoryContextType {
 const CategoryContext = createContext<CategoryContextType>({
   foregroundCategories: [],
   setForegroundCategories: () => {},
-  backgroundCategories: [],
-  setBackgroundCategories: () => {},
-  tagCategories: [],
-  setTagCategories: () => {},
   selectedDates: new Map(),
   dateInfoMap: new Map(),
   setSelectedDate: () => {},
@@ -45,17 +37,6 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
     { id: '3', label: 'Personal', color: '#4CAF50', active: true, selected: false }
   ]);
   
-  const [backgroundCategories, setBackgroundCategories] = useState<Category[]>([
-    { id: '1', label: 'Urgent', color: '#E91E63', active: true },
-    { id: '2', label: 'Waiting', color: '#FF9800', active: true }
-  ]);
-  
-  const [tagCategories, setTagCategories] = useState<Category[]>([
-    { id: '1', label: 'Home', color: null, active: true },
-    { id: '2', label: 'Office', color: null, active: true },
-    { id: '3', label: 'Travel', color: null, active: true },
-    { id: '4', label: 'Call', color: null, active: false }
-  ]);
 
   // Map to store date information with category associations
   const [dateInfoMap, setDateInfoMap] = useState<Map<string, DateInfo>>(new Map());
@@ -151,10 +132,6 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
       value={{
         foregroundCategories,
         setForegroundCategories,
-        backgroundCategories,
-        setBackgroundCategories,
-        tagCategories,
-        setTagCategories,
         selectedDates,
         dateInfoMap,
         setSelectedDate,
