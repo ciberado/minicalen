@@ -1,4 +1,5 @@
 // API Configuration for client-side
+import logger from '../logger';
 interface ApiConfig {
   baseUrl: string;
   websocketUrl: string;
@@ -51,7 +52,7 @@ export const getWebSocketUrl = (): string => {
 
 // Export for debugging
 export const debugApiConfig = () => {
-  console.log('API Configuration:', {
+  logger.debug('API Configuration:', {
     isDevelopment: import.meta.env.DEV,
     customApiUrl: import.meta.env.VITE_API_URL,
     customWsUrl: import.meta.env.VITE_WS_URL,
