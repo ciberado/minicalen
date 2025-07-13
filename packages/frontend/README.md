@@ -38,6 +38,28 @@ npm run lint
 - `VITE_API_URL` - Backend API URL (default: http://localhost:3001)
 - `VITE_WS_URL` - WebSocket URL (default: http://localhost:3001)
 
+## Docker
+
+```bash
+# Build Docker image (from workspace root)
+npm run build:frontend:docker
+
+# Run container
+docker run -d --name minicalen-frontend -p 8080:8080 minicalen-frontend
+
+# Health check
+curl http://localhost:8080/health
+```
+
+The Docker image:
+- Uses nginx Alpine for serving static files
+- Runs on port 8080 as non-root user
+- Includes health check endpoint
+- Optimized multi-stage build (~50MB)
+- SPA routing support for React Router
+
+For detailed Docker documentation, see [../../DOCKER.md](../../DOCKER.md).
+
 ## Technology Stack
 
 - **React 18** - UI framework

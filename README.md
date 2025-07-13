@@ -39,6 +39,23 @@ npm run build:server
 npm run start
 ```
 
+### Docker Deployment
+
+```bash
+# Build Docker images
+npm run build:frontend:docker
+npm run build:server:docker
+
+# Run containers individually
+docker run -d --name minicalen-frontend -p 8080:8080 minicalen-frontend
+docker run -d --name minicalen-server -p 3001:3001 minicalen-server
+
+# Or use Docker Compose for orchestration
+docker-compose up -d
+```
+
+For detailed Docker documentation, see [DOCKER.md](./DOCKER.md).
+
 ## 🏗️ Architecture
 
 ```
@@ -97,15 +114,29 @@ npm install express --workspace=@minicalen/server
 
 - [Frontend Documentation](./packages/frontend/README.md)
 - [Server Documentation](./packages/server/README.md)
+- [Docker Guide](./DOCKER.md)
 - [Deployment Guide](./DEPLOYMENT.md)
 
 ## 🔧 Scripts
 
+### Development
 - `npm run dev` - Start frontend development server
 - `npm run dev:server` - Start backend development server
 - `npm run dev:all` - Start both frontend and backend
+
+### Building
 - `npm run build` - Build both packages
+- `npm run build:frontend` - Build frontend package only
+- `npm run build:server` - Build server package only
+
+### Docker
+- `npm run build:frontend:docker` - Build frontend Docker image
+- `npm run build:server:docker` - Build server Docker image
+
+### Production
 - `npm run start` - Start production server
+
+### Development Tools
 - `npm run lint` - Lint all packages
 
 ## 🏗️ Technology Stack

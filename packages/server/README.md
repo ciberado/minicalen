@@ -43,6 +43,34 @@ npm run lint
 - `SSL_KEY_PATH` - Path to SSL private key
 - `SSL_CERT_PATH` - Path to SSL certificate
 
+## Docker
+
+```bash
+# Build Docker image (from workspace root)
+npm run build:server:docker
+
+# Run container
+docker run -d --name minicalen-server -p 3001:3001 minicalen-server
+
+# Run with persistent storage
+docker run -d --name minicalen-server -p 3001:3001 \
+  -v minicalen-data:/app/data \
+  -v minicalen-logs:/app/logs \
+  minicalen-server
+
+# Health check
+curl http://localhost:3001/health
+```
+
+The Docker image:
+- Uses Node.js 20 Alpine as base
+- Runs on port 3001 as non-root user
+- Includes dumb-init for proper signal handling
+- Optimized multi-stage build (~150MB)
+- Persistent volumes for data and logs
+
+For detailed Docker documentation, see [../../DOCKER.md](../../DOCKER.md).
+
 ## API Endpoints
 
 - `GET /api/health` - Health check
