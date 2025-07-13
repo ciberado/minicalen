@@ -40,7 +40,8 @@ RUN mkdir -p /var/cache/nginx /var/log/nginx /var/run \
     && chown -R minicalen:minicalen /var/cache/nginx /var/log/nginx /var/run /usr/share/nginx/html \
     && chmod -R 755 /var/cache/nginx /var/log/nginx /var/run
 
-# Copy nginx configuration for SPA routing
+# Copy nginx configurations
+COPY packages/frontend/nginx-main.conf /etc/nginx/nginx.conf
 COPY packages/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy the built application
@@ -55,4 +56,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
+# Run nginx with custom configuration that works with non-root user
 CMD ["nginx", "-g", "daemon off;"]
