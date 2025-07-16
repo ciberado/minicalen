@@ -2,7 +2,98 @@
 
 This guide explains how to deploy MiniCalen in different environments with proper configuration.
 
-## 🚀 Caddy Reverse Proxy Deployment (Recommended)
+## � Quick Deployment with Published Images
+
+The fastest way to deploy MiniCalen is using the pre-built Docker images published via GitHub Actions.
+
+### Using Docker Compose with Published Images
+
+Create a `docker-compose.yml` file:
+
+```yaml
+version: '3.8'
+services:
+  minicalen-server:
+    image: your-dockerhub-username/minicalen-server:latest
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - MINICALEN_HOST=yourdomain.com
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  minicalen-frontend:
+    image: your-dockerhub-username/minicalen-frontend:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - VITE_API_URL=https://yourdomain.com
+      - VITE_WS_URL=wss://yourdomain.com
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - MINICALEN_HOST=yourdomain.com
+      - MINICALEN_BACKEND=minicalen-server
+      - MINICALEN_FRONTEND=minicalen-frontend
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - minicalen-server
+      - minicalen-frontend
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
+```
+
+Then run:
+```bash
+docker-compose up -d
+```
+
+### Manual Docker Run
+
+```bash
+# Create a data directory for sessions
+mkdir -p ./data
+
+# Run the server
+docker run -d \
+  --name minicalen-server \
+  -p 3001:3001 \
+  -e NODE_ENV=production \
+  -e MINICALEN_HOST=yourdomain.com \
+  -v $(pwd)/data:/app/data \
+  your-dockerhub-username/minicalen-server:latest
+
+# Run the frontend
+docker run -d \
+  --name minicalen-frontend \
+  -p 8080:8080 \
+  -e VITE_API_URL=https://yourdomain.com \
+  -e VITE_WS_URL=wss://yourdomain.com \
+  your-dockerhub-username/minicalen-frontend:latest
+```
+
+### Available Image Tags
+
+Choose from these tag options:
+- `:latest` - Latest stable release
+- `:1.0.0` - Specific version (replace with actual version)
+- `:abc12345` - Specific commit (replace with actual commit SHA)
+
+## �🚀 Caddy Reverse Proxy Deployment (Recommended)
 
 MiniCalen includes a pre-configured `Caddyfile` for easy deployment with Caddy as a reverse proxy. This setup handles SSL termination, WebSocket connections, and routing.
 
@@ -340,4 +431,57 @@ curl https://yourdomain.com/api/health
   "https": true,
   "version": "1.0.0"
 }
+```
+
+## 🔄 CI/CD: Automated Image Publishing
+
+MiniCalen includes automated Docker image building through GitHub Actions.
+
+### Release Workflow
+
+1. **Update package versions** in `packages/frontend/package.json` and `packages/server/package.json`
+2. **Create a release tag** ending with `-RELEASE`:
+   ```bash
+   git tag v1.2.0-RELEASE
+   git push origin v1.2.0-RELEASE
+   ```
+3. **GitHub Actions automatically**:
+   - Builds multi-architecture Docker images (linux/amd64, linux/arm64)
+   - Tags images with package versions and commit SHA
+   - Pushes to Docker Hub registry
+
+### Required Repository Secrets
+
+Configure in GitHub repository settings → Secrets and variables → Actions:
+
+- `DOCKER_USERNAME` - Your Docker Hub username
+- `DOCKER_PASSWORD` - Your Docker Hub password or access token
+
+### Deployment with New Images
+
+After a successful release build:
+
+```bash
+# Pull latest images
+docker-compose pull
+
+# Restart services with new images
+docker-compose up -d
+
+# Or for manual deployments
+docker pull your-dockerhub-username/minicalen-frontend:latest
+docker pull your-dockerhub-username/minicalen-server:latest
+docker-compose restart
+```
+
+### Image Verification
+
+Check image information:
+
+```bash
+# View image tags and details
+docker image inspect your-dockerhub-username/minicalen-server:latest
+
+# Check running container versions
+docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
 ```

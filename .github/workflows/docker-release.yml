@@ -1,0 +1,84 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    tags:
+      - '*-RELEASE'
+
+env:
+  REGISTRY: docker.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Extract package versions
+        id: versions
+        run: |
+          FRONTEND_VERSION=$(node -p "require('./packages/frontend/package.json').version")
+          SERVER_VERSION=$(node -p "require('./packages/server/package.json').version")
+          echo "frontend_version=$FRONTEND_VERSION" >> $GITHUB_OUTPUT
+          echo "server_version=$SERVER_VERSION" >> $GITHUB_OUTPUT
+          echo "commit_sha=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./packages/frontend/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/minicalen-frontend:${{ steps.versions.outputs.frontend_version }}
+            ${{ secrets.DOCKER_USERNAME }}/minicalen-frontend:${{ steps.versions.outputs.commit_sha }}
+            ${{ secrets.DOCKER_USERNAME }}/minicalen-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push server image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./packages/server/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/minicalen-server:${{ steps.versions.outputs.server_version }}
+            ${{ secrets.DOCKER_USERNAME }}/minicalen-server:${{ steps.versions.outputs.commit_sha }}
+            ${{ secrets.DOCKER_USERNAME }}/minicalen-server:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Image digest
+        run: |
+          echo "Frontend image built and pushed successfully"
+          echo "Server image built and pushed successfully"
+          echo "Frontend version: ${{ steps.versions.outputs.frontend_version }}"
+          echo "Server version: ${{ steps.versions.outputs.server_version }}"
+          echo "Commit SHA: ${{ steps.versions.outputs.commit_sha }}"

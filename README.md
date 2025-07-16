@@ -42,7 +42,7 @@ npm run start
 ### Docker Deployment
 
 ```bash
-# Build Docker images
+# Build Docker images locally
 npm run build:frontend:docker
 npm run build:server:docker
 
@@ -52,6 +52,10 @@ docker run -d --name minicalen-server -p 3001:3001 minicalen-server
 
 # Or use Docker Compose for orchestration
 docker-compose up -d
+
+# Use pre-built images from Docker Hub (after CI/CD)
+docker run -d -p 8080:8080 your-dockerhub-username/minicalen-frontend:latest
+docker run -d -p 3001:3001 your-dockerhub-username/minicalen-server:latest
 ```
 
 For detailed Docker documentation, see [DOCKER.md](./DOCKER.md).
@@ -116,6 +120,59 @@ npm install express --workspace=@minicalen/server
 - [Server Documentation](./packages/server/README.md)
 - [Docker Guide](./DOCKER.md)
 - [Deployment Guide](./DEPLOYMENT.md)
+- [CI/CD Guide](./CI-CD.md)
+
+## 🔄 CI/CD: Automated Builds
+
+MiniCalen includes automated Docker image building and publishing through GitHub Actions.
+
+### Release Process
+
+To trigger automated Docker image builds:
+
+1. **Create a release tag** ending with `-RELEASE`:
+   ```bash
+   git tag v1.0.0-RELEASE
+   git push origin v1.0.0-RELEASE
+   ```
+
+2. **GitHub Actions automatically**:
+   - Builds Docker images for both frontend and server
+   - Tags images with package versions and commit SHA
+   - Pushes to Docker Hub registry
+
+### Required Secrets
+
+Configure these secrets in your GitHub repository:
+
+- `DOCKER_USERNAME` - Your Docker Hub username
+- `DOCKER_PASSWORD` - Your Docker Hub password or access token
+
+### Generated Image Tags
+
+Each release creates multiple tags:
+
+**Frontend images:**
+- `username/minicalen-frontend:1.0.0` (package version)
+- `username/minicalen-frontend:abc12345` (commit SHA)
+- `username/minicalen-frontend:latest`
+
+**Server images:**
+- `username/minicalen-server:1.0.0` (package version) 
+- `username/minicalen-server:abc12345` (commit SHA)
+- `username/minicalen-server:latest`
+
+### Using Published Images
+
+```bash
+# Pull and run the latest images
+docker pull username/minicalen-frontend:latest
+docker pull username/minicalen-server:latest
+
+# Or use specific versions
+docker pull username/minicalen-frontend:1.0.0
+docker pull username/minicalen-server:1.0.0
+```
 
 ## 🔧 Scripts
 
