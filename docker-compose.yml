@@ -1,8 +1,8 @@
-version: '3.8'
+
 
 services:
   frontend:
-    image: minicalen-frontend
+    image: ciberado/minicalen-frontend
     ports:
       - "8080:8080"
     depends_on:
@@ -16,7 +16,7 @@ services:
       start_period: 10s
 
   server:
-    image: minicalen-server
+    image: ciberado/minicalen-server
     ports:
       - "3001:3001"
     volumes:

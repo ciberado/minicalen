@@ -1,0 +1,65 @@
+services:
+
+  server:
+    image: ciberado/minicalen-server
+    network_mode: service:minicalen-ts
+    # ports:
+    #  - "3001:3001"
+    volumes:
+      - minicalen-data:/app/data
+      - minicalen-logs:/app/logs
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+
+  frontend:
+    image: ciberado/minicalen-frontend
+    network_mode: service:minicalen-ts
+    # ports:
+    #  - "8080:8080"
+    depends_on:
+      - server
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  minicalen-ts:
+    hostname: minicalen
+    container_name: minicalen_ts
+    image: tailscale/tailscale:latest
+    ports:
+      - 3001:3001
+      - 8080:8080
+    environment:
+      - TS_AUTHKEY=$CLIENT_SECRET
+      - TS_EXTRA_ARGS=--advertise-tags=tag:container
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/ts.json
+    volumes:
+      - tailscale-data-minicalen:/var/lib/tailscale
+      - /home/javi/services/minicalen/ts/config:/config
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - net_admin
+      - sys_module
+    restart: unless-stopped
+    
+volumes:
+  minicalen-data:
+    driver: local
+  minicalen-logs:
+    driver: local
+  tailscale-data-minicalen:
+    driver: local
