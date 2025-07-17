@@ -3,10 +3,17 @@ import { v4 as uuidv4 } from 'uuid';
 import { useCategories } from './CategoryContext';
 import { useWebSocket } from './WebSocketContext';
 import { getApiUrl } from '../config/api';
+import { Category } from './Categories';
+
+// Define proper types for session state
+interface DateInfoEntry {
+  color: string;
+  categoryId: string;
+}
 
 interface SessionState {
-  foregroundCategories: any[];
-  dateInfoMap: any;
+  foregroundCategories: Category[];
+  dateInfoMap: [string, DateInfoEntry][]; // Array of [dateString, DateInfo] tuples
   timestamp: string; // ISO timestamp when the session was saved
 }
 
@@ -62,7 +69,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   }, [isConnected, sessionId, joinSession]);
 
   // Helper function to compare states (excluding timestamp for meaningful change detection)
-  const statesEqual = useCallback((state1: any, state2: any): boolean => {
+  const statesEqual = useCallback((state1: { foregroundCategories: Category[]; dateInfoMap: [string, DateInfoEntry][] }, state2: { foregroundCategories: Category[]; dateInfoMap: [string, DateInfoEntry][] }): boolean => {
     // Compare foreground categories
     if (JSON.stringify(state1.foregroundCategories) !== JSON.stringify(state2.foregroundCategories)) {
       console.log('Categories changed:', {
@@ -292,6 +299,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   }, [sessionId, onStateUpdate, offStateUpdate, handleRemoteStateUpdate]);
 
   // Broadcast state changes when they occur (with debouncing to prevent spam)
+  // Only auto-save after a session has been explicitly created (manually saved or loaded)
   useEffect(() => {
     if (sessionId && !isApplyingRemoteState && lastSavedStateRef.current) {
       // Check if state has actually changed compared to last saved state
