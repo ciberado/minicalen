@@ -41,7 +41,8 @@ const Calendar = ({}: CalendarProps) => {
           start: dateStr,
           allDay: true,
           display: 'background',
-          backgroundColor: color
+          backgroundColor: color,
+          classNames: ['non-interactive-event'] // Add class to make non-interactive
         });
       }
     });
@@ -207,6 +208,7 @@ const Calendar = ({}: CalendarProps) => {
         minHeight: '1.2em', // Make day cells smaller in height
         padding: '0 !important',
         border: 'none !important',
+        cursor: 'pointer !important',
       },
       '.fc .fc-col-header-cell': {
         padding: '2px 0',
@@ -225,6 +227,16 @@ const Calendar = ({}: CalendarProps) => {
       '.fc .fc-daygrid-day:hover': {
         backgroundColor: 'rgba(0, 0, 0, 0.04)',
         cursor: 'pointer',
+      },
+      // Ensure day numbers are above the click overlay
+      '.fc .fc-daygrid-day-number': {
+        position: 'relative',
+        zIndex: 2,
+        pointerEvents: 'none',
+      },
+      // Make background events non-interactive
+      '.fc .non-interactive-event': {
+        pointerEvents: 'none !important',
       },
     }}>
       <FullCalendar
@@ -254,17 +266,6 @@ const Calendar = ({}: CalendarProps) => {
         dayHeaderFormat={{ weekday: 'narrow' }} // Use single letter for weekday names
         firstDay={1} // Start weeks on Monday to save space (Optional, remove if you prefer Sunday)
         events={events} // Add events from selectedDates
-        eventClick={(info) => {
-          // Handle event click (optional)
-          console.log('Event clicked:', info.event);
-          const dateStr = info.event.startStr;
-          setSelectedDate(dateStr, null, null); // Remove the date properly with null categoryId
-          
-          // Use setTimeout to allow state update to complete
-          setTimeout(() => {
-            calendarRef.current?.getApi().refetchEvents();
-          }, 0);
-        }}
         dateClick={handleDateClick} // Use our date click handler
       />
     </Box>

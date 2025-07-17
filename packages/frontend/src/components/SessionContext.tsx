@@ -266,7 +266,14 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     setForegroundCategories(remoteState.foregroundCategories);
     setTimestamp(remoteState.timestamp);
     
-    // Restore date info from remote state
+    // Clear existing date selections first, then apply remote state
+    // This ensures that removed dates are properly cleared
+    // Clear all existing dates first
+    dateInfoMap.forEach((_, dateStr) => {
+      setSelectedDate(dateStr, null, null);
+    });
+    
+    // Then apply the remote date info
     const dateInfoEntries = remoteState.dateInfoMap;
     dateInfoEntries.forEach(([dateStr, info]: [string, { color: string, categoryId: string }]) => {
       setSelectedDate(dateStr, info.color, info.categoryId);
@@ -284,7 +291,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         timestamp: remoteState.timestamp
       };
     }, 100);
-  }, [setForegroundCategories, setSelectedDate, setTimestamp]);
+  }, [setForegroundCategories, setSelectedDate, setTimestamp, dateInfoMap]);
 
   // Set up WebSocket state update listener
   useEffect(() => {
