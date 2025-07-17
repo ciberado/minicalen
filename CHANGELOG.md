@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2025-07-17
+
 ### Fixed
 - Fixed category value removal when clicking on already selected dates ([4f733af](../../commit/4f733af))
 - State now saves with each update even for single-user sessions ([d1b4dc1](../../commit/d1b4dc1))
@@ -131,4 +133,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Jul 10, 2025**: Real-time collaboration with WebSocket synchronization
 - **Jul 12, 2025**: Monorepo architecture and deployment infrastructure
 - **Jul 13, 2025**: Production-ready Docker containerization
-- **Jul 17, 2025**: CI/CD pipeline and enhanced state management
+- **Jul 17, 2025**: First stable release v1.0.0 with CI/CD pipeline
