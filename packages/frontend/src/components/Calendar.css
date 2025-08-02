@@ -1,3 +1,9 @@
+/* Give days associated with CategoryValues an 8px border radius */
+.fc .fc-bg-event {
+  border: 2px solid white !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
 /* Custom FullCalendar styles to force 4 columns layout */
 
 /* Main Calendar Container */
