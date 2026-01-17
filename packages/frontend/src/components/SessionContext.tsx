@@ -4,15 +4,18 @@ import { useCategories } from './CategoryContext';
 import { useWebSocket } from './WebSocketContext';
 import { getApiUrl } from '../config/api';
 import { Category } from './Categories';
+import { TextCategory } from './CategoryContext';
 
 // Define proper types for session state
 interface DateInfoEntry {
   color: string;
   categoryId: string;
+  textCategoryIds?: string[]; // Add text category IDs
 }
 
 interface SessionState {
   foregroundCategories: Category[];
+  textCategories: TextCategory[]; // Add text categories
   dateInfoMap: [string, DateInfoEntry][]; // Array of [dateString, DateInfo] tuples
   timestamp: string; // ISO timestamp when the session was saved
 }
@@ -45,8 +48,10 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const lastSavedStateRef = useRef<SessionState | null>(null);
   const { 
     foregroundCategories, 
+    textCategories,
     dateInfoMap,
     setForegroundCategories,
+    setTextCategories,
     setSelectedDate
   } = useCategories();
   const { joinSession, isConnected, broadcastStateChange, onStateUpdate, offStateUpdate } = useWebSocket();
@@ -69,12 +74,21 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   }, [isConnected, sessionId, joinSession]);
 
   // Helper function to compare states (excluding timestamp for meaningful change detection)
-  const statesEqual = useCallback((state1: { foregroundCategories: Category[]; dateInfoMap: [string, DateInfoEntry][] }, state2: { foregroundCategories: Category[]; dateInfoMap: [string, DateInfoEntry][] }): boolean => {
+  const statesEqual = useCallback((state1: { foregroundCategories: Category[]; textCategories: TextCategory[]; dateInfoMap: [string, DateInfoEntry][] }, state2: { foregroundCategories: Category[]; textCategories: TextCategory[]; dateInfoMap: [string, DateInfoEntry][] }): boolean => {
     // Compare foreground categories
     if (JSON.stringify(state1.foregroundCategories) !== JSON.stringify(state2.foregroundCategories)) {
       console.log('Categories changed:', {
         old: state2.foregroundCategories,
         new: state1.foregroundCategories
+      });
+      return false;
+    }
+    
+    // Compare text categories
+    if (JSON.stringify(state1.textCategories) !== JSON.stringify(state2.textCategories)) {
+      console.log('Text categories changed:', {
+        old: state2.textCategories,
+        new: state1.textCategories
       });
       return false;
     }
@@ -96,6 +110,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     if (sessionId && isConnected && !isApplyingRemoteState) {
       const currentState: SessionState = {
         foregroundCategories,
+        textCategories,
         dateInfoMap: Array.from(dateInfoMap.entries()),
         timestamp: new Date().toISOString()
       };
@@ -103,7 +118,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       console.log('Broadcasting state change:', currentState);
       broadcastStateChange(sessionId, currentState);
     }
-  }, [sessionId, isConnected, isApplyingRemoteState, foregroundCategories, dateInfoMap, broadcastStateChange]);
+  }, [sessionId, isConnected, isApplyingRemoteState, foregroundCategories, textCategories, dateInfoMap, broadcastStateChange]);
 
   // Internal save function that can be called manually
   const saveSessionInternal = useCallback(async (sessionIdToSave: string, sessionState: SessionState) => {
@@ -162,6 +177,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     // Prepare the state to be saved
     const sessionState: SessionState = {
       foregroundCategories,
+      textCategories,
       dateInfoMap: dateInfoArray,
       timestamp
     };
@@ -209,6 +225,11 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       // Restore categories
       setForegroundCategories(sessionData.foregroundCategories);
       
+      // Restore text categories (with fallback for older sessions)
+      if (sessionData.textCategories) {
+        setTextCategories(sessionData.textCategories);
+      }
+      
       // Restore date info
       const dateInfoEntries = sessionData.dateInfoMap;
       
@@ -216,13 +237,14 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       // This will need to be done carefully to avoid UI flickering
       
       // Restore each date's info
-      dateInfoEntries.forEach(([dateStr, info]: [string, { color: string, categoryId: string }]) => {
+      dateInfoEntries.forEach(([dateStr, info]: [string, { color: string, categoryId: string, textCategoryIds?: string[] }]) => {
         setSelectedDate(dateStr, info.color, info.categoryId);
       });
       
       // Initialize the last saved state for state comparison
       lastSavedStateRef.current = {
         foregroundCategories: sessionData.foregroundCategories,
+        textCategories: sessionData.textCategories || [],
         dateInfoMap: sessionData.dateInfoMap,
         timestamp: sessionData.timestamp
       };
@@ -264,6 +286,9 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     
     // Apply the remote state
     setForegroundCategories(remoteState.foregroundCategories);
+    if (remoteState.textCategories) {
+      setTextCategories(remoteState.textCategories);
+    }
     setTimestamp(remoteState.timestamp);
     
     // Clear existing date selections first, then apply remote state
@@ -275,7 +300,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     
     // Then apply the remote date info
     const dateInfoEntries = remoteState.dateInfoMap;
-    dateInfoEntries.forEach(([dateStr, info]: [string, { color: string, categoryId: string }]) => {
+    dateInfoEntries.forEach(([dateStr, info]: [string, { color: string, categoryId: string, textCategoryIds?: string[] }]) => {
       setSelectedDate(dateStr, info.color, info.categoryId);
     });
     
@@ -287,11 +312,12 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       // This ensures we don't re-broadcast the same state we just received
       lastSavedStateRef.current = {
         foregroundCategories: remoteState.foregroundCategories,
+        textCategories: remoteState.textCategories || [],
         dateInfoMap: remoteState.dateInfoMap,
         timestamp: remoteState.timestamp
       };
     }, 100);
-  }, [setForegroundCategories, setSelectedDate, setTimestamp, dateInfoMap]);
+  }, [setForegroundCategories, setTextCategories, setSelectedDate, setTimestamp, dateInfoMap]);
 
   // Set up WebSocket state update listener
   useEffect(() => {
@@ -312,11 +338,13 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       // Check if state has actually changed compared to last saved state
       const currentStateData = {
         foregroundCategories,
+        textCategories,
         dateInfoMap: Array.from(dateInfoMap.entries())
       };
       
       const lastSavedStateData = {
         foregroundCategories: lastSavedStateRef.current.foregroundCategories,
+        textCategories: lastSavedStateRef.current.textCategories || [],
         dateInfoMap: lastSavedStateRef.current.dateInfoMap
       };
       
@@ -332,6 +360,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
           // Update last saved state reference to include the broadcast
           lastSavedStateRef.current = {
             foregroundCategories,
+            textCategories,
             dateInfoMap: Array.from(dateInfoMap.entries()),
             timestamp: new Date().toISOString()
           };
@@ -340,7 +369,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [foregroundCategories, dateInfoMap, sessionId, isApplyingRemoteState, statesEqual, broadcastCurrentState]);
+  }, [foregroundCategories, textCategories, dateInfoMap, sessionId, isApplyingRemoteState, statesEqual, broadcastCurrentState]);
 
   // Only broadcast state changes when manually saving (not on every state change)
   // This prevents performance issues and infinite loops

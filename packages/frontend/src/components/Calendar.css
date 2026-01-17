@@ -4,6 +4,29 @@
   border-radius: 8px !important;
   overflow: hidden;
 }
+
+/* Text symbols overlay styles */
+.text-symbols-overlay {
+  position: absolute;
+  top: 18px;
+  left: 2px;
+  right: 2px;
+  pointer-events: none;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.text-symbols-overlay span {
+  font-weight: bold;
+  font-size: 0.7rem;
+  background: white;
+  padding: 0px 2px;
+  border-radius: 2px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.3);
+  line-height: 1;
+}
 /* Custom FullCalendar styles to force 4 columns layout */
 
 /* Main Calendar Container */

@@ -30,6 +30,7 @@ interface CategoriesProps {
   categories?: Category[];
   onCategoriesChange?: (categories: Category[]) => void;
   onSelectionChange?: (selectedCategories: Category[]) => void;  // Add selection change handler
+  onCategorySelect?: (categoryId: string) => void;  // Add custom selection handler for global exclusivity
   readOnly?: boolean;
   showColorPicker?: boolean;  // Add option to hide color picker
   exclusive?: boolean;  // Whether only one category can be selected at a time
@@ -45,6 +46,7 @@ const Categories = forwardRef<CategoriesHandle, CategoriesProps>(({
   categories: initialCategories,
   onCategoriesChange,
   onSelectionChange,
+  onCategorySelect,  // Add custom selection handler
   readOnly = false,
   showColorPicker = true,
   exclusive = false,  // Default to non-exclusive mode
@@ -139,6 +141,14 @@ const Categories = forwardRef<CategoriesHandle, CategoriesProps>(({
   };
 
   const handleSelectedChange = (id: string, isSelected: boolean) => {
+    // If a custom selection handler is provided (for global exclusivity), use that
+    if (onCategorySelect && isSelected) {
+      console.log(`[Categories ${title}] Using custom selection handler for category:`, id);
+      onCategorySelect(id);
+      return;
+    }
+    
+    // Otherwise, use the standard selection logic
     let newCategories;
     
     if (exclusive && isSelected) {

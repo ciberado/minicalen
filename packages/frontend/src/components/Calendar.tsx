@@ -19,9 +19,13 @@ const Calendar = ({}: CalendarProps) => {
   // Get the categories context
   const { 
     foregroundCategories, 
+    textCategories,
     selectedDates,
     dateInfoMap,
-    setSelectedDate
+    setSelectedDate,
+    toggleTextCategory,
+    getDateTextCategories,
+    generateCategorySymbol
   } = useCategories();
   
   // Get the currently selected foreground category (if any)
@@ -29,15 +33,76 @@ const Calendar = ({}: CalendarProps) => {
     return foregroundCategories.find(cat => cat.selected === true);
   }, [foregroundCategories]);
   
+  // Get the currently selected text category (if any)
+  const selectedTextCategory = useMemo(() => {
+    return textCategories.find(cat => cat.selected === true);
+  }, [textCategories]);
+
+  // Function to update symbols for a specific date without full re-render
+  const updateDateSymbols = (dateStr: string) => {
+    // Find the calendar cell for this date
+    const cellElement = document.querySelector(`[data-date="${dateStr}"]`);
+    if (!cellElement) return;
+
+    const dateInfo = dateInfoMap.get(dateStr);
+    
+    // Remove existing symbols
+    const existingOverlay = cellElement.querySelector('.text-symbols-overlay');
+    if (existingOverlay) {
+      existingOverlay.remove();
+    }
+
+    // Add new symbols if any
+    if (dateInfo && dateInfo.textCategoryIds && dateInfo.textCategoryIds.length > 0) {
+      const textCats = getDateTextCategories(dateStr);
+      
+      if (textCats.length > 0) {
+        const symbolsContainer = document.createElement('div');
+        symbolsContainer.className = 'text-symbols-overlay';
+        symbolsContainer.style.cssText = `
+          position: absolute;
+          top: 18px;
+          left: 2px;
+          right: 2px;
+          pointer-events: none;
+          z-index: 3;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 2px;
+        `;
+        
+        textCats.forEach(cat => {
+          const symbol = generateCategorySymbol(cat.label);
+          const symbolSpan = document.createElement('span');
+          symbolSpan.textContent = symbol;
+          symbolSpan.style.cssText = `
+            color: ${cat.color};
+            font-weight: bold;
+            font-size: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 1px 2px;
+            border-radius: 2px;
+            border: 1px solid ${cat.color};
+            line-height: 1;
+          `;
+          symbolsContainer.appendChild(symbolSpan);
+        });
+        
+        cellElement.style.position = 'relative';
+        cellElement.appendChild(symbolsContainer);
+      }
+    }
+  };
+  
   // Convert selectedDates Map to FullCalendar events
   const events = useMemo(() => {
     const eventArray: any[] = [];
     
-    // Convert each date entry to an event object
+    // Convert each date entry to background events for color categories
     selectedDates.forEach((color, dateStr) => {
       if (color) {
         eventArray.push({
-          id: dateStr,
+          id: `bg-${dateStr}`,
           start: dateStr,
           allDay: true,
           display: 'background',
@@ -56,6 +121,34 @@ const Calendar = ({}: CalendarProps) => {
       calendarRef.current.getApi().refetchEvents();
     }
   }, [selectedDates]);
+
+  // Track dates that have had symbols to ensure cleanup on removal
+  const [trackedDates, setTrackedDates] = useState(new Set<string>());
+
+  // Update all date symbols when dateInfoMap changes (more efficient than full re-render)
+  useEffect(() => {
+    // Small delay to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      const currentDates = new Set<string>();
+      
+      // Update all current dates with symbols
+      dateInfoMap.forEach((_, dateStr) => {
+        updateDateSymbols(dateStr);
+        currentDates.add(dateStr);
+      });
+      
+      // Clean up symbols for dates that were removed
+      trackedDates.forEach((dateStr) => {
+        if (!currentDates.has(dateStr)) {
+          updateDateSymbols(dateStr); // This will clear symbols since date is not in map
+        }
+      });
+      
+      setTrackedDates(currentDates);
+    }, 50);
+    
+    return () => clearTimeout(timeoutId);
+  }, [dateInfoMap, trackedDates]);
 
   // Force 4 columns layout after render
   useEffect(() => {
@@ -104,44 +197,126 @@ const Calendar = ({}: CalendarProps) => {
     };
   }, []);
 
+  // Utility function to get consistent date string
+  const getDateStr = (date: Date) => {
+    // Use local date to avoid timezone issues
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Handle date clicks
   const handleDateClick = (arg: any) => {
-    const dateStr = arg.dateStr; // Format: YYYY-MM-DD
-    
-    // If no foreground category is selected, do nothing
-    if (!selectedForegroundCategory || !selectedForegroundCategory.color) {
-      console.log('No foreground category selected or it has no color');
-      return;
-    }
+    const dateStr = getDateStr(arg.date); // Consistent date formatting
     
     console.log('Date clicked:', dateStr);
-    console.log('Selected category:', selectedForegroundCategory);
+    console.log('Selected text category:', selectedTextCategory);
+    console.log('Selected foreground category:', selectedForegroundCategory);
     
-    // Get the current information about the date
-    const currentColor = selectedDates.get(dateStr);
-    const dateInfo = dateInfoMap.get(dateStr);
-    const currentCategoryId = dateInfo ? dateInfo.categoryId : null;
-    
-    console.log('Current color:', currentColor);
-    console.log('Current category ID:', currentCategoryId);
-    console.log('Selected category ID:', selectedForegroundCategory.id);
-    
-    // If the date is already marked with the same category that's currently selected,
-    // remove the color (toggle behavior)
-    if (currentCategoryId === selectedForegroundCategory.id) {
-      console.log('Removing color - same category clicked again');
-      setSelectedDate(dateStr, null, null); // Remove the date
+    // With global exclusivity, only one type of category can be selected at a time
+    if (selectedTextCategory) {
+      console.log('Text category selected, toggling:', selectedTextCategory.label);
+      toggleTextCategory(dateStr, selectedTextCategory.id);
+      
+      // Immediately update the visual symbols for this specific date
+      updateDateSymbols(dateStr);
+    } else if (selectedForegroundCategory && selectedForegroundCategory.color) {
+      console.log('Foreground category selected, applying color:', selectedForegroundCategory.label);
+      
+      // Get the current information about the date
+      const currentColor = selectedDates.get(dateStr);
+      const dateInfo = dateInfoMap.get(dateStr);
+      const currentCategoryId = dateInfo ? dateInfo.categoryId : null;
+      
+      console.log('Current color:', currentColor);
+      console.log('Current category ID:', currentCategoryId);
+      console.log('Selected category ID:', selectedForegroundCategory.id);
+      
+      // If the date is already marked with the same category that's currently selected,
+      // remove the color (toggle behavior)
+      if (currentCategoryId === selectedForegroundCategory.id) {
+        console.log('Removing color - same category clicked again');
+        setSelectedDate(dateStr, null, null); // Remove the date
+      } else {
+        console.log('Adding color:', selectedForegroundCategory.color);
+        // Add/update the date with both color and category ID
+        setSelectedDate(dateStr, selectedForegroundCategory.color, selectedForegroundCategory.id);
+      }
+      
+      // Force calendar to refresh
+      if (calendarRef.current) {
+        setTimeout(() => {
+          calendarRef.current?.getApi().refetchEvents();
+        }, 0);
+      }
     } else {
-      console.log('Adding color:', selectedForegroundCategory.color);
-      // Add/update the date with both color and category ID
-      setSelectedDate(dateStr, selectedForegroundCategory.color, selectedForegroundCategory.id);
+      // If no categories are selected at all, log this
+      console.log('No category selected for date click');
     }
+  };
+
+  // Custom day cell renderer for text symbols
+  const dayCellDidMount = (info: any) => {
+    // Get date string in consistent format
+    const dateStr = getDateStr(info.date);
+    const dateInfo = dateInfoMap.get(dateStr);
     
-    // Force calendar to refresh
-    if (calendarRef.current) {
-      setTimeout(() => {
-        calendarRef.current?.getApi().refetchEvents();
-      }, 0);
+    // Store reference to this cell for later updates
+    info.el.setAttribute('data-date', dateStr);
+    
+    console.log('dayCellDidMount called for date:', dateStr, 'dateInfo:', dateInfo);
+    
+    if (dateInfo && dateInfo.textCategoryIds && dateInfo.textCategoryIds.length > 0) {
+      const textCats = getDateTextCategories(dateStr);
+      console.log('Found text categories for', dateStr, ':', textCats);
+      
+      if (textCats.length > 0) {
+        // Remove any existing symbols overlay first
+        const existingOverlay = info.el.querySelector('.text-symbols-overlay');
+        if (existingOverlay) {
+          existingOverlay.remove();
+        }
+        
+        // Create text symbols container
+        const symbolsContainer = document.createElement('div');
+        symbolsContainer.className = 'text-symbols-overlay';
+        symbolsContainer.style.cssText = `
+          position: absolute;
+          top: 18px;
+          left: 2px;
+          right: 2px;
+          pointer-events: none;
+          z-index: 3;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 2px;
+        `;
+        
+        // Add each symbol
+        textCats.forEach(cat => {
+          const symbol = generateCategorySymbol(cat.label);
+          console.log('Adding symbol:', symbol, 'for category:', cat.label, 'color:', cat.color);
+          const symbolSpan = document.createElement('span');
+          symbolSpan.textContent = symbol;
+          symbolSpan.style.cssText = `
+            color: ${cat.color};
+            font-weight: bold;
+            font-size: 0.7rem;
+            background: white;
+            padding: 0px 2px;
+            border-radius: 2px;
+            box-shadow: 0 0 2px rgba(0,0,0,0.3);
+            line-height: 1;
+          `;
+          symbolsContainer.appendChild(symbolSpan);
+        });
+        
+        // Add the symbols to the day cell
+        info.el.style.position = 'relative';
+        info.el.appendChild(symbolsContainer);
+        console.log('Added symbols overlay to', dateStr);
+      }
     }
   };
 
@@ -240,6 +415,7 @@ const Calendar = ({}: CalendarProps) => {
       },
     }}>
       <FullCalendar
+        key="calendar" 
         ref={calendarRef}
         plugins={[multiMonthPlugin, interactionPlugin]}
         initialView="multiMonth"
@@ -267,6 +443,7 @@ const Calendar = ({}: CalendarProps) => {
         firstDay={1} // Start weeks on Monday to save space (Optional, remove if you prefer Sunday)
         events={events} // Add events from selectedDates
         dateClick={handleDateClick} // Use our date click handler
+        dayCellDidMount={dayCellDidMount} // Custom day renderer for text symbols
       />
     </Box>
   );
