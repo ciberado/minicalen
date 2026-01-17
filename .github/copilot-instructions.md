@@ -12,19 +12,32 @@ MiniCalen is a **real-time collaborative calendar application** built as an npm 
 
 ## Development Workflow
 
-### Starting Services
+### Development Workflows
 
+**Starting Services**:
 ```bash
 npm run dev:all      # Start both frontend and backend concurrently
 npm run dev:server   # Backend only (port 3001) 
 npm run dev          # Frontend only (port 5173)
 ```
 
-### Key Commands
+**Package-Specific Operations**:
+```bash
+# Workspace-scoped commands
+npm install --workspace=@minicalen/frontend <package>
+npm run lint --workspace=@minicalen/server
+npm run build --workspace=@minicalen/frontend
 
-- Use `npm run build` to build both packages
-- Use `--workspace=@minicalen/frontend` or `--workspace=@minicalen/server` for package-specific commands
-- Backend uses `nodemon` with `tsx` for TypeScript hot-reload in development
+# Available VS Code tasks (use run_task tool):
+# - "Start All Services" - Equivalent to npm run dev:all
+# - "Start Development Server" - Frontend only
+# - "Start Backend Server" - Backend only
+```
+
+**Docker Deployment**:
+- Local images: `npm run build:frontend:docker` / `npm run build:server:docker`
+- Production: Use pre-built `ciberado/minicalen-frontend` and `ciberado/minicalen-server`
+- Persistence: `/app/data` (sessions) and `/app/logs` volumes in server container
 
 ## Core Patterns
 
@@ -58,9 +71,20 @@ The frontend uses **nested React Context providers** for global state:
 
 ### Category System
 
-Three category types with distinct behaviors:
+**Architecture**: Three category types with distinct behaviors:
 
 - **Foreground**: Primary calendar categories with colors (`#F44336`, `#2196F3`, etc.)
+- **Date-to-Category Mapping**: `dateInfoMap` stores date strings mapped to `{color, categoryId}` objects
+- **Real-time Sync**: Category changes automatically update associated dates via React `useEffect`
+
+**Key Implementation**: Categories are managed in `CategoryContext.tsx` with nested state:
+```tsx
+// Date info structure
+interface DateInfo {
+  color: string;
+  categoryId: string; // Links date to specific category
+}
+```
 
 ## Configuration Patterns
 
@@ -93,14 +117,44 @@ Frontend uses environment-aware API configuration:
 - Component files use PascalCase and include corresponding `.css` files where needed
 - Server uses single `index.ts` file with clear separation of concerns (WebSocket, API, file operations)
 
+### Context Provider Architecture
+
+**Strict Nesting Order** (from `App.tsx`):
+```tsx
+<WebSocketProvider>      // Outermost: Socket.IO connection management
+  <CategoryProvider>     // Middle: Calendar categories and date associations
+    <SessionProvider>    // Innermost: Session persistence and URL routing
+      <Layout/>
+    </SessionProvider>
+  </CategoryProvider>
+</WebSocketProvider>
+```
+
+**Context Dependencies**: Each inner context can use outer contexts via hooks:
+- `SessionProvider` uses `useCategories()` and `useWebSocket()`
+- `CategoryProvider` has no dependencies (pure state management)
+
 ### State Update Pattern
 
 When modifying calendar state:
 
-1. Update local React state
-2. Broadcast via WebSocket using `broadcastStateChange()`
-3. Backend auto-saves to file system
-4. Other clients receive updates via WebSocket
+1. **Local Update**: Update local React state in appropriate context
+2. **WebSocket Broadcast**: Call `broadcastStateChange(sessionId, state)` from WebSocketContext
+3. **Auto-Save**: Backend receives `state-change` event and auto-saves to JSON file
+4. **Sync Others**: Other clients receive `state-update` event and apply changes
+
+**Critical Data Flow**: State changes trigger dual persistence:
+- HTTP API calls for explicit saves (`POST /api/sessions`)
+- WebSocket `state-change` events for real-time sync and auto-save
+
+**State Structure**: All contexts serialize state as:
+```tsx
+interface SessionState {
+  foregroundCategories: Category[];
+  dateInfoMap: [string, DateInfoEntry][]; // Serialized as array of tuples
+  timestamp: string; // ISO timestamp
+}
+```
 
 ### Error Handling
 
@@ -120,3 +174,19 @@ When modifying calendar state:
 - WebSocket connection logging on both client and server
 - Session file storage visible in `packages/server/data/sessions/`
 - Health check endpoint at `/health` provides environment status
+
+## Backend Implementation Notes
+
+### WebSocket Event Flow
+
+- Client joins session → `socket.join(sessionId)` creates Socket.IO room
+- State changes → `state-change` event triggers auto-save and broadcasts to room
+- Real-time sync → `state-update` events sent to all clients except sender
+- File persistence → JSON files in `data/sessions/` with UUID filenames
+
+### CORS & Environment Configuration  
+
+- **Development**: Auto-includes `localhost:5173` and `localhost:3000`
+- **Production**: Requires `ALLOWED_ORIGINS` or `MINICALEN_HOST` environment variables
+- **Caddy Proxy**: Special WebSocket routing for `/socket.io/*` paths
+- **SSL Support**: Optional HTTPS with certificate validation (`USE_HTTPS=true`)
