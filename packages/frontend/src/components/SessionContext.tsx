@@ -1,17 +1,12 @@
 import { createContext, useState, useContext, ReactNode, useEffect, useRef, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { useCategories } from './CategoryContext';
+import { useCategories, RemoteCategoryState, DateInfoEntry } from './CategoryContext';
 import { useWebSocket } from './WebSocketContext';
 import { getApiUrl } from '../config/api';
 import { Category } from './Categories';
 import { TextCategory } from './CategoryContext';
 
-// Define proper types for session state
-interface DateInfoEntry {
-  color: string;
-  categoryId: string;
-  textCategoryIds?: string[]; // Add text category IDs
-}
+// Session state interface uses DateInfoEntry from CategoryContext
 
 interface SessionState {
   foregroundCategories: Category[];
@@ -44,7 +39,6 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [timestamp, setTimestamp] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isApplyingRemoteState, setIsApplyingRemoteState] = useState(false);
   const lastSavedStateRef = useRef<SessionState | null>(null);
   const { 
     foregroundCategories, 
@@ -52,7 +46,9 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     dateInfoMap,
     setForegroundCategories,
     setTextCategories,
-    setSelectedDate
+    setSelectedDate,
+    applyRemoteState,
+    isRemoteUpdate
   } = useCategories();
   const { joinSession, isConnected, broadcastStateChange, onStateUpdate, offStateUpdate } = useWebSocket();
 
@@ -107,7 +103,13 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
   // Broadcast state changes to other clients (but not when applying remote state)
   const broadcastCurrentState = useCallback(() => {
-    if (sessionId && isConnected && !isApplyingRemoteState) {
+    // Check the synchronous ref to see if we're applying remote state
+    if (isRemoteUpdate()) {
+      console.log('Skipped broadcast - currently applying remote state');
+      return;
+    }
+    
+    if (sessionId && isConnected) {
       const currentState: SessionState = {
         foregroundCategories,
         textCategories,
@@ -117,8 +119,13 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       
       console.log('Broadcasting state change:', currentState);
       broadcastStateChange(sessionId, currentState);
+    } else {
+      console.log('Skipped broadcast:', {
+        sessionId: !!sessionId,
+        isConnected
+      });
     }
-  }, [sessionId, isConnected, isApplyingRemoteState, foregroundCategories, textCategories, dateInfoMap, broadcastStateChange]);
+  }, [sessionId, isConnected, isRemoteUpdate, foregroundCategories, textCategories, dateInfoMap, broadcastStateChange]);
 
   // Internal save function that can be called manually
   const saveSessionInternal = useCallback(async (sessionIdToSave: string, sessionState: SessionState) => {
@@ -279,45 +286,32 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
   // Handle incoming state updates from other clients
   const handleRemoteStateUpdate = useCallback((remoteState: SessionState) => {
-    console.log('Applying remote state update:', remoteState);
+    console.log('SessionContext: Received remote state update:', remoteState);
     
-    // Set flag to prevent broadcasting this change back
-    setIsApplyingRemoteState(true);
+    // Update the last saved state reference FIRST, before applying changes
+    // This prevents the broadcast effect from detecting a "change"
+    lastSavedStateRef.current = {
+      foregroundCategories: remoteState.foregroundCategories,
+      textCategories: remoteState.textCategories || [],
+      dateInfoMap: remoteState.dateInfoMap,
+      timestamp: remoteState.timestamp
+    };
     
-    // Apply the remote state
-    setForegroundCategories(remoteState.foregroundCategories);
-    if (remoteState.textCategories) {
-      setTextCategories(remoteState.textCategories);
-    }
+    // Update timestamp
     setTimestamp(remoteState.timestamp);
     
-    // Clear existing date selections first, then apply remote state
-    // This ensures that removed dates are properly cleared
-    // Clear all existing dates first
-    dateInfoMap.forEach((_, dateStr) => {
-      setSelectedDate(dateStr, null, null);
-    });
+    // Use the atomic applyRemoteState function from CategoryContext
+    // This sets the isRemoteUpdate flag, applies all state, then resets the flag
+    const remoteCategoryState: RemoteCategoryState = {
+      foregroundCategories: remoteState.foregroundCategories,
+      textCategories: remoteState.textCategories || [],
+      dateInfoMap: remoteState.dateInfoMap
+    };
     
-    // Then apply the remote date info
-    const dateInfoEntries = remoteState.dateInfoMap;
-    dateInfoEntries.forEach(([dateStr, info]: [string, { color: string, categoryId: string, textCategoryIds?: string[] }]) => {
-      setSelectedDate(dateStr, info.color, info.categoryId);
-    });
+    applyRemoteState(remoteCategoryState);
     
-    // Reset the flag after a short delay to allow state updates to propagate
-    setTimeout(() => {
-      setIsApplyingRemoteState(false);
-      
-      // Update the last saved state reference after applying remote state
-      // This ensures we don't re-broadcast the same state we just received
-      lastSavedStateRef.current = {
-        foregroundCategories: remoteState.foregroundCategories,
-        textCategories: remoteState.textCategories || [],
-        dateInfoMap: remoteState.dateInfoMap,
-        timestamp: remoteState.timestamp
-      };
-    }, 100);
-  }, [setForegroundCategories, setTextCategories, setSelectedDate, setTimestamp, dateInfoMap]);
+    console.log('SessionContext: Remote state applied successfully');
+  }, [applyRemoteState, setTimestamp]);
 
   // Set up WebSocket state update listener
   useEffect(() => {
@@ -334,7 +328,13 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   // Broadcast state changes when they occur (with debouncing to prevent spam)
   // Only auto-save after a session has been explicitly created (manually saved or loaded)
   useEffect(() => {
-    if (sessionId && !isApplyingRemoteState && lastSavedStateRef.current) {
+    // Early exit if we're applying remote state (check synchronous ref)
+    if (isRemoteUpdate()) {
+      console.log('Broadcast effect: Skipping - remote update in progress');
+      return;
+    }
+    
+    if (sessionId && lastSavedStateRef.current) {
       // Check if state has actually changed compared to last saved state
       const currentStateData = {
         foregroundCategories,
@@ -351,25 +351,46 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       const hasChanged = !statesEqual(currentStateData, lastSavedStateData);
       
       if (hasChanged) {
-        console.log('State changed, broadcasting to other clients after delay');
+        console.log('State changed locally, broadcasting to other clients after delay');
         
-        // Debounce the broadcast to prevent spam (500ms delay)
+        // Debounce the broadcast to prevent spam
         const timeoutId = setTimeout(() => {
-          broadcastCurrentState();
+          // Double-check we're not applying remote state (synchronous ref check)
+          if (isRemoteUpdate()) {
+            console.log('Skipped broadcast - remote update started during debounce');
+            return;
+          }
           
-          // Update last saved state reference to include the broadcast
-          lastSavedStateRef.current = {
-            foregroundCategories,
-            textCategories,
-            dateInfoMap: Array.from(dateInfoMap.entries()),
-            timestamp: new Date().toISOString()
-          };
-        }, 500);
+          if (sessionId) {
+            // Re-check if the state is still different to avoid stale broadcasts
+            const latestCurrentStateData = {
+              foregroundCategories,
+              textCategories,
+              dateInfoMap: Array.from(dateInfoMap.entries())
+            };
+            
+            if (!statesEqual(latestCurrentStateData, lastSavedStateData)) {
+              broadcastCurrentState();
+              
+              // Update last saved state reference to include the broadcast
+              lastSavedStateRef.current = {
+                foregroundCategories,
+                textCategories,
+                dateInfoMap: Array.from(dateInfoMap.entries()),
+                timestamp: new Date().toISOString()
+              };
+            } else {
+              console.log('Skipped broadcast - state reverted or synchronized');
+            }
+          } else {
+            console.log('Skipped broadcast - no session');
+          }
+        }, 500); // Debounce time for responsiveness
         
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [foregroundCategories, textCategories, dateInfoMap, sessionId, isApplyingRemoteState, statesEqual, broadcastCurrentState]);
+  }, [foregroundCategories, textCategories, dateInfoMap, sessionId, isRemoteUpdate, statesEqual, broadcastCurrentState]);
 
   // Only broadcast state changes when manually saving (not on every state change)
   // This prevents performance issues and infinite loops

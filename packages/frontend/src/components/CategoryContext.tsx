@@ -1,4 +1,4 @@
-import { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { createContext, useState, useContext, ReactNode, useEffect, useRef, useCallback } from 'react';
 
 // Import the Category type from Categories component
 import { Category } from './Categories';
@@ -40,6 +40,20 @@ const sortTextCategories = (categories: TextCategory[]): TextCategory[] => {
   });
 };
 
+// Exported interface for date info entries (used by SessionContext)
+export interface DateInfoEntry {
+  color: string;
+  categoryId: string;
+  textCategoryIds?: string[];
+}
+
+// Interface for bulk remote state updates
+export interface RemoteCategoryState {
+  foregroundCategories: Category[];
+  textCategories: TextCategory[];
+  dateInfoMap: [string, DateInfoEntry][]; // Serialized as array of tuples
+}
+
 interface CategoryContextType {
   foregroundCategories: Category[];
   setForegroundCategories: (categories: Category[]) => void;
@@ -56,6 +70,8 @@ interface CategoryContextType {
   generateCategorySymbol: (label: string) => string; // Function to generate symbol from label
   selectCategory: (categoryId: string, categoryType: 'foreground' | 'text') => void; // Global category selection function
   clearAllSelections: () => void; // Function to clear all category selections
+  applyRemoteState: (state: RemoteCategoryState) => void; // Apply remote state without triggering broadcasts
+  isRemoteUpdate: () => boolean; // Check if current update is from remote source
 }
 
 // Create the context with default values
@@ -75,16 +91,27 @@ const CategoryContext = createContext<CategoryContextType>({
   generateCategorySymbol: () => '',
   selectCategory: () => {},
   clearAllSelections: () => {},
+  applyRemoteState: () => {},
+  isRemoteUpdate: () => false,
 });
 
 // Create a provider component
 export const CategoryProvider = ({ children }: { children: ReactNode }) => {
+  // Ref to track if current state change is from a remote source
+  // This is a ref (not state) to avoid React batching issues and provide synchronous access
+  const isRemoteUpdateRef = useRef(false);
+  
   // Initial category data
-  const [foregroundCategories, setForegroundCategories] = useState<Category[]>([
+  const [foregroundCategories, setForegroundCategoriesInternal] = useState<Category[]>([
     { id: '1', label: 'Important', color: '#F44336', active: true, selected: true },
     { id: '2', label: 'Work', color: '#2196F3', active: true, selected: false },
     { id: '3', label: 'Personal', color: '#4CAF50', active: true, selected: false }
   ]);
+
+  // Wrapper for setForegroundCategories to track local changes
+  const setForegroundCategories = useCallback((categories: Category[] | ((prev: Category[]) => Category[])) => {
+    setForegroundCategoriesInternal(categories);
+  }, []);
 
   // Initial text category data (sorted)
   const [internalTextCategories, setInternalTextCategories] = useState<TextCategory[]>(
@@ -95,13 +122,13 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
   );
   
   // Wrapper for setTextCategories that ensures categories are always sorted
-  const setTextCategories = (categories: TextCategory[] | ((prev: TextCategory[]) => TextCategory[])) => {
+  const setTextCategories = useCallback((categories: TextCategory[] | ((prev: TextCategory[]) => TextCategory[])) => {
     if (typeof categories === 'function') {
       setInternalTextCategories(prev => sortTextCategories(categories(prev)));
     } else {
       setInternalTextCategories(sortTextCategories(categories));
     }
-  };
+  }, []);
   
   // Expose sorted text categories
   const textCategories = internalTextCategories;
@@ -116,8 +143,61 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
   // Map to store selected dates and their colors (for backward compatibility)
   const [selectedDates, setSelectedDates] = useState<Map<string, string>>(new Map());
 
+  // Check if current update is from remote source (synchronous ref access)
+  const isRemoteUpdate = useCallback(() => isRemoteUpdateRef.current, []);
+
+  // Apply remote state atomically without triggering broadcasts
+  // This function sets the remote flag, applies all state changes, then resets the flag
+  const applyRemoteState = useCallback((state: RemoteCategoryState) => {
+    console.log('CategoryContext: Applying remote state atomically');
+    
+    // Set the remote update flag BEFORE any state changes
+    isRemoteUpdateRef.current = true;
+    
+    // Apply foreground categories
+    setForegroundCategoriesInternal(state.foregroundCategories);
+    
+    // Apply text categories (sorted)
+    setInternalTextCategories(sortTextCategories(state.textCategories || []));
+    
+    // Apply date info map - convert from array of tuples to Map
+    const newDateInfoMap = new Map<string, DateInfo>();
+    const newSelectedDates = new Map<string, string>();
+    
+    state.dateInfoMap.forEach(([dateStr, info]) => {
+      newDateInfoMap.set(dateStr, {
+        color: info.color,
+        categoryId: info.categoryId,
+        textCategoryIds: info.textCategoryIds
+      });
+      if (info.color) {
+        newSelectedDates.set(dateStr, info.color);
+      }
+    });
+    
+    setDateInfoMap(newDateInfoMap);
+    setSelectedDates(newSelectedDates);
+    
+    // Reset the flag after React has processed all updates
+    // Using queueMicrotask ensures this runs after React's synchronous updates
+    // but before any effects that might trigger broadcasts
+    queueMicrotask(() => {
+      // Double-check with another microtask to ensure all React batched updates are done
+      queueMicrotask(() => {
+        console.log('CategoryContext: Remote state applied, resetting flag');
+        isRemoteUpdateRef.current = false;
+      });
+    });
+  }, []);
+
   // Update selectedDates when categories change to reflect new colors
   useEffect(() => {
+    // Skip this effect during remote updates - remote state is already complete
+    if (isRemoteUpdateRef.current) {
+      console.log('Skipping category color sync during remote update');
+      return;
+    }
+    
     // Only update if we have dates to update
     if (dateInfoMap.size === 0) return;
     
@@ -347,6 +427,8 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
         generateCategorySymbol,
         selectCategory,
         clearAllSelections,
+        applyRemoteState,
+        isRemoteUpdate,
       }}
     >
       {children}
