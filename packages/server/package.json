@@ -1,6 +1,6 @@
 {
   "name": "@minicalen/server",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "MiniCalen backend server",
   "type": "module",
   "main": "dist/index.js",

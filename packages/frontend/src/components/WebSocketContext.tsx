@@ -3,15 +3,18 @@ import { io, Socket } from 'socket.io-client';
 import { getWebSocketUrl, debugApiConfig } from '../config/api';
 import logger from '../logger';
 import { Category } from './Categories';
+import { TextCategory } from './CategoryContext';
 
 // Define proper types matching the actual data structure
 interface DateInfoEntry {
   color: string;
   categoryId: string;
+  textCategoryIds?: string[];
 }
 
 interface SessionState {
   foregroundCategories: Category[];
+  textCategories: TextCategory[]; // Text categories for date annotations
   dateInfoMap: [string, DateInfoEntry][]; // Array of [dateString, DateInfo] tuples
   timestamp: string;
 }

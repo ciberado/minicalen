@@ -5,6 +5,21 @@ All notable changes to MiniCalen will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-18
+
+### Fixed
+- **Text Categories Backward Compatibility**: Seamless support for legacy sessions without text categories
+  - Preserve default text categories when loading old sessions
+  - Maintain existing text categories during remote state synchronization
+  - Ensure forward compatibility by always including text categories in new saves
+  - Fix infinite sync loop in multi-user collaboration scenarios
+
+### Improved
+- Enhanced state comparison logic to handle missing text categories gracefully
+- Consistent text category ordering across UI components
+- More robust WebSocket state synchronization
+- Updated Docker images with latest dependencies and optimizations
+
 ## [1.1.0] - 2025-08-01
 
 ### Changed
