@@ -2,6 +2,57 @@
 
 A lightweight, modern calendar application built with React and Node.js.
 
+## ✨ Features
+
+### 📅 **Calendar Management**
+- **Year View**: Display 12-month grid layout for comprehensive year overview
+- **Interactive Date Selection**: Click dates to assign categories and labels
+- **Today Highlighting**: Current date automatically highlighted for easy navigation
+- **Cross-Month Date Display**: Seamless handling of dates spanning multiple months
+
+### 🎨 **Category System**
+- **Foreground Categories**: Color-coded background categories (Important, Work, Personal)
+  - Customizable colors with hex color picker
+  - Visual opacity control (active/inactive states)
+  - Category activation/deactivation with visual feedback
+- **Text Categories**: Symbol-based labeling system
+  - Customizable text labels with auto-generated symbols (e.g., "Holiday [H]", "Deadline [D]")
+  - Overlay symbols displayed on calendar dates
+  - Multiple text categories per date supported
+  - Color-coded symbols with customizable colors
+
+### 💾 **Session Management**
+- **Persistent Sessions**: Automatic saving and loading of calendar state
+- **Session URLs**: Shareable URLs for collaborative calendar access
+- **State Restoration**: Complete restoration of categories, dates, and text labels
+- **Session Persistence**: Text categories and assignments persist across page reloads
+
+### 🔄 **Real-Time Collaboration**
+- **WebSocket Synchronization**: Live updates across multiple browser sessions
+- **Multi-User Support**: Multiple users can collaborate on the same calendar
+- **Cross-Browser Compatibility**: WebSocket fallback ensures compatibility with Firefox and all major browsers
+- **State Broadcasting**: Changes automatically sync to all connected clients
+
+### 🎛️ **User Interface**
+- **Material-UI Design**: Modern, responsive interface with Material Design components
+- **Sidebar Controls**: Organized category management with checkboxes and color controls
+- **Visual Feedback**: Clear indicators for category states and interactions
+- **Responsive Layout**: Optimized 4-column grid layout with automatic sizing
+
+### 🔧 **Technical Features**
+- **TypeScript**: Full type safety across frontend and backend
+- **File-Based Storage**: Simple JSON file storage for sessions (no database required)
+- **CORS Support**: Configurable cross-origin request handling
+- **Docker Ready**: Complete containerization support for easy deployment
+- **Monorepo Architecture**: Independent frontend and backend packages
+- **Environment Configuration**: Flexible configuration for development and production
+
+### 🚀 **Development & Deployment**
+- **Hot Reload**: Instant development feedback with Vite and nodemon
+- **Automated CI/CD**: GitHub Actions for Docker image building and publishing
+- **Multi-Environment**: Development, production, and Docker deployment options
+- **Comprehensive Logging**: Debug logging for troubleshooting and monitoring
+
 ## 📦 Packages
 
 This is a monorepo containing two independent packages:
