@@ -46,8 +46,6 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     dateInfoMap,
     setForegroundCategories,
     setTextCategories,
-    setSelectedDate,
-    toggleTextCategory,
     applyRemoteState,
     isRemoteUpdate
   } = useCategories();

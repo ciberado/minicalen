@@ -177,7 +177,7 @@ const Calendar = ({}: CalendarProps) => {
   }, [foregroundCategories, textCategories]); // Refresh when any category visibility changes
 
   // Track dates that have had symbols to ensure cleanup on removal
-  const [trackedDates, setTrackedDates] = useState(new Set<string>());
+  const [, setTrackedDates] = useState(new Set<string>());
 
   // Update all date symbols when dateInfoMap changes (more efficient than full re-render)
   useEffect(() => {

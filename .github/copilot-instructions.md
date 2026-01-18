@@ -190,3 +190,9 @@ interface SessionState {
 - **Production**: Requires `ALLOWED_ORIGINS` or `MINICALEN_HOST` environment variables
 - **Caddy Proxy**: Special WebSocket routing for `/socket.io/*` paths
 - **SSL Support**: Optional HTTPS with certificate validation (`USE_HTTPS=true`)
+
+### Shortcuts & Utilities
+
+When you read "patch bump", run `npm build`, fix possible errors, increase the version number of all project packages by one patch level (e.g., 1.0.0 → 1.0.1) without changing major or minor versions, update CHANGELOG.md files accordingly, and create a git commit and tag for the new version.
+
+When you read "release", create a new git tag ending with `-RELEASE` (e.g., v1.0.0-RELEASE) to trigger the CI/CD pipeline for building and publishing Docker images for both frontend and backend packages and push.
