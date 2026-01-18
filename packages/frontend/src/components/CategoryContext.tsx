@@ -157,8 +157,11 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
     // Apply foreground categories
     setForegroundCategoriesInternal(state.foregroundCategories);
     
-    // Apply text categories (sorted)
-    setInternalTextCategories(sortTextCategories(state.textCategories || []));
+    // Apply text categories (sorted) - preserve existing if not provided for backward compatibility
+    if (state.textCategories && state.textCategories.length > 0) {
+      setInternalTextCategories(sortTextCategories(state.textCategories));
+    }
+    // If textCategories is missing or empty, keep current text categories for transparency
     
     // Apply date info map - convert from array of tuples to Map
     const newDateInfoMap = new Map<string, DateInfo>();

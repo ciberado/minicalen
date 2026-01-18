@@ -181,10 +181,10 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     // Get current timestamp in ISO format
     const timestamp = new Date().toISOString();
     
-    // Prepare the state to be saved
+    // Prepare the state to be saved - ensure text categories are always included
     const sessionState: SessionState = {
       foregroundCategories,
-      textCategories,
+      textCategories: textCategories || [], // Ensure always present for forward compatibility
       dateInfoMap: dateInfoArray,
       timestamp
     };
@@ -232,10 +232,11 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       // Restore categories
       setForegroundCategories(sessionData.foregroundCategories);
       
-      // Restore text categories (with fallback for older sessions)
-      if (sessionData.textCategories) {
+      // Restore text categories (preserve defaults for older sessions without text categories)
+      if (sessionData.textCategories && sessionData.textCategories.length > 0) {
         setTextCategories(sessionData.textCategories);
       }
+      // If no text categories in saved session, keep current defaults for transparency
       
       // Restore date info
       const dateInfoEntries = sessionData.dateInfoMap;
@@ -251,7 +252,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       // Initialize the last saved state for state comparison
       lastSavedStateRef.current = {
         foregroundCategories: sessionData.foregroundCategories,
-        textCategories: sessionData.textCategories || [],
+        textCategories: sessionData.textCategories || textCategories, // Use current text categories if not in saved session
         dateInfoMap: sessionData.dateInfoMap,
         timestamp: sessionData.timestamp
       };
@@ -304,7 +305,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     // This sets the isRemoteUpdate flag, applies all state, then resets the flag
     const remoteCategoryState: RemoteCategoryState = {
       foregroundCategories: remoteState.foregroundCategories,
-      textCategories: remoteState.textCategories || [],
+      textCategories: remoteState.textCategories || textCategories, // Preserve current if missing
       dateInfoMap: remoteState.dateInfoMap
     };
     
