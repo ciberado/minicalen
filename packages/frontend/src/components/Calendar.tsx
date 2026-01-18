@@ -7,6 +7,16 @@ import './Calendar.css'; // Import custom calendar styles
 import './noBorders.css'; // Import border removal styles
 import { useCategories } from './CategoryContext'; // Import our context
 
+// Utility function to convert hex color to RGB values
+const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+};
+
 interface CalendarProps {
   // Add any props you might need in the future
 }
@@ -75,6 +85,10 @@ const Calendar = ({}: CalendarProps) => {
           
           textCats.forEach(cat => {
             const symbol = generateCategorySymbol(cat.label);
+            
+            // Determine opacity based on category visibility
+            const opacity = cat.visible === false ? 0.1 : 1;
+            
             const symbolSpan = document.createElement('span');
             symbolSpan.textContent = symbol;
             symbolSpan.style.cssText = `
@@ -86,6 +100,7 @@ const Calendar = ({}: CalendarProps) => {
               border-radius: 2px;
               border: 1px solid ${cat.color};
               line-height: 1;
+              opacity: ${opacity};
             `;
             symbolsContainer.appendChild(symbolSpan);
           });
@@ -104,19 +119,40 @@ const Calendar = ({}: CalendarProps) => {
     // Convert each date entry to background events for color categories
     selectedDates.forEach((color, dateStr) => {
       if (color) {
+        // Get the date info to determine the category
+        const dateInfo = dateInfoMap.get(dateStr);
+        
+        // Check if the corresponding category is visible/active for opacity
+        let eventBackgroundColor = color;
+        if (dateInfo && dateInfo.categoryId) {
+          const category = foregroundCategories.find(cat => cat.id === dateInfo.categoryId);
+          // Reduce opacity if the category is inactive or invisible
+          if (category && (category.visible === false || category.active === false)) {
+            console.log('Category inactive, applying reduced opacity:', category.label, category.active, category.visible);
+            // Convert color to rgba with 20% opacity
+            const rgb = hexToRgb(color);
+            if (rgb) {
+              eventBackgroundColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.2)`;
+            }
+          } else {
+            console.log('Category active:', category?.label, category?.active, category?.visible);
+          }
+        }
+        
+        // Add the event with appropriate background color
         eventArray.push({
           id: `bg-${dateStr}`,
           start: dateStr,
           allDay: true,
           display: 'background',
-          backgroundColor: color,
+          backgroundColor: eventBackgroundColor,
           classNames: ['non-interactive-event'] // Add class to make non-interactive
         });
       }
     });
     
     return eventArray;
-  }, [selectedDates]);
+  }, [selectedDates, dateInfoMap, foregroundCategories]);
 
   // Force calendar to refresh when dates change
   useEffect(() => {
@@ -124,6 +160,21 @@ const Calendar = ({}: CalendarProps) => {
       calendarRef.current.getApi().refetchEvents();
     }
   }, [selectedDates]);
+
+  // Force calendar to refresh when category visibility changes
+  useEffect(() => {
+    if (calendarRef.current) {
+      calendarRef.current.getApi().refetchEvents();
+    }
+    // Also update text symbols when text categories visibility changes
+    const timeoutId = setTimeout(() => {
+      dateInfoMap.forEach((_, dateStr) => {
+        updateDateSymbols(dateStr);
+      });
+    }, 100); // Small delay to ensure DOM is ready
+
+    return () => clearTimeout(timeoutId);
+  }, [foregroundCategories, textCategories]); // Refresh when any category visibility changes
 
   // Track dates that have had symbols to ensure cleanup on removal
   const [trackedDates, setTrackedDates] = useState(new Set<string>());
@@ -225,6 +276,12 @@ const Calendar = ({}: CalendarProps) => {
       // Immediately update the visual symbols for this specific date
       updateDateSymbols(dateStr);
     } else if (selectedForegroundCategory && selectedForegroundCategory.color) {
+      // Check if the selected category is active - prevent interaction if not
+      if (!selectedForegroundCategory.active) {
+        console.log('Selected foreground category is inactive, ignoring click:', selectedForegroundCategory.label);
+        return;
+      }
+      
       console.log('Foreground category selected, applying color:', selectedForegroundCategory.label);
       
       // Get the current information about the date
@@ -299,7 +356,11 @@ const Calendar = ({}: CalendarProps) => {
         // Add each symbol
         textCats.forEach(cat => {
           const symbol = generateCategorySymbol(cat.label);
-          console.log('Adding symbol:', symbol, 'for category:', cat.label, 'color:', cat.color);
+          console.log('Adding symbol:', symbol, 'for category:', cat.label, 'color:', cat.color, 'visible:', cat.visible);
+          
+          // Determine opacity based on category visibility
+          const opacity = cat.visible === false ? 0.1 : 1;
+          
           const symbolSpan = document.createElement('span');
           symbolSpan.textContent = symbol;
           symbolSpan.style.cssText = `
@@ -311,6 +372,7 @@ const Calendar = ({}: CalendarProps) => {
             border-radius: 2px;
             box-shadow: 0 0 2px rgba(0,0,0,0.3);
             line-height: 1;
+            opacity: ${opacity};
           `;
           symbolsContainer.appendChild(symbolSpan);
         });

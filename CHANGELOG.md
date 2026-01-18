@@ -5,6 +5,17 @@ All notable changes to MiniCalen will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-01-18
+
+### Improved
+- **Category Deactivation Behavior**: Enhanced visual feedback and interaction control for deactivated foreground categories
+  - Deactivated categories now properly display at 20% opacity (reduced from 70%)
+  - Calendar dates with deactivated category colors also show at 20% opacity using RGBA transparency
+  - Prevented date manipulation (add/remove) when selected category is deactivated
+  - Improved FullCalendar compatibility by using RGBA background colors instead of separate opacity property
+  - Added debug logging for better troubleshooting of category state changes
+
+
 ## [1.2.2] - 2026-01-18
 
 ### Fixed
@@ -16,10 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.1] - 2026-01-18
 
 ### Fixed
-- **Session Management**: Improved session persistence and error handling
-- **WebSocket Connectivity**: Enhanced connection stability and automatic reconnection
-- **Category State Synchronization**: Fixed edge cases in real-time category updates
-- **Performance Optimizations**: Reduced unnecessary re-renders in calendar component
+- **Docker Build Compilation**: Resolved TypeScript compilation errors for Docker builds
+  - Fix HTMLElement casting in Calendar component for style property access
+  - Import TextCategory type in Sidebar component
+  - Ensure color property is never null in text category mapping
+  - Enable successful Docker image builds for v1.2.0
 
 ## [1.2.0] - 2026-01-18
 

@@ -30,10 +30,12 @@ interface CategoryValueProps {
   initialLabel?: string;
   initialColor?: string | null;  // Make color optional by allowing null
   initialActive?: boolean;
+  initialVisible?: boolean;  // Add visible state
   initialSelected?: boolean;  // Add selected state
   onLabelChange?: (id: string, newLabel: string) => void;
   onColorChange?: (id: string, newColor: string | null) => void;
   onActiveChange?: (id: string, isActive: boolean) => void;
+  onVisibleChange?: (id: string, isVisible: boolean) => void;  // Add visibility handler
   onSelectedChange?: (id: string, isSelected: boolean) => void;  // Add selection handler
   showColorPicker?: boolean;  // Add option to hide color picker
 }
@@ -43,16 +45,19 @@ const CategoryValue = ({
   initialLabel = 'Category',
   initialColor = DEFAULT_COLORS[0],
   initialActive = true,
+  initialVisible = true,  // Add visible prop with default true
   initialSelected = false,  // Add selected prop with default false
   onLabelChange,
   onColorChange,
   onActiveChange,
+  onVisibleChange,  // Add visibility handler
   onSelectedChange,  // Add selection handler
   showColorPicker = true
 }: CategoryValueProps) => {
   const [label, setLabel] = useState(initialLabel);
   const [color, setColor] = useState(initialColor);
   const [active, setActive] = useState(initialActive);
+  const [visible, setVisible] = useState(initialVisible);  // Add visible state
   const [selected, setSelected] = useState(initialSelected);  // Add selected state
   const [isEditing, setIsEditing] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -63,8 +68,9 @@ const CategoryValue = ({
     setLabel(initialLabel);
     setColor(initialColor);
     setActive(initialActive);
+    setVisible(initialVisible);
     setSelected(initialSelected);
-  }, [initialLabel, initialColor, initialActive, initialSelected]);
+  }, [initialLabel, initialColor, initialActive, initialVisible, initialSelected]);
 
   const handleColorClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -108,9 +114,20 @@ const CategoryValue = ({
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setActive(e.target.checked);
+    const isChecked = e.target.checked;
+    
+    console.log('Category checkbox changed:', id, label, 'checked:', isChecked);
+    
+    // Update both visible and active states to keep them in sync
+    setVisible(isChecked);
+    setActive(isChecked);
+    
+    // Call both handlers to ensure parent components receive both updates
+    if (onVisibleChange) {
+      onVisibleChange(id, isChecked);
+    }
     if (onActiveChange) {
-      onActiveChange(id, e.target.checked);
+      onActiveChange(id, isChecked);
     }
   };
 
@@ -135,7 +152,7 @@ const CategoryValue = ({
         backgroundColor: active 
           ? (selected ? 'rgba(25, 118, 210, 0.12)' : 'background.paper') 
           : 'action.disabledBackground',
-        opacity: active ? 1 : 0.7,
+        opacity: active ? 1 : 0.2,
         transition: 'all 0.2s',
         '&:hover': {
           borderColor: 'primary.main',
@@ -259,9 +276,9 @@ const CategoryValue = ({
         )}
       </Box>
 
-      {/* Activation checkbox */}
+      {/* Visibility checkbox */}
       <Checkbox
-        checked={active}
+        checked={visible}
         onChange={handleCheckboxChange}
         size="small"
         sx={{ p: 0.5 }}
