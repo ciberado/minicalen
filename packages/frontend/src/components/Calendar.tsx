@@ -40,58 +40,61 @@ const Calendar = ({}: CalendarProps) => {
 
   // Function to update symbols for a specific date without full re-render
   const updateDateSymbols = (dateStr: string) => {
-    // Find the calendar cell for this date
-    const cellElement = document.querySelector(`[data-date="${dateStr}"]`);
-    if (!cellElement) return;
+    // Find ALL calendar cells for this date (there may be multiple for cross-month dates)
+    const cellElements = document.querySelectorAll(`[data-date="${dateStr}"]`);
+    if (cellElements.length === 0) return;
 
     const dateInfo = dateInfoMap.get(dateStr);
     
-    // Remove existing symbols
-    const existingOverlay = cellElement.querySelector('.text-symbols-overlay');
-    if (existingOverlay) {
-      existingOverlay.remove();
-    }
-
-    // Add new symbols if any
-    if (dateInfo && dateInfo.textCategoryIds && dateInfo.textCategoryIds.length > 0) {
-      const textCats = getDateTextCategories(dateStr);
-      
-      if (textCats.length > 0) {
-        const symbolsContainer = document.createElement('div');
-        symbolsContainer.className = 'text-symbols-overlay';
-        symbolsContainer.style.cssText = `
-          position: absolute;
-          top: 18px;
-          left: 2px;
-          right: 2px;
-          pointer-events: none;
-          z-index: 3;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 2px;
-        `;
-        
-        textCats.forEach(cat => {
-          const symbol = generateCategorySymbol(cat.label);
-          const symbolSpan = document.createElement('span');
-          symbolSpan.textContent = symbol;
-          symbolSpan.style.cssText = `
-            color: ${cat.color};
-            font-weight: bold;
-            font-size: 10px;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 1px 2px;
-            border-radius: 2px;
-            border: 1px solid ${cat.color};
-            line-height: 1;
-          `;
-          symbolsContainer.appendChild(symbolSpan);
-        });
-        
-        (cellElement as HTMLElement).style.position = 'relative';
-        cellElement.appendChild(symbolsContainer);
+    // Process each cell element that has this date
+    cellElements.forEach((cellElement) => {
+      // Remove existing symbols
+      const existingOverlay = cellElement.querySelector('.text-symbols-overlay');
+      if (existingOverlay) {
+        existingOverlay.remove();
       }
-    }
+
+      // Add new symbols if any
+      if (dateInfo && dateInfo.textCategoryIds && dateInfo.textCategoryIds.length > 0) {
+        const textCats = getDateTextCategories(dateStr);
+        
+        if (textCats.length > 0) {
+          const symbolsContainer = document.createElement('div');
+          symbolsContainer.className = 'text-symbols-overlay';
+          symbolsContainer.style.cssText = `
+            position: absolute;
+            top: 18px;
+            left: 2px;
+            right: 2px;
+            pointer-events: none;
+            z-index: 3;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+          `;
+          
+          textCats.forEach(cat => {
+            const symbol = generateCategorySymbol(cat.label);
+            const symbolSpan = document.createElement('span');
+            symbolSpan.textContent = symbol;
+            symbolSpan.style.cssText = `
+              color: ${cat.color};
+              font-weight: bold;
+              font-size: 10px;
+              background: rgba(255, 255, 255, 0.8);
+              padding: 1px 2px;
+              border-radius: 2px;
+              border: 1px solid ${cat.color};
+              line-height: 1;
+            `;
+            symbolsContainer.appendChild(symbolSpan);
+          });
+          
+          (cellElement as HTMLElement).style.position = 'relative';
+          cellElement.appendChild(symbolsContainer);
+        }
+      }
+    });
   };
   
   // Convert selectedDates Map to FullCalendar events

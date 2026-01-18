@@ -5,6 +5,22 @@ All notable changes to MiniCalen will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-01-18
+
+### Fixed
+- **Text Categories Cross-Month Display**: Fixed bug where text category symbols only appeared on first occurrence of dates that span multiple months
+  - Updated `updateDateSymbols` function to use `querySelectorAll` instead of `querySelector`
+  - Ensures text symbols appear on all instances of cross-month dates (e.g., last week of one month showing in next month)
+  - Fixes both addition and removal of text symbols across duplicate date displays
+
+## [1.2.1] - 2026-01-18
+
+### Fixed
+- **Session Management**: Improved session persistence and error handling
+- **WebSocket Connectivity**: Enhanced connection stability and automatic reconnection
+- **Category State Synchronization**: Fixed edge cases in real-time category updates
+- **Performance Optimizations**: Reduced unnecessary re-renders in calendar component
+
 ## [1.2.0] - 2026-01-18
 
 ### Added
