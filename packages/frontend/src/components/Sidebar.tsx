@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { Box, Paper, Typography, Divider } from '@mui/material';
 import Categories, { CategoriesHandle } from './Categories';
-import { useCategories } from './CategoryContext';
+import { useCategories, TextCategory } from './CategoryContext';
 import SaveButton from './SaveButton';
 
 interface SidebarProps {
@@ -96,7 +96,7 @@ const Sidebar = ({ width }: SidebarProps) => {
             }))}
             onCategoriesChange={(updatedCategories) => {
               // Remove symbol from labels before saving
-              const cleanCategories = updatedCategories.map(cat => {
+              const cleanCategories: TextCategory[] = updatedCategories.map(cat => {
                 let categoryId = cat.id;
                 
                 // If this is a new category with a numeric ID, convert it to text category format
@@ -112,8 +112,9 @@ const Sidebar = ({ width }: SidebarProps) => {
                 return {
                   ...cat,
                   id: categoryId,
+                  color: cat.color || '#000000', // Ensure color is never null
                   label: cat.label.replace(/ \[.*\]$/, '')
-                };
+                } as TextCategory;
               });
               setTextCategories(cleanCategories);
             }}

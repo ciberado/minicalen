@@ -88,7 +88,7 @@ const Calendar = ({}: CalendarProps) => {
           symbolsContainer.appendChild(symbolSpan);
         });
         
-        cellElement.style.position = 'relative';
+        (cellElement as HTMLElement).style.position = 'relative';
         cellElement.appendChild(symbolsContainer);
       }
     }

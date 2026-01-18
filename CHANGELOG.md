@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] - 2026-01-18
 
+### Added
+- **Text Categories Feature**: New text label system for enhanced calendar organization
+  - Text categories with customizable symbols (e.g., "Holiday [H]", "Deadline [D]")
+  - Support for multiple text categories per date alongside foreground categories
+  - Visual symbols displayed on calendar dates for quick identification
+  - Independent management from foreground color categories
+
 ### Fixed
 - **Text Categories Backward Compatibility**: Seamless support for legacy sessions without text categories
   - Preserve default text categories when loading old sessions
