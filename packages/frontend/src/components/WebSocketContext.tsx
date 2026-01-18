@@ -58,19 +58,46 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     logger.info('Connecting to WebSocket at:', wsUrl);
     
     const newSocket = io(wsUrl, {
-      transports: ['websocket', 'polling'], // Fallback to polling if WebSocket fails
+      transports: ['polling', 'websocket'], // Prefer polling first for Firefox compatibility
       timeout: 20000, // 20 second timeout
-      autoConnect: true
+      autoConnect: true,
+      forceNew: true, // Force new connection
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      upgrade: true, // Allow transport upgrade from polling to websocket
+      rememberUpgrade: false // Don't remember the upgrade for more reliable connections
     });
     
     newSocket.on('connect', () => {
-      logger.debug('Connected to WebSocket server:', newSocket.id);
+      logger.info('Connected to WebSocket server:', newSocket.id, 'via transport:', newSocket.io.engine.transport.name);
       setIsConnected(true);
     });
 
-    newSocket.on('disconnect', () => {
-      logger.debug('Disconnected from WebSocket server');
+    newSocket.on('disconnect', (reason) => {
+      logger.warn('Disconnected from WebSocket server. Reason:', reason);
       setIsConnected(false);
+    });
+
+    newSocket.on('connect_error', (error) => {
+      logger.error('WebSocket connection error:', error.message);
+      setIsConnected(false);
+    });
+
+    newSocket.on('reconnect', (attemptNumber) => {
+      logger.info('Reconnected to WebSocket server after', attemptNumber, 'attempts');
+    });
+
+    newSocket.on('reconnect_attempt', (attemptNumber) => {
+      logger.debug('WebSocket reconnection attempt:', attemptNumber);
+    });
+
+    newSocket.on('reconnect_error', (error) => {
+      logger.error('WebSocket reconnection error:', error);
+    });
+
+    newSocket.on('reconnect_failed', () => {
+      logger.error('WebSocket reconnection failed after all attempts');
     });
 
     // Listen for session events
