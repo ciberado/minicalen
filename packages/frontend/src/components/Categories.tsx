@@ -22,6 +22,7 @@ export interface Category {
   label: string;
   color: string | null;  // Make color optional by allowing null
   active: boolean;
+  visible?: boolean;  // Add visibility property - controls opacity of visual hints
   selected?: boolean;  // Add selected property
 }
 
@@ -54,9 +55,9 @@ const Categories = forwardRef<CategoriesHandle, CategoriesProps>(({
 
   // If external categories are provided, use them. Otherwise, use internal state
   const [internalCategories, setInternalCategories] = useState<Category[]>([
-    { id: '1', label: 'Work', color: DEFAULT_COLORS[0], active: true, selected: false },
-    { id: '2', label: 'Personal', color: DEFAULT_COLORS[5], active: true, selected: false },
-    { id: '3', label: 'Errands', color: DEFAULT_COLORS[8], active: false, selected: false }
+    { id: '1', label: 'Work', color: DEFAULT_COLORS[0], active: true, visible: true, selected: false },
+    { id: '2', label: 'Personal', color: DEFAULT_COLORS[5], active: true, visible: true, selected: false },
+    { id: '3', label: 'Errands', color: DEFAULT_COLORS[8], active: false, visible: true, selected: false }
   ]);
 
   // Determine which categories to use (external or internal)
@@ -135,7 +136,14 @@ const Categories = forwardRef<CategoriesHandle, CategoriesProps>(({
 
   const handleActiveChange = (id: string, isActive: boolean) => {
     const newCategories = categories.map(cat => 
-      cat.id === id ? { ...cat, active: isActive } : cat
+      cat.id === id ? { ...cat, active: isActive, visible: isActive } : cat
+    );
+    updateCategories(newCategories);
+  };
+
+  const handleVisibleChange = (id: string, isVisible: boolean) => {
+    const newCategories = categories.map(cat => 
+      cat.id === id ? { ...cat, visible: isVisible, active: isVisible } : cat
     );
     updateCategories(newCategories);
   };
@@ -206,6 +214,7 @@ const Categories = forwardRef<CategoriesHandle, CategoriesProps>(({
           label: 'New Category', 
           color: getNextColor(), 
           active: true,
+          visible: true, // New categories are visible by default
           selected: true // Auto-select the new category
         }
       ];
@@ -219,6 +228,7 @@ const Categories = forwardRef<CategoriesHandle, CategoriesProps>(({
           label: 'New Category', 
           color: getNextColor(), 
           active: true,
+          visible: true, // New categories are visible by default
           selected: false
         }
       ];
@@ -243,10 +253,12 @@ const Categories = forwardRef<CategoriesHandle, CategoriesProps>(({
             initialLabel={category.label}
             initialColor={category.color}
             initialActive={category.active}
+            initialVisible={category.visible}
             initialSelected={category.selected}
             onLabelChange={handleLabelChange}
             onColorChange={handleColorChange}
             onActiveChange={handleActiveChange}
+            onVisibleChange={handleVisibleChange}
             onSelectedChange={handleSelectedChange}
             showColorPicker={showColorPicker}
           />

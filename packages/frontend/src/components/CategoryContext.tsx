@@ -9,6 +9,7 @@ export interface TextCategory {
   label: string;
   color: string;
   active: boolean;
+  visible?: boolean;  // Add visibility property - controls opacity of visual hints
   selected?: boolean;
 }
 
@@ -103,9 +104,9 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
   
   // Initial category data
   const [foregroundCategories, setForegroundCategoriesInternal] = useState<Category[]>([
-    { id: '1', label: 'Important', color: '#F44336', active: true, selected: true },
-    { id: '2', label: 'Work', color: '#2196F3', active: true, selected: false },
-    { id: '3', label: 'Personal', color: '#4CAF50', active: true, selected: false }
+    { id: '1', label: 'Important', color: '#F44336', active: true, visible: true, selected: true },
+    { id: '2', label: 'Work', color: '#2196F3', active: true, visible: true, selected: false },
+    { id: '3', label: 'Personal', color: '#4CAF50', active: true, visible: true, selected: false }
   ]);
 
   // Wrapper for setForegroundCategories to track local changes
@@ -116,8 +117,8 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
   // Initial text category data (sorted)
   const [internalTextCategories, setInternalTextCategories] = useState<TextCategory[]>(
     sortTextCategories([
-      { id: 't1', label: 'Holiday', color: '#FF5722', active: true, selected: false },
-      { id: 't2', label: 'Deadline', color: '#795548', active: true, selected: false }
+      { id: 't1', label: 'Holiday', color: '#FF5722', active: true, visible: true, selected: false },
+      { id: 't2', label: 'Deadline', color: '#795548', active: true, visible: true, selected: false }
     ])
   );
   
