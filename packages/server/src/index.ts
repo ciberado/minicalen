@@ -25,8 +25,10 @@ const getAllowedOrigins = (): string[] | boolean => {
   // Default development origins
   if (NODE_ENV === 'development') {
     origins.push('http://localhost:5173'); // Vite default
+    origins.push('http://localhost:5174'); // Vite alternative port
     origins.push('http://localhost:3000'); // React default
     origins.push('http://127.0.0.1:5173');
+    origins.push('http://127.0.0.1:5174');
     origins.push('http://127.0.0.1:3000');
   }
   

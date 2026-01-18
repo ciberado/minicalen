@@ -47,6 +47,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     setForegroundCategories,
     setTextCategories,
     setSelectedDate,
+    toggleTextCategory,
     applyRemoteState,
     isRemoteUpdate
   } = useCategories();
@@ -54,9 +55,14 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
   // Check for session ID in the URL hash when the component mounts
   useEffect(() => {
+    console.log('SessionContext: useEffect for hash detection running');
     const hash = window.location.hash.substring(1);
+    console.log('SessionContext: Hash detected:', hash);
     if (hash && hash.length > 0) {
+      console.log('SessionContext: Calling loadSession with hash:', hash);
       loadSession(hash);
+    } else {
+      console.log('SessionContext: No hash found or empty hash');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -195,10 +201,12 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
   // Load a session by ID
   const loadSession = async (id: string): Promise<boolean> => {
+    console.log('SessionContext: loadSession called with ID:', id);
     setIsLoading(true);
     
     try {
       // Load the session from the backend
+      console.log('SessionContext: Fetching session data from backend');
       const response = await fetch(getApiUrl(`/sessions/${id}`));
       
       if (!response.ok) {
@@ -212,6 +220,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       
       const data = await response.json();
       const sessionData = data.state;
+      console.log('SessionContext: Session data loaded:', sessionData);
       
       if (!sessionData) {
         console.error('Invalid session data:', id);
@@ -238,16 +247,20 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       }
       // If no text categories in saved session, keep current defaults for transparency
       
-      // Restore date info
+      // Restore date info - restore complete dateInfoMap including text categories
       const dateInfoEntries = sessionData.dateInfoMap;
       
-      // Clear existing date info first (to avoid duplicates)
-      // This will need to be done carefully to avoid UI flickering
+      // Apply the complete state including date info using applyRemoteState
+      // This ensures text categories are properly restored
+      const completeState = {
+        foregroundCategories: sessionData.foregroundCategories,
+        textCategories: sessionData.textCategories || textCategories,
+        dateInfoMap: dateInfoEntries
+      };
       
-      // Restore each date's info
-      dateInfoEntries.forEach(([dateStr, info]: [string, { color: string, categoryId: string, textCategoryIds?: string[] }]) => {
-        setSelectedDate(dateStr, info.color, info.categoryId);
-      });
+      console.log('SessionContext: Calling applyRemoteState with state:', completeState);
+      applyRemoteState(completeState);
+      console.log('SessionContext: applyRemoteState completed');
       
       // Initialize the last saved state for state comparison
       lastSavedStateRef.current = {

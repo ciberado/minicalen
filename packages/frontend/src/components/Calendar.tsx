@@ -181,28 +181,33 @@ const Calendar = ({}: CalendarProps) => {
 
   // Update all date symbols when dateInfoMap changes (more efficient than full re-render)
   useEffect(() => {
+    console.log('Calendar: dateInfoMap changed, updating symbols for', dateInfoMap.size, 'dates');
+    
     // Small delay to ensure DOM is ready
     const timeoutId = setTimeout(() => {
       const currentDates = new Set<string>();
       
       // Update all current dates with symbols
       dateInfoMap.forEach((_, dateStr) => {
+        console.log('Calendar: Updating symbols for date', dateStr);
         updateDateSymbols(dateStr);
         currentDates.add(dateStr);
       });
       
-      // Clean up symbols for dates that were removed
-      trackedDates.forEach((dateStr) => {
-        if (!currentDates.has(dateStr)) {
-          updateDateSymbols(dateStr); // This will clear symbols since date is not in map
-        }
+      // Clean up symbols for dates that were removed (use previous tracked dates)
+      setTrackedDates(prevTracked => {
+        prevTracked.forEach((dateStr) => {
+          if (!currentDates.has(dateStr)) {
+            console.log('Calendar: Cleaning up symbols for removed date', dateStr);
+            updateDateSymbols(dateStr); // This will clear symbols since date is not in map
+          }
+        });
+        return currentDates;
       });
-      
-      setTrackedDates(currentDates);
-    }, 50);
+    }, 100); // Increased delay to ensure DOM is fully ready
     
     return () => clearTimeout(timeoutId);
-  }, [dateInfoMap, trackedDates]);
+  }, [dateInfoMap]); // Remove trackedDates from dependencies to avoid infinite loop
 
   // Force 4 columns layout after render
   useEffect(() => {

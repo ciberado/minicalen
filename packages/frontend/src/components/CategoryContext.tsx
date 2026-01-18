@@ -168,7 +168,10 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
     const newDateInfoMap = new Map<string, DateInfo>();
     const newSelectedDates = new Map<string, string>();
     
+    console.log('CategoryContext: Creating new dateInfoMap from state with', state.dateInfoMap.length, 'entries');
+    
     state.dateInfoMap.forEach(([dateStr, info]) => {
+      console.log('CategoryContext: Adding date info for', dateStr, 'with textCategoryIds:', info.textCategoryIds);
       newDateInfoMap.set(dateStr, {
         color: info.color,
         categoryId: info.categoryId,
@@ -179,8 +182,19 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
       }
     });
     
-    setDateInfoMap(newDateInfoMap);
-    setSelectedDates(newSelectedDates);
+    console.log('CategoryContext: Setting new dateInfoMap with', newDateInfoMap.size, 'entries');
+    
+    // Force a complete re-render by ensuring state changes are detected
+    // Set to empty first, then set to the new data (ensures React detects the change)
+    setDateInfoMap(new Map());
+    setSelectedDates(new Map());
+    
+    // Use setTimeout to ensure the empty state is applied first
+    setTimeout(() => {
+      setDateInfoMap(newDateInfoMap);
+      setSelectedDates(newSelectedDates);
+      console.log('CategoryContext: dateInfoMap and selectedDates set after timeout');
+    }, 0);
     
     // Reset the flag after React has processed all updates
     // Using queueMicrotask ensures this runs after React's synchronous updates
