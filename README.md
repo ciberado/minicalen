@@ -1,57 +1,62 @@
 # MiniCalen
 
-A lightweight, modern calendar application built with React and Node.js.
+A lightweight, collaborative calendar application with real-time synchronization and user authentication.
+
+![Calendar Overview](docs/screenshots/calendar-main.png)
 
 ## ✨ Features
 
 ### 📅 **Calendar Management**
-- **Year View**: Display 12-month grid layout for comprehensive year overview
-- **Interactive Date Selection**: Click dates to assign categories and labels
-- **Today Highlighting**: Current date automatically highlighted for easy navigation
-- **Cross-Month Date Display**: Seamless handling of dates spanning multiple months
+- **Year View**: 12-month grid layout for complete year overview
+- **Interactive Selection**: Click dates to assign categories and text labels
+- **Today Highlighting**: Current date automatically highlighted
+- **Smart Navigation**: Seamless month-to-month date handling
 
 ### 🎨 **Category System**
-- **Foreground Categories**: Color-coded background categories (Important, Work, Personal)
-  - Customizable colors with hex color picker
-  - Visual opacity control (active/inactive states)
-  - Category activation/deactivation with visual feedback
-- **Text Categories**: Symbol-based labeling system
-  - Customizable text labels with auto-generated symbols (e.g., "Holiday [H]", "Deadline [D]")
-  - Overlay symbols displayed on calendar dates
-  - Multiple text categories per date supported
-  - Color-coded symbols with customizable colors
+- **Foreground Categories**: Color-coded backgrounds (Important, Work, Personal) with customizable hex colors
+- **Text Labels**: Symbol-based tags (e.g., "Holiday [H]") that overlay on dates
+- **Multiple Categories**: Assign multiple labels to any date
+- **Visual Controls**: Toggle categories on/off with checkboxes
 
-### 💾 **Session Management**
-- **Persistent Sessions**: Automatic saving and loading of calendar state
-- **Session URLs**: Shareable URLs for collaborative calendar access
-- **State Restoration**: Complete restoration of categories, dates, and text labels
-- **Session Persistence**: Text categories and assignments persist across page reloads
+### 🔐 **Authentication & User Management**
+- **Anonymous Sessions**: Start creating calendars immediately without signup
+- **User Accounts**: Email/password authentication powered by Better-Auth
+- **Session Ownership**: Claim anonymous calendars by signing in
+- **My Calendars Dashboard**: Manage all your calendars from one place
+
+![My Calendars](docs/screenshots/my-calendars.png)
+
+### 💾 **Session & Sharing**
+- **Persistent Storage**: SQLite database with automatic state saving
+- **Shareable URLs**: Collaborate via unique session links
+- **Permission Levels**: Owner, editor, and viewer access control
+- **State Restoration**: Complete calendar state preserved across reloads
 
 ### 🔄 **Real-Time Collaboration**
-- **WebSocket Synchronization**: Live updates across multiple browser sessions
-- **Multi-User Support**: Multiple users can collaborate on the same calendar
-- **Cross-Browser Compatibility**: WebSocket fallback ensures compatibility with Firefox and all major browsers
-- **State Broadcasting**: Changes automatically sync to all connected clients
+- **WebSocket Sync**: Instant updates across all connected clients
+- **Multi-User Support**: Multiple users editing simultaneously with permissions
+- **Cross-Browser**: WebSocket fallback for Firefox and all major browsers
+- **Authenticated Connections**: Socket.IO with session-based authentication
 
 ### 🎛️ **User Interface**
-- **Material-UI Design**: Modern, responsive interface with Material Design components
-- **Sidebar Controls**: Organized category management with checkboxes and color controls
-- **Visual Feedback**: Clear indicators for category states and interactions
-- **Responsive Layout**: Optimized 4-column grid layout with automatic sizing
+- **Material-UI Design**: Modern, responsive interface
+- **Sidebar Controls**: Category management with visual feedback
+- **4-Column Grid**: Optimized responsive layout
 
-### 🔧 **Technical Features**
-- **TypeScript**: Full type safety across frontend and backend
-- **File-Based Storage**: Simple JSON file storage for sessions (no database required)
-- **CORS Support**: Configurable cross-origin request handling
-- **Docker Ready**: Complete containerization support for easy deployment
-- **Monorepo Architecture**: Independent frontend and backend packages
-- **Environment Configuration**: Flexible configuration for development and production
+### 🔧 **Technical Stack**
+- **Frontend**: React 18 + TypeScript + Vite + Material-UI
+- **Backend**: Node.js + Express + Socket.IO + Better-Auth
+- **Database**: SQLite with Drizzle ORM
+- **Deployment**: Docker + GitHub Actions CI/CD
+- **Architecture**: npm workspace monorepo
 
-### 🚀 **Development & Deployment**
-- **Hot Reload**: Instant development feedback with Vite and nodemon
-- **Automated CI/CD**: GitHub Actions for Docker image building and publishing
-- **Multi-Environment**: Development, production, and Docker deployment options
-- **Comprehensive Logging**: Debug logging for troubleshooting and monitoring
+## 📚 Documentation
+
+Detailed documentation available in the `docs/` folder:
+- [Authentication Guide](docs/AUTHENTICATION.md) - User authentication and session management
+- [Docker Deployment](DOCKER.md) - Container deployment instructions
+- [CI/CD Pipeline](CI-CD.md) - Automated build and deployment
+- [Logging](LOGGING.md) - Application logging configuration
 
 ## 📦 Packages
 
@@ -93,39 +98,48 @@ npm run start
 ### Docker Deployment
 
 ```bash
-# Build Docker images locally
-npm run build:frontend:docker
-npm run build:server:docker
-
-# Run containers individually
-docker run -d --name minicalen-frontend -p 8080:8080 minicalen-frontend
-docker run -d --name minicalen-server -p 3001:3001 minicalen-server
-
-# Or use Docker Compose for orchestration
+# Using Docker Compose (recommended)
 docker-compose up -d
 
-# Use pre-built images from Docker Hub (after CI/CD)
-docker run -d -p 8080:8080 your-dockerhub-username/minicalen-frontend:latest
-docker run -d -p 3001:3001 your-dockerhub-username/minicalen-server:latest
+# Or build and run manually
+docker run -d --name minicalen-server \
+  -p 3001:3001 \
+  -v $(pwd)/data:/app/data \
+  -v $(pwd)/logs:/app/logs \
+  -e BETTER_AUTH_SECRET=your-secret-key \
+  minicalen-server
 ```
 
-For detailed Docker documentation, see [DOCKER.md](./DOCKER.md).
+**Environment Variables**:
+- `BETTER_AUTH_SECRET` - Required for authentication (min 32 characters)
+- `DATABASE_URL` - Optional SQLite database path
+- `ALLOWED_ORIGINS` - CORS origins for production
+
+See [DOCKER.md](DOCKER.md) for complete deployment guide.
 
 ## 🏗️ Architecture
 
 ```
 minicalen/
 ├── packages/
-│   ├── frontend/          # React frontend package
-│   │   ├── src/          # React components and logic
-│   │   ├── public/       # Static assets
-│   │   └── dist/         # Built frontend assets
-│   └── server/           # Node.js backend package
-│       ├── src/          # Server source code
-│       ├── data/         # Session storage
-│       └── dist/         # Built server code
-├── scripts/              # Utility scripts
-└── DEPLOYMENT.md         # Deployment guide
+│   ├── frontend/          # React + TypeScript + Vite
+│   │   ├── src/
+│   │   │   ├── auth/      # Better-Auth client
+│   │   │   ├── components/ # React components
+│   │   │   ├── contexts/  # React contexts
+│   │   │   └── hooks/     # Custom hooks
+│   │   └── dist/          # Production build
+│   └── server/            # Node.js + Express + Socket.IO
+│       ├── src/
+│       │   ├── auth/      # Authentication middleware
+│       │   ├── db/        # Drizzle ORM schemas
+│       │   └── routes/    # API endpoints
+│       ├── data/          # SQLite database
+│       └── logs/          # Application logs
+├── docs/                  # Documentation
+│   ├── AUTHENTICATION.md
+│   └── screenshots/
+└── docker-compose.yml     # Container orchestration
 ```
 
 ## 🛠️ Development Workflow
@@ -155,114 +169,53 @@ npm install express --workspace=@minicalen/server
 
 ## 🌐 Environment Configuration
 
-### Frontend Environment Variables
-- `VITE_API_URL` - Backend API URL (default: http://localhost:3001)
-- `VITE_WS_URL` - WebSocket URL (default: http://localhost:3001)
+**Frontend** (`packages/frontend/.env`):
+- `VITE_API_URL` - Backend API URL (default: `http://localhost:3001`)
+- `VITE_WS_URL` - WebSocket URL (auto-configured in development)
 
-### Server Environment Variables
-- `PORT` - Server port (default: 3001)
-- `NODE_ENV` - Environment (development/production)
-- `ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins
-- `MINICALEN_HOST` - Host for proxy configuration
+**Backend** (`packages/server/.env`):
+- `BETTER_AUTH_SECRET` - Auth secret key (required, min 32 chars)
+- `DATABASE_URL` - SQLite database path (default: `./data/minicalen.db`)
+- `PORT` - Server port (default: `3001`)
+- `ALLOWED_ORIGINS` - CORS origins for production
 
-## 📚 Documentation
+See [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md) for authentication setup details.
 
-- [Frontend Documentation](./packages/frontend/README.md)
-- [Server Documentation](./packages/server/README.md)
-- [Docker Guide](./DOCKER.md)
-- [Deployment Guide](./DEPLOYMENT.md)
-- [CI/CD Guide](./CI-CD.md)
+## 🔄 CI/CD & Deployment
 
-## 🔄 CI/CD: Automated Builds
+### Automated Docker Builds
 
-MiniCalen includes automated Docker image building and publishing through GitHub Actions.
-
-### Release Process
-
-To trigger automated Docker image builds:
-
-1. **Create a release tag** ending with `-RELEASE`:
-   ```bash
-   git tag v1.0.0-RELEASE
-   git push origin v1.0.0-RELEASE
-   ```
-
-2. **GitHub Actions automatically**:
-   - Builds Docker images for both frontend and server
-   - Tags images with package versions and commit SHA
-   - Pushes to Docker Hub registry
-
-### Required Secrets
-
-Configure these secrets in your GitHub repository:
-
-- `DOCKER_USERNAME` - Your Docker Hub username
-- `DOCKER_PASSWORD` - Your Docker Hub password or access token
-
-### Generated Image Tags
-
-Each release creates multiple tags:
-
-**Frontend images:**
-- `username/minicalen-frontend:1.0.0` (package version)
-- `username/minicalen-frontend:abc12345` (commit SHA)
-- `username/minicalen-frontend:latest`
-
-**Server images:**
-- `username/minicalen-server:1.0.0` (package version) 
-- `username/minicalen-server:abc12345` (commit SHA)
-- `username/minicalen-server:latest`
-
-### Using Published Images
+Create a release tag ending with `-RELEASE` to trigger automated builds:
 
 ```bash
-# Pull and run the latest images
-docker pull username/minicalen-frontend:latest
-docker pull username/minicalen-server:latest
-
-# Or use specific versions
-docker pull username/minicalen-frontend:1.0.0
-docker pull username/minicalen-server:1.0.0
+git tag v1.0.0-RELEASE
+git push origin v1.0.0-RELEASE
 ```
 
-## 🔧 Scripts
+GitHub Actions will build and publish Docker images for both frontend and server to Docker Hub.
 
-### Development
-- `npm run dev` - Start frontend development server
-- `npm run dev:server` - Start backend development server
-- `npm run dev:all` - Start both frontend and backend
+**Required GitHub Secrets**: `DOCKER_USERNAME`, `DOCKER_PASSWORD`
 
-### Building
-- `npm run build` - Build both packages
-- `npm run build:frontend` - Build frontend package only
-- `npm run build:server` - Build server package only
+For complete CI/CD documentation, see [CI-CD.md](CI-CD.md).
 
-### Docker
-- `npm run build:frontend:docker` - Build frontend Docker image
-- `npm run build:server:docker` - Build server Docker image
+## 🔧 Available Scripts
 
-### Production
-- `npm run start` - Start production server
+```bash
+# Development
+npm run dev:all              # Start both frontend and backend
+npm run dev                  # Start frontend only
+npm run dev:server           # Start backend only
 
-### Development Tools
-- `npm run lint` - Lint all packages
+# Building
+npm run build                # Build both packages
+npm run build:frontend       # Build frontend only
+npm run build:server         # Build server only
 
-## 🏗️ Technology Stack
-
-### Frontend
-- React 18 with TypeScript
-- Vite for build and development
-- Material-UI for components
-- FullCalendar for calendar functionality
-- Socket.IO client for real-time updates
-
-### Backend
-- Node.js with Express
-- TypeScript
-- Socket.IO for real-time communication
-- File-based session storage
-- CORS support for cross-origin requests
+# Docker
+npm run build:frontend:docker  # Build frontend Docker image
+npm run build:server:docker    # Build server Docker image
+```
 
 ## 📄 License
 
-[Add your license here]
+MIT License - See individual package READMEs for details.

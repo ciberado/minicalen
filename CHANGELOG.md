@@ -5,6 +5,80 @@ All notable changes to MiniCalen will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-01-28
+
+### Added
+- **Authentication System**: Complete user authentication and session management
+  - Email/password authentication via BetterAuth framework
+  - Anonymous session support (create calendars without signing up)
+  - Session claiming functionality (convert anonymous → owned)
+  - SQLite database with Drizzle ORM for session persistence
+  - User accounts with secure password hashing
+  - HTTP-only cookies for session security
+  
+- **Permission-Based Sharing**: Granular access control for collaborative calendars
+  - Owner permission: Full control (read, write, share, delete)
+  - Editor permission: Can modify content but not share
+  - Viewer permission: Read-only access
+  - Share sessions via email address
+  - Real-time permission enforcement on API and WebSocket layers
+  
+- **Frontend Authentication UI**: Complete Material-UI based auth interface
+  - Sign in/sign up dialogs with email/password
+  - User menu with account management
+  - Session list showing owned and shared calendars
+  - Share dialog for granting permissions
+  - Access level indicators throughout UI
+  
+- **Database Schema**: Comprehensive schema for authentication
+  - `users` table: User accounts and profiles
+  - `sessions` table: Calendar sessions with ownership
+  - `sessionPermissions` table: Fine-grained access control
+  - Foreign key relationships with cascade deletes
+  - Automatic timestamp tracking
+  
+- **WebSocket Authentication**: Secure real-time communication
+  - Cookie-based authentication for Socket.IO
+  - Permission validation on state change events
+  - Anonymous user support with proper access control
+  - `checkSessionAccess()` helper for permission checks
+  
+- **Migration Tools**: Legacy session migration system
+  - `/api/migrate/legacy-sessions` endpoint
+  - Converts file-based sessions to database
+  - Dry-run mode for testing
+  - Preserves session IDs and state
+
+### Changed
+- **Session Storage**: Migrated from file-based to database storage
+  - Sessions now stored in SQLite database
+  - Legacy JSON files can be migrated automatically
+  - Improved concurrent access handling
+  - Better performance for multi-user scenarios
+  
+- **API Authentication**: Updated API endpoints with auth middleware
+  - `requireAuth` middleware for protected routes
+  - `optionalAuth` middleware for mixed access patterns
+  - Cookie-based session management
+  - Proper error handling for unauthenticated requests
+  
+- **CORS Configuration**: Enhanced CORS with credentials support
+  - `credentials: true` in CORS config
+  - `withCredentials: true` in Socket.IO client
+  - Proper cookie handling across domains
+  
+### Documentation
+- Added `AUTHENTICATION.md` - Complete authentication system guide
+- Added `TESTING.md` - Comprehensive testing results
+- Updated `README.md` - Authentication features and documentation links
+- Updated architecture diagram with database layer
+
+### Dependencies
+- Added `better-auth` v1.0 - Authentication framework
+- Added `drizzle-orm` - Type-safe database queries
+- Added `better-sqlite3` - SQLite database driver
+- Added `@mui/icons-material` - Material-UI icons
+
 ## [1.4.2] - 2026-01-18
 
 ### Fixed
