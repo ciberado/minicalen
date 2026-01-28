@@ -26,8 +26,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Frontend Authentication UI**: Complete Material-UI based auth interface
   - Sign in/sign up dialogs with email/password
   - User menu with account management
-  - Session list showing owned and shared calendars
+  - My Calendars dashboard showing owned and shared calendars
   - Share dialog for granting permissions
+  - Access banner displaying current user and permissions
+  - Session list with create, rename, and delete operations
+  
+- **Database Integration**: SQLite with Drizzle ORM
+  - Better-Auth tables for user/session management
+  - Custom sessions table with ownership and sharing
+  - Migration system for schema updates
+  - Automatic database initialization on startup
+  
+- **API Enhancements**: New authentication and session endpoints
+  - `/api/auth/*` - BetterAuth endpoints for sign-in/sign-up/sign-out
+  - `/api/sessions` - CRUD operations for calendar sessions
+  - `/api/sessions/:id/share` - Share sessions with other users
+  - Session migration endpoint for claiming anonymous sessions
+  - Authentication middleware protecting sensitive endpoints
+
+### Changed
+- **WebSocket Authentication**: Socket.IO connections now support authenticated users
+  - Optional authentication middleware for anonymous users
+  - User and session information attached to socket connections
+  - Permission-based access control for real-time updates
+  
+- **Session Storage**: Migrated from file-based to database storage
+  - Automatic migration of existing JSON session files to database
+  - Sessions now linked to user accounts when authenticated
+  - Support for both anonymous and authenticated sessions
+
+### Fixed
+- **Code Quality**: Resolved TypeScript linter errors
+  - Fixed Socket.IO type definitions with proper interface extension
+  - Removed all `any` types with explicit type definitions
+  - Fixed React Fast Refresh warnings by extracting hooks to separate files
+  
+- **Project Structure**: Improved code organization
+  - Created `contexts/` directory for React contexts
+  - Created `hooks/` directory for custom hooks
+  - Separated authentication logic into `auth/` directory
+  - Better separation of concerns for maintainability
+
+### Documentation
+- **README Updates**: Comprehensive documentation improvements
+  - Added authentication and user management section
+  - Included screenshots showcasing key features
+  - Reorganized features with concise, scannable bullet points
+  - Simplified technical stack and environment sections
+  - Added documentation links to `docs/` folder
+  
+- **New Documentation**: Detailed guides and references
+  - `docs/AUTHENTICATION.md` - Complete authentication guide
+  - `docs/screenshots/` - Visual feature demonstrations
+  - `TESTING.md` - Authentication testing documentation
+  - Environment variable documentation for Better-Auth setup
+
+### Security
+- **Authentication Security**: Industry-standard security practices
+  - Password hashing with bcrypt
+  - HTTP-only cookies for session tokens
+  - CORS configuration for production environments
+  - Session expiration (30-day default)
+  - CSRF protection via Better-Auth
+
+### Breaking Changes
+- **Database Migration Required**: Sessions now stored in SQLite database
+  - Existing JSON session files will be automatically migrated on first startup
+  - Environment variable `BETTER_AUTH_SECRET` now required (min 32 characters)
+  - Database file location: `packages/server/data/minicalen.db`
   - Access level indicators throughout UI
   
 - **Database Schema**: Comprehensive schema for authentication
