@@ -1,14 +1,38 @@
-import { useRef, useEffect } from 'react';
-import { Box, Paper, Typography, Divider } from '@mui/material';
+import { useRef, useEffect, useState } from 'react';
+import {
+  Box,
+  Paper,
+  Typography,
+  Divider,
+  IconButton,
+  Menu,
+  MenuItem,
+  Avatar,
+  ListItemIcon,
+  ListItemText,
+} from '@mui/material';
+import {
+  AccountCircle,
+  Login,
+  Logout,
+  FolderOpen,
+} from '@mui/icons-material';
 import Categories, { CategoriesHandle } from './Categories';
 import { useCategories, TextCategory } from './CategoryContext';
 import SaveButton from './SaveButton';
+import { useAuth } from '../hooks/useAuth';
+import { signOut } from '../auth/client';
+import logger from '../logger';
 
 interface SidebarProps {
   width: string;
+  onOpenSessions?: () => void;
 }
 
-const Sidebar = ({ width }: SidebarProps) => {
+const Sidebar = ({ width, onOpenSessions }: SidebarProps) => {
+  const { user, isAuthenticated, setShowAuthDialog } = useAuth();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  
   // Use the categories context
   const { 
     foregroundCategories, 
@@ -46,7 +70,35 @@ const Sidebar = ({ width }: SidebarProps) => {
       symbol: generateCategorySymbol(cat.label)
     })));
   }, [textCategories, generateCategorySymbol]);
-  
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleSignIn = () => {
+    handleMenuClose();
+    setShowAuthDialog(true);
+  };
+
+  const handleSignOut = async () => {
+    handleMenuClose();
+    try {
+      await signOut();
+      logger.info('Signed out successfully');
+    } catch (error) {
+      logger.error('Sign out error:', error);
+    }
+  };
+
+  const handleOpenSessions = () => {
+    handleMenuClose();
+    if (onOpenSessions) {
+      onOpenSessions();
+    }
+  };  
   return (
     <Paper 
       elevation={2}
@@ -68,7 +120,54 @@ const Sidebar = ({ width }: SidebarProps) => {
             MiniCalen
           </Typography>
           <SaveButton />
+          <IconButton onClick={handleMenuOpen} size="small" sx={{ ml: 1 }}>
+            {isAuthenticated ? (
+              <Avatar sx={{ width: 32, height: 32, fontSize: '0.875rem' }}>
+                {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+              </Avatar>
+            ) : (
+              <AccountCircle />
+            )}
+          </IconButton>
         </Box>
+
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+        >
+          {isAuthenticated ? (
+            [
+              <MenuItem key="sessions" onClick={handleOpenSessions}>
+                <ListItemIcon>
+                  <FolderOpen fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>My Calendars</ListItemText>
+              </MenuItem>,
+              <MenuItem key="signout" onClick={handleSignOut}>
+                <ListItemIcon>
+                  <Logout fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Sign Out</ListItemText>
+              </MenuItem>,
+            ]
+          ) : (
+            <MenuItem onClick={handleSignIn}>
+              <ListItemIcon>
+                <Login fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Sign In</ListItemText>
+            </MenuItem>
+          )}
+        </Menu>
         
         <Divider sx={{ mb: 2 }} />
         

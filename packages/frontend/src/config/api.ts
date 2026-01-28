@@ -40,6 +40,9 @@ const getApiConfig = (): ApiConfig => {
 
 export const apiConfig = getApiConfig();
 
+// Export base URL for compatibility
+export const API_BASE_URL = apiConfig.baseUrl;
+
 // Helper function to get full API endpoint
 export const getApiUrl = (endpoint: string): string => {
   return `${apiConfig.baseUrl}/api${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;

@@ -2,6 +2,8 @@ import Layout from './components/Layout'
 import { CategoryProvider } from './components/CategoryContext'
 import { SessionProvider } from './components/SessionContext'
 import { WebSocketProvider } from './components/WebSocketContext'
+import { AuthProvider } from './components/AuthContext'
+import { AuthDialog } from './components/AuthDialog'
 import logger from './logger'
 import './App.css'
 
@@ -10,13 +12,16 @@ logger.debug('App is initializing');
 
 function App() {
   return (
-    <WebSocketProvider>
-      <CategoryProvider>
-        <SessionProvider>
-          <Layout/>
-        </SessionProvider>
-      </CategoryProvider>
-    </WebSocketProvider>
+    <AuthProvider>
+      <WebSocketProvider>
+        <CategoryProvider>
+          <SessionProvider>
+            <Layout/>
+            <AuthDialog />
+          </SessionProvider>
+        </CategoryProvider>
+      </WebSocketProvider>
+    </AuthProvider>
   )
 }
 

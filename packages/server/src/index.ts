@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs';
@@ -7,6 +8,11 @@ import { createServer } from 'http';
 import { createServer as createHttpsServer } from 'https';
 import { Server } from 'socket.io';
 import logger from './logger.js';
+import { auth } from './auth/index.js';
+import { toNodeHandler } from 'better-auth/node';
+import sessionsRoutes from './routes/sessions.js';
+import migrateRoutes from './routes/migrate.js';
+import { optionalAuthSocket } from './auth/middleware.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -99,6 +105,16 @@ app.use(cors({
 // Parse JSON bodies
 app.use(express.json({ limit: '10mb' }));
 
+// Parse cookies for authentication
+app.use(cookieParser());
+
+// Authentication routes (BetterAuth) - must come before other routes
+app.use('/api/auth', toNodeHandler(auth));
+
+// API routes with authentication
+app.use('/api/sessions', sessionsRoutes);
+app.use('/api/migrate', migrateRoutes);
+
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response): void => {
   res.json({ 
@@ -122,9 +138,52 @@ if (!fs.existsSync(sessionsDir)) {
   fs.mkdirSync(sessionsDir);
 }
 
+// Helper function to check session access
+async function checkSessionAccess(sessionId: string, userId: string, minAccessLevel: 'viewer' | 'editor' = 'viewer'): Promise<boolean> {
+  try {
+    const { db } = await import('./db/index.js');
+    const { sessions, sessionPermissions } = await import('./db/schema/index.js');
+    const { eq, and } = await import('drizzle-orm');
+    
+    // Check if user owns the session
+    const session = await db.select().from(sessions).where(eq(sessions.id, sessionId)).limit(1);
+    if (session.length > 0 && session[0].userId === userId) {
+      return true; // Owner has full access
+    }
+    
+    // Check if session permissions exist for user
+    const permission = await db.select().from(sessionPermissions)
+      .where(and(
+        eq(sessionPermissions.sessionId, sessionId),
+        eq(sessionPermissions.userId, userId)
+      ))
+      .limit(1);
+    
+    if (permission.length > 0) {
+      const accessLevel = permission[0].accessLevel;
+      if (minAccessLevel === 'viewer') {
+        return accessLevel === 'viewer' || accessLevel === 'editor' || accessLevel === 'owner';
+      }
+      return accessLevel === 'editor' || accessLevel === 'owner';
+    }
+    
+    return false;
+  } catch (error) {
+    logger.error('Error checking session access:', error);
+    return false;
+  }
+}
+
 // WebSocket connection handling
+io.use(optionalAuthSocket);
+
 io.on('connection', (socket) => {
   logger.debug('User connected:', socket.id);
+  
+  // Log if user is authenticated
+  if ((socket as any).user) {
+    logger.debug(`Authenticated user: ${(socket as any).user.email}`);
+  }
 
   // Handle joining a session room
   socket.on('join-session', (sessionId: string) => {
@@ -134,6 +193,7 @@ io.on('connection', (socket) => {
     // Notify others in the room that a new user joined
     socket.to(sessionId).emit('user-joined', {
       userId: socket.id,
+      user: (socket as any).user,
       message: `User ${socket.id} joined the session`
     });
     
@@ -157,8 +217,21 @@ io.on('connection', (socket) => {
   });
 
   // Handle state changes (real-time synchronization)
-  socket.on('state-change', (data: { sessionId: string; state: unknown; fromUser: string }) => {
+  socket.on('state-change', async (data: { sessionId: string; state: unknown; fromUser: string }) => {
     logger.debug(`State change from user ${data.fromUser} in session ${data.sessionId}`);
+    
+    // Check if user has permission to edit this session
+    const user = (socket as any).user;
+    if (user) {
+      // For authenticated users, verify they have edit access
+      const hasAccess = await checkSessionAccess(data.sessionId, user.id, 'editor');
+      if (!hasAccess) {
+        logger.warn(`User ${user.email} attempted to modify session ${data.sessionId} without permission`);
+        socket.emit('error', { message: 'You do not have permission to edit this session' });
+        return;
+      }
+    }
+    // Anonymous users can always edit their own sessions (no ownership yet)
     
     // Save the state change to the session file automatically
     const saved = saveSessionToFile(data.sessionId, data.state, 'WebSocket');
@@ -193,12 +266,12 @@ interface Session {
   state: SessionState;
 }
 
-// Helper function to get session file path
+// Helper function to get session file path (for legacy file-based sessions)
 const getSessionFilePath = (id: string): string => {
   return join(sessionsDir, `${id}.json`);
 };
 
-// Helper function to save session (used by both WebSocket and API)
+// Helper function to save session (used by both WebSocket and API for legacy support)
 const saveSessionToFile = (sessionId: string, sessionState: SessionState | unknown, source: string = 'API'): boolean => {
   try {
     // Ensure sessionState is treated as SessionState
@@ -215,7 +288,7 @@ const saveSessionToFile = (sessionId: string, sessionState: SessionState | unkno
       state: state
     };
     
-    // Save to file
+    // Save to file (legacy support)
     const filePath = getSessionFilePath(sessionId);
     fs.writeFileSync(filePath, JSON.stringify(session, null, 2));
     logger.info(`Session saved via ${source}: ${sessionId} at ${new Date(state.timestamp).toLocaleString()}`);
@@ -227,8 +300,9 @@ const saveSessionToFile = (sessionId: string, sessionState: SessionState | unkno
   }
 };
 
-// Route to save a session
-app.post('/api/sessions', (req: Request, res: Response): void => {
+// Legacy API endpoint - kept for backward compatibility
+// New sessions should use the authenticated /api/sessions routes
+app.post('/api/legacy/sessions', (req: Request, res: Response): void => {
   const { id, state }: { id: string; state: SessionState } = req.body;
   
   if (!id || !state) {
@@ -237,7 +311,7 @@ app.post('/api/sessions', (req: Request, res: Response): void => {
   }
   
   // Save using the helper function
-  const saved = saveSessionToFile(id, state, 'API');
+  const saved = saveSessionToFile(id, state, 'Legacy API');
   
   if (saved) {
     res.json({ id, timestamp: state.timestamp || new Date().toISOString() });
@@ -246,8 +320,8 @@ app.post('/api/sessions', (req: Request, res: Response): void => {
   }
 });
 
-// Route to get a session
-app.get('/api/sessions/:id', (req: Request, res: Response): void => {
+// Legacy API endpoint - kept for backward compatibility
+app.get('/api/legacy/sessions/:id', (req: Request, res: Response): void => {
   const { id } = req.params;
   
   try {
@@ -260,66 +334,11 @@ app.get('/api/sessions/:id', (req: Request, res: Response): void => {
     const data = fs.readFileSync(filePath, 'utf8');
     const session = JSON.parse(data);
     
-    logger.debug(`Session loaded: ${id}`);
+    logger.debug(`Legacy session loaded: ${id}`);
     res.json(session);
   } catch (error) {
-    logger.error(`Error loading session ${id}:`, error);
+    logger.error(`Error loading legacy session ${id}:`, error);
     res.status(500).json({ error: 'Failed to load session' });
-  }
-});
-
-// Route to list all sessions
-// TODO - Make this endpoint private (SECURITY)
-app.get('/api/sessions', (_req: Request, res: Response): void => {
-  try {
-    const sessionsList: Array<{ id: string; timestamp: string }> = [];
-    const files = fs.readdirSync(sessionsDir);
-    
-    for (const file of files) {
-      if (file.endsWith('.json')) {
-        const id = file.replace('.json', '');
-        const filePath = getSessionFilePath(id);
-        
-        try {
-          const data = fs.readFileSync(filePath, 'utf8');
-          const session = JSON.parse(data);
-          sessionsList.push({
-            id: session.id,
-            timestamp: session.timestamp
-          });
-        } catch (error) {
-          logger.error(`Error reading session file ${file}:`, error);
-        }
-      }
-    }
-    
-    // Sort by timestamp (newest first)
-    sessionsList.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    
-    res.json(sessionsList);
-  } catch (error) {
-    logger.error('Error listing sessions:', error);
-    res.status(500).json({ error: 'Failed to list sessions' });
-  }
-});
-
-// Route to delete a session
-app.delete('/api/sessions/:id', (req: Request, res: Response): void => {
-  const { id } = req.params;
-  
-  try {
-    const filePath = getSessionFilePath(id);
-    if (!fs.existsSync(filePath)) {
-      res.status(404).json({ error: 'Session not found' });
-      return;
-    }
-    
-    fs.unlinkSync(filePath);
-    logger.info(`Session deleted: ${id}`);
-    res.json({ success: true });
-  } catch (error) {
-    logger.error(`Error deleting session ${id}:`, error);
-    res.status(500).json({ error: 'Failed to delete session' });
   }
 });
 

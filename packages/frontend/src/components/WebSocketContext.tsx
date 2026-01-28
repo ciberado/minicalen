@@ -66,7 +66,8 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       upgrade: true, // Allow transport upgrade from polling to websocket
-      rememberUpgrade: false // Don't remember the upgrade for more reliable connections
+      rememberUpgrade: false, // Don't remember the upgrade for more reliable connections
+      withCredentials: true // Send cookies for authentication
     });
     
     newSocket.on('connect', () => {
