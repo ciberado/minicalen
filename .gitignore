@@ -31,3 +31,6 @@ packages/server/data/sessions/*.json
 *.db
 *.sqlite
 *.sqlite3
+
+# Playwright MCP output
+.playwright-mcp/
