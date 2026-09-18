@@ -43,47 +43,79 @@ router.get('/', requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-// POST /api/sessions - Create new session
+// POST /api/sessions - Create or update session (upsert)
 router.post('/', optionalAuth, async (req: AuthRequest, res) => {
   try {
-    const sessionId = uuidv4();
     const userId = req.user?.id;
-    const { name } = req.body;
+    const { id, name, state } = req.body;
+    
+    // Use provided ID or generate new one
+    const sessionId = id || uuidv4();
+    
+    // Use provided state or create empty state
+    const sessionState = state || {
+      foregroundCategories: [],
+      dateInfoMap: [],
+      timestamp: new Date().toISOString(),
+    };
 
-    const newSession = await db
-      .insert(sessions)
-      .values({
-        id: sessionId,
-        userId: userId || null,
-        isAnonymous: !userId,
-        name: name || 'Untitled Calendar',
-        state: JSON.stringify({
-          foregroundCategories: [],
-          dateInfoMap: [],
-          timestamp: new Date().toISOString(),
-        }),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastAccessedAt: new Date(),
-      })
-      .returning();
+    // Check if session already exists
+    const [existingSession] = await db
+      .select()
+      .from(sessions)
+      .where(eq(sessions.id, sessionId));
 
-    // If user is authenticated, create owner permission
-    if (userId) {
-      await db.insert(sessionPermissions).values({
-        id: uuidv4(),
-        sessionId,
-        userId,
-        accessLevel: 'owner',
-        grantedAt: new Date(),
-        grantedBy: userId,
-      });
+    let resultSession;
+
+    if (existingSession) {
+      // Update existing session
+      logger.info(`Updating existing session: ${sessionId}`);
+      const [updatedSession] = await db
+        .update(sessions)
+        .set({
+          state: JSON.stringify(sessionState),
+          updatedAt: new Date(),
+          lastAccessedAt: new Date(),
+          ...(name && { name }),
+        })
+        .where(eq(sessions.id, sessionId))
+        .returning();
+      resultSession = updatedSession;
+    } else {
+      // Create new session
+      logger.info(`Creating new session: ${sessionId}`);
+      const [newSession] = await db
+        .insert(sessions)
+        .values({
+          id: sessionId,
+          userId: userId || null,
+          isAnonymous: !userId,
+          name: name || 'Untitled Calendar',
+          state: JSON.stringify(sessionState),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastAccessedAt: new Date(),
+        })
+        .returning();
+      resultSession = newSession;
+
+      // If user is authenticated, create owner permission for new sessions
+      if (userId) {
+        await db.insert(sessionPermissions).values({
+          id: uuidv4(),
+          sessionId,
+          userId,
+          accessLevel: 'owner',
+          grantedAt: new Date(),
+          grantedBy: userId,
+        });
+      }
     }
 
-    res.json({ session: newSession[0] });
+    res.json({ session: resultSession });
   } catch (error) {
-    logger.error('Error creating session:', error);
-    res.status(500).json({ error: 'Failed to create session' });
+    logger.error('Error saving session:', error);
+    res.status(500).json({ error: 'Failed to save session' });
   }
 });
 

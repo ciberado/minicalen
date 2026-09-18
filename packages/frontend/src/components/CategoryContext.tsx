@@ -102,6 +102,13 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
   // This is a ref (not state) to avoid React batching issues and provide synchronous access
   const isRemoteUpdateRef = useRef(false);
   
+  // Ref to track pending remote updates - stays true until after React's batch rendering
+  // This is more reliable than version counters because it uses requestAnimationFrame
+  const pendingRemoteUpdateRef = useRef(false);
+  
+  // Track the previous foreground categories to detect actual color changes (not just loads)
+  const prevForegroundCategoriesRef = useRef<Category[] | null>(null);
+  
   // Initial category data
   const [foregroundCategories, setForegroundCategoriesInternal] = useState<Category[]>([
     { id: '1', label: 'Important', color: '#F44336', active: true, visible: true, selected: true },
@@ -152,6 +159,10 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
   const applyRemoteState = useCallback((state: RemoteCategoryState) => {
     console.log('CategoryContext: Applying remote state atomically');
     
+    // Set the pending remote update flag - this will prevent the useEffect from processing
+    // We use requestAnimationFrame to reset it after React's batch rendering completes
+    pendingRemoteUpdateRef.current = true;
+    
     // Set the remote update flag BEFORE any state changes
     isRemoteUpdateRef.current = true;
     
@@ -184,42 +195,70 @@ export const CategoryProvider = ({ children }: { children: ReactNode }) => {
     
     console.log('CategoryContext: Setting new dateInfoMap with', newDateInfoMap.size, 'entries');
     
-    // Force a complete re-render by ensuring state changes are detected
-    // Set to empty first, then set to the new data (ensures React detects the change)
-    setDateInfoMap(new Map());
-    setSelectedDates(new Map());
+    // Directly set the new maps - React will detect the change since they are new Map instances
+    setDateInfoMap(newDateInfoMap);
+    setSelectedDates(newSelectedDates);
+    console.log('CategoryContext: dateInfoMap and selectedDates set');
     
-    // Use setTimeout to ensure the empty state is applied first
-    setTimeout(() => {
-      setDateInfoMap(newDateInfoMap);
-      setSelectedDates(newSelectedDates);
-      console.log('CategoryContext: dateInfoMap and selectedDates set after timeout');
-    }, 0);
+    // Reset the remote update flag immediately
+    isRemoteUpdateRef.current = false;
     
-    // Reset the flag after React has processed all updates
-    // Using queueMicrotask ensures this runs after React's synchronous updates
-    // but before any effects that might trigger broadcasts
-    queueMicrotask(() => {
-      // Double-check with another microtask to ensure all React batched updates are done
-      queueMicrotask(() => {
-        console.log('CategoryContext: Remote state applied, resetting flag');
-        isRemoteUpdateRef.current = false;
-      });
+    // Reset the pending flag after React's batch rendering using requestAnimationFrame
+    // This ensures the useEffect that runs due to these state changes will be skipped
+    requestAnimationFrame(() => {
+      pendingRemoteUpdateRef.current = false;
+      console.log('CategoryContext: pendingRemoteUpdate flag reset after frame');
     });
   }, []);
 
-  // Update selectedDates when categories change to reflect new colors
+  // Update selectedDates when category COLORS change (not when loaded from remote)
   useEffect(() => {
-    // Skip this effect during remote updates - remote state is already complete
-    if (isRemoteUpdateRef.current) {
-      console.log('Skipping category color sync during remote update');
+    console.log('CategoryContext useEffect triggered - pendingRemoteUpdate:', pendingRemoteUpdateRef.current);
+    
+    // Skip this effect if we're in a pending remote update
+    // The pendingRemoteUpdateRef stays true until after React's batch rendering completes
+    if (pendingRemoteUpdateRef.current) {
+      console.log('Skipping category color sync - remote update in progress');
+      // Update the ref so next time we can compare properly
+      prevForegroundCategoriesRef.current = foregroundCategories;
       return;
     }
     
     // Only update if we have dates to update
-    if (dateInfoMap.size === 0) return;
+    if (dateInfoMap.size === 0) {
+      prevForegroundCategoriesRef.current = foregroundCategories;
+      return;
+    }
     
-    console.log('Categories changed, updating dates');
+    // Check if any category colors actually changed (not just being set for the first time)
+    const prevCategories = prevForegroundCategoriesRef.current;
+    if (!prevCategories) {
+      // First render, just store the categories and skip
+      console.log('First render, skipping color sync');
+      prevForegroundCategoriesRef.current = foregroundCategories;
+      return;
+    }
+    
+    // Check if any category color has actually changed
+    let hasColorChange = false;
+    for (const category of foregroundCategories) {
+      const prevCategory = prevCategories.find(c => c.id === category.id);
+      if (prevCategory && prevCategory.color !== category.color) {
+        hasColorChange = true;
+        console.log(`Category ${category.id} color changed from ${prevCategory.color} to ${category.color}`);
+        break;
+      }
+    }
+    
+    // Update the ref for next comparison
+    prevForegroundCategoriesRef.current = foregroundCategories;
+    
+    if (!hasColorChange) {
+      console.log('No color changes detected, skipping sync');
+      return;
+    }
+    
+    console.log('Category colors changed, updating dates');
     console.log('Current dateInfoMap:', Array.from(dateInfoMap.entries()));
     console.log('Current foreground categories:', foregroundCategories);
     

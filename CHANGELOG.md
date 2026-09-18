@@ -5,6 +5,26 @@ All notable changes to MiniCalen will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-01-31
+
+### Fixed
+- **Real-Time Sync**: Improved remote state synchronization in CategoryContext
+  - Added pending remote update flag to prevent race conditions during batch rendering
+  - Use `requestAnimationFrame` for more reliable timing after React's batch updates
+  - Track previous foreground categories to detect actual color changes vs. initial loads
+  - Simplified state update logic by removing unnecessary setTimeout workarounds
+
+- **Session API**: Enhanced session creation with upsert functionality
+  - POST endpoint now supports both creating new sessions and updating existing ones
+  - Accept optional `id` and `state` parameters for session upsert operations
+  - Improved logging for session creation vs. update operations
+
+- **Code Quality**: Fixed TypeScript linter errors
+  - Removed unused `setForegroundCategories` and `setTextCategories` destructuring in SessionContext
+
+### Changed
+- **Server Dockerfile**: Improved build configuration and layer caching
+
 ## [1.5.0] - 2026-01-28
 
 ### Added

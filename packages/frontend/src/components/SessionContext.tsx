@@ -6,6 +6,9 @@ import { getApiUrl } from '../config/api';
 import { Category } from './Categories';
 import { TextCategory } from './CategoryContext';
 
+// LocalStorage key for anonymous session persistence
+const LOCAL_STORAGE_KEY = 'minicalen-anonymous-session';
+
 // Session state interface uses DateInfoEntry from CategoryContext
 
 interface SessionState {
@@ -44,14 +47,13 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     foregroundCategories, 
     textCategories,
     dateInfoMap,
-    setForegroundCategories,
-    setTextCategories,
     applyRemoteState,
     isRemoteUpdate
   } = useCategories();
   const { joinSession, isConnected, broadcastStateChange, onStateUpdate, offStateUpdate } = useWebSocket();
 
   // Check for session ID in the URL hash when the component mounts
+  // If no hash, try to restore from localStorage
   useEffect(() => {
     console.log('SessionContext: useEffect for hash detection running');
     const hash = window.location.hash.substring(1);
@@ -60,7 +62,27 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       console.log('SessionContext: Calling loadSession with hash:', hash);
       loadSession(hash);
     } else {
-      console.log('SessionContext: No hash found or empty hash');
+      console.log('SessionContext: No hash found, checking localStorage for anonymous session');
+      // Try to restore from localStorage for anonymous sessions
+      try {
+        const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (savedData) {
+          const parsedData = JSON.parse(savedData);
+          console.log('SessionContext: Found anonymous session in localStorage:', parsedData);
+          // Apply the saved state
+          const restoredState: RemoteCategoryState = {
+            foregroundCategories: parsedData.foregroundCategories,
+            textCategories: parsedData.textCategories || [],
+            dateInfoMap: parsedData.dateInfoMap || []
+          };
+          applyRemoteState(restoredState);
+          console.log('SessionContext: Anonymous session restored from localStorage');
+        } else {
+          console.log('SessionContext: No anonymous session found in localStorage');
+        }
+      } catch (error) {
+        console.error('SessionContext: Failed to restore from localStorage:', error);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -217,7 +239,20 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const data = await response.json();
-      const sessionData = data.state;
+      // The API returns { session: { id, name, state, ... } } where state may be a JSON string
+      let sessionData = data.session?.state;
+      
+      // Parse state if it's a string (stored as JSON string in database)
+      if (typeof sessionData === 'string') {
+        try {
+          sessionData = JSON.parse(sessionData);
+        } catch (e) {
+          console.error('Failed to parse session state:', e);
+          setIsLoading(false);
+          return false;
+        }
+      }
+      
       console.log('SessionContext: Session data loaded:', sessionData);
       
       if (!sessionData) {
@@ -236,24 +271,15 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         joinSession(id);
       }
       
-      // Restore categories
-      setForegroundCategories(sessionData.foregroundCategories);
-      
-      // Restore text categories (preserve defaults for older sessions without text categories)
-      if (sessionData.textCategories && sessionData.textCategories.length > 0) {
-        setTextCategories(sessionData.textCategories);
-      }
-      // If no text categories in saved session, keep current defaults for transparency
-      
-      // Restore date info - restore complete dateInfoMap including text categories
-      const dateInfoEntries = sessionData.dateInfoMap;
-      
-      // Apply the complete state including date info using applyRemoteState
-      // This ensures text categories are properly restored
+      // Apply the complete state atomically using applyRemoteState
+      // This sets pendingRemoteUpdateRef BEFORE any state changes, preventing
+      // the useEffect in CategoryContext from running its sync logic
+      // NOTE: Do NOT call setForegroundCategories/setTextCategories separately before this,
+      // as that would trigger the useEffect before the pending flag is set
       const completeState = {
         foregroundCategories: sessionData.foregroundCategories,
         textCategories: sessionData.textCategories || textCategories,
-        dateInfoMap: dateInfoEntries
+        dateInfoMap: sessionData.dateInfoMap
       };
       
       console.log('SessionContext: Calling applyRemoteState with state:', completeState);
@@ -406,6 +432,40 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
   // Only broadcast state changes when manually saving (not on every state change)
   // This prevents performance issues and infinite loops
+
+  // Auto-save to localStorage for anonymous sessions (no sessionId)
+  // This ensures F5 refresh preserves calendar data
+  useEffect(() => {
+    // Skip if applying remote state
+    if (isRemoteUpdate()) {
+      console.log('LocalStorage save: Skipping - remote update in progress');
+      return;
+    }
+    
+    // Only auto-save when there's no explicit session (anonymous mode)
+    // Also check for URL hash - if present, we're loading a session and shouldn't save
+    const hash = window.location.hash.replace('#', '');
+    if (!sessionId && !hash) {
+      const stateToSave = {
+        foregroundCategories,
+        textCategories,
+        dateInfoMap: Array.from(dateInfoMap.entries()),
+        timestamp: new Date().toISOString()
+      };
+      
+      // Debounce localStorage writes
+      const timeoutId = setTimeout(() => {
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
+          console.log('SessionContext: Anonymous session auto-saved to localStorage');
+        } catch (error) {
+          console.error('SessionContext: Failed to save to localStorage:', error);
+        }
+      }, 300);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [foregroundCategories, textCategories, dateInfoMap, sessionId, isRemoteUpdate]);
 
   return (
     <SessionContext.Provider

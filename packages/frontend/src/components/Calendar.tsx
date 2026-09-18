@@ -6,6 +6,7 @@ import interactionPlugin from '@fullcalendar/interaction'; // Import the interac
 import './Calendar.css'; // Import custom calendar styles
 import './noBorders.css'; // Import border removal styles
 import { useCategories } from './CategoryContext'; // Import our context
+import { useSession } from './SessionContext'; // Import session context for calendar key
 
 // Utility function to convert hex color to RGB values
 const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
@@ -25,6 +26,9 @@ const Calendar = ({}: CalendarProps) => {
   const calendarRef = useRef<FullCalendar>(null);
   const [monthCount] = useState(12); // Always 12 months
   const [aspectRatio, setAspectRatio] = useState(1.5); // Starting aspect ratio
+  
+  // Get session context to use sessionId as calendar key for forced re-renders on session load
+  const { sessionId, timestamp: sessionTimestamp } = useSession();
   
   // Get the categories context
   const { 
@@ -485,7 +489,7 @@ const Calendar = ({}: CalendarProps) => {
       },
     }}>
       <FullCalendar
-        key="calendar" 
+        key={`calendar-${sessionId || 'new'}-${sessionTimestamp || 'init'}`}
         ref={calendarRef}
         plugins={[multiMonthPlugin, interactionPlugin]}
         initialView="multiMonth"

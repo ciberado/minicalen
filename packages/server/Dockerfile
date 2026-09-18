@@ -40,10 +40,12 @@ RUN adduser --system --uid 1001 minicalen
 RUN mkdir -p /app/data/sessions /app/logs \
     && chown -R minicalen:minicalen /app
 
-# Copy package.json for production dependencies
+# Copy production dependencies from deps stage
+COPY --from=deps --chown=minicalen:minicalen /app/node_modules ./node_modules
+COPY --from=deps --chown=minicalen:minicalen /app/packages/server/node_modules ./node_modules
+
+# Copy package files
 COPY --from=deps /app/packages/server/package.json ./
-# Install only production dependencies
-RUN npm install --only=production && npm cache clean --force
 
 # Copy the built application
 COPY --from=builder --chown=minicalen:minicalen /app/packages/server/dist ./dist
