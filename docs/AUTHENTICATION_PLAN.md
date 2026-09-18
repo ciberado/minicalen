@@ -1,8 +1,16 @@
 # MiniCalen Authentication Implementation Plan
 
-**Status**: 🟡 In Progress  
+**Status**: ✅ Core implementation shipped in v1.5.0 (branch `feat/lists`); this document
+is retained as a historical design record.  
 **Started**: January 28, 2026  
-**Target**: [TBD]
+**Target**: v1.5.0 (released on `feat/lists`; not yet merged to `main`)
+
+> **Reality check:** the shipped implementation diverges from parts of this plan. It uses
+> `POST /api/sessions/:id/share` (by email) rather than the collaborators endpoints
+> described below, stores calendar state as a JSON blob on `sessions.state` rather than in
+> the `categories`/`date_info` tables, and leaves several planned items (public access
+> toggle, rename UI, `AccessBanner`, permission-changed socket events, automated tests)
+> unimplemented. See `AGENTS.md` section 7 for the authoritative list of gaps.
 
 ## Overview
 
@@ -10,12 +18,12 @@ Adding user authentication to MiniCalen with SQLite + Drizzle ORM + BetterAuth. 
 
 ### Core Objectives
 - [x] Define authentication architecture
-- [ ] Database setup with Drizzle ORM
-- [ ] BetterAuth integration
-- [ ] Backend API routes
-- [ ] Frontend authentication UI
-- [ ] Real-time permission system
-- [ ] Testing and deployment
+- [x] Database setup with Drizzle ORM
+- [x] BetterAuth integration
+- [x] Backend API routes (core CRUD + share + claim)
+- [x] Frontend authentication UI
+- [~] Real-time permission system (edit check only; no permission-change events)
+- [ ] Testing and deployment (manual `curl` verification only)
 
 ---
 

@@ -1,198 +1,119 @@
 # MiniCalen AI Coding Instructions
 
+> **Canonical guide: [`AGENTS.md`](../AGENTS.md) at the repository root.**
+> This file is kept for tool compatibility. When the two disagree, `AGENTS.md` wins.
+> This document was previously stale (it described file-based storage as primary and
+> omitted authentication); it has been corrected as of v1.5.1.
+
 ## Project Architecture
 
-MiniCalen is a **real-time collaborative calendar application** built as an npm workspace monorepo with React frontend and Node.js backend, featuring WebSocket-based live synchronization.
+MiniCalen is a **real-time collaborative year-view calendar** built as an npm workspace
+monorepo:
 
-### Workspace Structure
-
-- `packages/frontend/` - React 18 + TypeScript + Vite + Material-UI application
-- `packages/server/` - Express.js + Socket.IO backend with file-based session storage
+- `packages/frontend/` — React 18 + TypeScript + Vite + Material-UI v7 + FullCalendar v6
+- `packages/server/` — Express 5 + Socket.IO + Better-Auth + Drizzle ORM + SQLite
 - Root workspace manages both packages via npm workspaces
+
+Sessions are stored in **SQLite** (`packages/server/data/minicalen.db`) as a JSON `state`
+blob on the `sessions` table, with ownership and sharing in `session_permissions`.
+Legacy JSON files in `data/sessions/` are still written by the WebSocket path and can be
+migrated via `/api/migrate/legacy-sessions`.
 
 ## Development Workflow
 
-### Development Workflows
-
-**Starting Services**:
 ```bash
-npm run dev:all      # Start both frontend and backend concurrently
-npm run dev:server   # Backend only (port 3001) 
-npm run dev          # Frontend only (port 5173)
+npm install
+npm run dev:all      # frontend (5173) + server (3001)
+npm run dev          # frontend only
+npm run dev:server   # server only
+npm run lint         # eslint both packages (max-warnings 0)
+npm run build        # tsc + vite (frontend), tsc (server)
+npm run type-check --workspace=@minicalen/frontend
+npm run type-check --workspace=@minicalen/server
 ```
 
-**Package-Specific Operations**:
-```bash
-# Workspace-scoped commands
-npm install --workspace=@minicalen/frontend <package>
-npm run lint --workspace=@minicalen/server
-npm run build --workspace=@minicalen/frontend
+Database (from the server workspace):
 
-# Available VS Code tasks (use run_task tool):
-# - "Start All Services" - Equivalent to npm run dev:all
-# - "Start Development Server" - Frontend only
-# - "Start Backend Server" - Backend only
+```bash
+npm run db:generate --workspace=@minicalen/server
+npm run db:migrate  --workspace=@minicalen/server
+npm run db:push     --workspace=@minicalen/server
+npm run db:studio   --workspace=@minicalen/server
 ```
 
-**Docker Deployment**:
-- Local images: `npm run build:frontend:docker` / `npm run build:server:docker`
-- Production: Use pre-built `ciberado/minicalen-frontend` and `ciberado/minicalen-server`
-- Persistence: `/app/data` (sessions) and `/app/logs` volumes in server container
+There is **no automated test suite**.
 
 ## Core Patterns
 
-### Context-Based State Management
-The frontend uses **nested React Context providers** for global state:
+### Provider nesting (`packages/frontend/src/App.tsx`)
+
 ```tsx
-<WebSocketProvider>
-  <CategoryProvider>
-    <SessionProvider>
-      <Layout/>
+<AuthProvider>          // Better-Auth session (useSession)
+  <WebSocketProvider>   // socket.io-client
+    <CategoryProvider>  // foregroundCategories, textCategories, dateInfoMap
+      <SessionProvider> // URL hash, localStorage, REST save/load, WS broadcast
+        <Layout />
+        <AuthDialog />
 ```
 
-**Key contexts:**
-- `WebSocketContext` - Real-time communication and session management
-- `CategoryProvider` - Calendar categories with color coding (foreground/background/tag types)
-- `SessionContext` - Session persistence and state management
+- `CategoryContext` is the source of truth for calendar state.
+- `SessionContext` persists state to `/api/sessions` (upsert) and broadcasts over
+  Socket.IO after a ~500 ms debounce.
+- Remote updates are applied via `applyRemoteState()` using refs
+  (`pendingRemoteUpdateRef`, `isRemoteUpdateRef`) to suppress re-broadcast. This is
+  fragile — see `BUG-INVESTIGATION.md`.
 
-### Real-Time Synchronization Architecture
+### Session state shape
 
-- Backend (server): Express.js server with Socket.IO for WebSocket connections
-- Frontend: Socket.IO client integrated via React Context
-- **State broadcasting pattern**: Local state changes trigger WebSocket events to sync across clients
-- **Dual persistence**: Changes saved via both API calls and WebSocket state-change events
-
-### Session Management
-
-- **File-based storage**: Sessions saved as JSON files in `packages/server/data/sessions/`
-- **UUID-based session IDs**: Each session gets a unique identifier
-- **Automatic persistence**: State changes auto-saved via WebSocket `state-change` events
-- **API endpoints**: `/api/sessions` for CRUD operations
-
-### Category System
-
-**Architecture**: Three category types with distinct behaviors:
-
-- **Foreground**: Primary calendar categories with colors (`#F44336`, `#2196F3`, etc.)
-- **Date-to-Category Mapping**: `dateInfoMap` stores date strings mapped to `{color, categoryId}` objects
-- **Real-time Sync**: Category changes automatically update associated dates via React `useEffect`
-
-**Key Implementation**: Categories are managed in `CategoryContext.tsx` with nested state:
-```tsx
-// Date info structure
-interface DateInfo {
-  color: string;
-  categoryId: string; // Links date to specific category
-}
-```
-
-## Configuration Patterns
-
-### Environment-Aware CORS
-
-Backend dynamically configures CORS based on environment:
-- Development: Auto-includes localhost ports (5173, 3000)
-- Production: Uses `ALLOWED_ORIGINS` or `MINICALEN_HOST` environment variables
-- See `getAllowedOrigins()` function in `packages/server/src/index.ts`
-
-### API Configuration
-
-Frontend uses environment-aware API configuration:
-- Development: Defaults to `http://localhost:3001`
-- Production: Uses `VITE_API_URL`/`VITE_WS_URL` or derives from current host
-- See `packages/frontend/src/config/api.ts`
-
-### Deployment with Caddy
-
-- **Reverse proxy setup**: Caddy handles SSL termination and routing
-- **WebSocket support**: Special handling for `/socket.io/*` paths
-- **Environment variables**: `MINICALEN_HOST`, `MINICALEN_BACKEND`, `MINICALEN_FRONTEND`
-- Configuration in `packages/server/Caddyfile`
-
-## Development Guidelines
-
-### File Structure Conventions
-
-- Context files end with `Context.tsx` and export both context and provider
-- Component files use PascalCase and include corresponding `.css` files where needed
-- Server uses single `index.ts` file with clear separation of concerns (WebSocket, API, file operations)
-
-### Context Provider Architecture
-
-**Strict Nesting Order** (from `App.tsx`):
-```tsx
-<WebSocketProvider>      // Outermost: Socket.IO connection management
-  <CategoryProvider>     // Middle: Calendar categories and date associations
-    <SessionProvider>    // Innermost: Session persistence and URL routing
-      <Layout/>
-    </SessionProvider>
-  </CategoryProvider>
-</WebSocketProvider>
-```
-
-**Context Dependencies**: Each inner context can use outer contexts via hooks:
-- `SessionProvider` uses `useCategories()` and `useWebSocket()`
-- `CategoryProvider` has no dependencies (pure state management)
-
-### State Update Pattern
-
-When modifying calendar state:
-
-1. **Local Update**: Update local React state in appropriate context
-2. **WebSocket Broadcast**: Call `broadcastStateChange(sessionId, state)` from WebSocketContext
-3. **Auto-Save**: Backend receives `state-change` event and auto-saves to JSON file
-4. **Sync Others**: Other clients receive `state-update` event and apply changes
-
-**Critical Data Flow**: State changes trigger dual persistence:
-- HTTP API calls for explicit saves (`POST /api/sessions`)
-- WebSocket `state-change` events for real-time sync and auto-save
-
-**State Structure**: All contexts serialize state as:
-```tsx
+```ts
 interface SessionState {
-  foregroundCategories: Category[];
-  dateInfoMap: [string, DateInfoEntry][]; // Serialized as array of tuples
-  timestamp: string; // ISO timestamp
+  foregroundCategories: Category[];        // { id, label, color, active, visible, selected }
+  textCategories: TextCategory[];          // { id, label, color, active, visible, selected }
+  dateInfoMap: [string, DateInfoEntry][];  // "YYYY-MM-DD" -> { color, categoryId, textCategoryIds? }
+  timestamp: string;                       // ISO
 }
 ```
 
-### Error Handling
+### Real-time flow
 
-- Server includes comprehensive environment validation (SSL certificates, CORS configuration)
-- Frontend includes connection fallbacks (WebSocket → polling)
-- File operations include proper error handling and logging
+1. Local state change in `CategoryContext`.
+2. `SessionContext` detects it and emits `state-change` over Socket.IO.
+3. Server validates permission (authenticated users only) and persists; the WebSocket
+   path currently writes a legacy JSON file.
+4. Server emits `state-update` to the room (excluding sender).
+5. Receiving clients apply it via `applyRemoteState()`.
 
-### Security Considerations
+### Authentication
 
-- Sessions API endpoint `/api/sessions` marked for privacy enhancement (TODO comment)
-- CORS origins strictly controlled in production
-- SSL/HTTPS support with certificate validation
+- Better-Auth email/password, 30-day sessions, cookie prefix `minicalen`.
+- Express middleware `requireAuth` / `optionalAuth`; Socket.IO `optionalAuthSocket`.
+- Permission levels: `owner` (all), `editor` (read/write), `viewer` (read).
+- Anonymous sessions are first-class and can later be claimed by a signed-in user.
 
-## Common Debugging
+## Configuration
 
-- Enable API debugging with `debugApiConfig()` in development
-- WebSocket connection logging on both client and server
-- Session file storage visible in `packages/server/data/sessions/`
-- Health check endpoint at `/health` provides environment status
+- Frontend: `VITE_API_URL`, `VITE_WS_URL` (`packages/frontend/.env`).
+- Server: `PORT`, `NODE_ENV`, `BETTER_AUTH_SECRET` (required, ≥32 chars),
+  `ALLOWED_ORIGINS`, `MINICALEN_HOST`, `USE_HTTPS`, `SSL_KEY_PATH`, `SSL_CERT_PATH`.
+- CORS is environment-aware in `getAllowedOrigins()` (`packages/server/src/index.ts`).
+- Runtime API/WS URLs are resolved in `packages/frontend/src/config/api.ts`.
 
-## Backend Implementation Notes
+## Deployment
 
-### WebSocket Event Flow
+- Docker Compose: `ciberado/minicalen-frontend` + `ciberado/minicalen-server`.
+- Root `Caddyfile` handles reverse proxy/TLS (WebSocket path `/socket.io/*`).
+- Pushing a tag matching `*-RELEASE` triggers `.github/workflows/docker-release.yml`,
+  which builds multi-arch images and pushes to Docker Hub.
 
-- Client joins session → `socket.join(sessionId)` creates Socket.IO room
-- State changes → `state-change` event triggers auto-save and broadcasts to room
-- Real-time sync → `state-update` events sent to all clients except sender
-- File persistence → JSON files in `data/sessions/` with UUID filenames
+## Agent shortcuts
 
-### CORS & Environment Configuration  
+- **"patch bump"** → run `npm run build`, fix errors, increment the patch version of all
+  `package.json` files (root, frontend, server), update `CHANGELOG.md`, commit and tag.
+- **"release"** → create and push a tag ending in `-RELEASE`
+  (e.g. `v1.5.1-RELEASE`) to trigger the Docker image pipeline.
 
-- **Development**: Auto-includes `localhost:5173` and `localhost:3000`
-- **Production**: Requires `ALLOWED_ORIGINS` or `MINICALEN_HOST` environment variables
-- **Caddy Proxy**: Special WebSocket routing for `/socket.io/*` paths
-- **SSL Support**: Optional HTTPS with certificate validation (`USE_HTTPS=true`)
+## Important caveats
 
-### Shortcuts & Utilities
-
-When you read "patch bump", run `npm build`, fix possible errors, increase the version number of all project packages by one patch level (e.g., 1.0.0 → 1.0.1) without changing major or minor versions, update CHANGELOG.md files accordingly, and create a git commit and tag for the new version.
-
-When you read "release", create a new git tag ending with `-RELEASE` (e.g., v1.0.0-RELEASE) to trigger the CI/CD pipeline for building and publishing Docker images for both frontend and backend packages and push.
+The current code is a **reference implementation for a planned v2 rewrite**. Known issues
+(no tests, fragile state sync, dual persistence, anonymous authorization bypass, dead
+code, heavy `console.log` usage) are catalogued in [`AGENTS.md`](../AGENTS.md) section 7.

@@ -4,6 +4,16 @@ A lightweight, collaborative calendar application with real-time synchronization
 
 ![Calendar Overview](docs/screenshots/calendar-main.png)
 
+## 📌 Project Status
+
+- **Version**: `1.5.1`, on branch `feat/lists`. `main` is at `1.4.2` and does **not**
+  include the authentication/sharing work.
+- **Tests**: none yet — verification is manual (`TESTING.md`).
+- **Next**: a **full reimplementation (v2)** is planned. The current code is treated as a
+  reference implementation and source of product knowledge.
+- **Where to start**: see [`AGENTS.md`](AGENTS.md) for the current architecture, commands,
+  known issues/technical debt and reimplementation guidance.
+
 ## ✨ Features
 
 ### 📅 **Calendar Management**
