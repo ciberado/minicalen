@@ -80,6 +80,31 @@ export class AppSidebar extends StoreElement {
       flex: none;
     }
 
+    .banner.readonly {
+      background: #fff3e0;
+      border-color: #ffe0b2;
+      color: #e65100;
+    }
+
+    .peers {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .peer {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #455a64;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .user-menu {
       position: relative;
     }
@@ -204,6 +229,18 @@ export class AppSidebar extends StoreElement {
         ? html`<div class="banner">
             <span>Anonymous calendar</span>
             <button @click=${() => appStore.claim()}>Save to account</button>
+          </div>`
+        : ''}
+      ${state.accessLevel === 'viewer' || state.session.readOnly
+        ? html`<div class="banner readonly">View-only — you cannot edit this calendar.</div>`
+        : ''}
+      ${state.session.peers.length > 0
+        ? html`<div class="peers">
+            ${state.session.peers.map(
+              (peer) => html`<span class="peer" title=${peer.user.email}
+                >${(peer.user.name ?? peer.user.email).charAt(0).toUpperCase()}</span
+              >`,
+            )}
           </div>`
         : ''}
 

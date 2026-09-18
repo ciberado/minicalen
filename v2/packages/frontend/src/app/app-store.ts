@@ -156,8 +156,10 @@ class AppStore {
 
     try {
       const user = await fetchCurrentUser();
+      sessionStore.setLocalUser(user);
       this.setState({ user, authLoading: false });
     } catch {
+      sessionStore.setLocalUser(null);
       this.setState({ user: null, authLoading: false });
     }
   }
@@ -231,6 +233,7 @@ class AppStore {
     try {
       this.setState({ busy: true });
       await signOutUser();
+      sessionStore.setLocalUser(null);
       await this.refreshUser();
       window.location.hash = '';
       await sessionStore.loadLocal();

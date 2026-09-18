@@ -24,12 +24,24 @@ import { COLLAB_URL } from '../env';
 
 export type SyncStatus = 'local' | 'connecting' | 'connected' | 'disconnected' | 'error';
 
+export interface PeerUser {
+  id: string;
+  email: string;
+  name?: string | null;
+}
+
+export interface Peer {
+  clientId: number;
+  user: PeerUser;
+}
+
 export interface SessionViewState {
   sessionId: string | null;
   categories: Category[];
   dateMarks: DateMarkMap;
   status: SyncStatus;
   readOnly: boolean;
+  peers: Peer[];
 }
 
 type Listener = () => void;
@@ -47,12 +59,15 @@ export class SessionStore {
   private indexeddb: IndexeddbPersistence | null = null;
   private provider: HocuspocusProvider | null = null;
 
+  private localUser: PeerUser | null = null;
+
   private state: SessionViewState = {
     sessionId: null,
     categories: [],
     dateMarks: {},
     status: 'local',
     readOnly: false,
+    peers: [],
   };
 
   constructor() {
@@ -113,6 +128,50 @@ export class SessionStore {
       onAuthenticationFailed: () => this.setState({ status: 'error' }),
       onAuthenticated: ({ scope }) => this.setState({ readOnly: scope === 'readonly' }),
     });
+
+    const awareness = this.provider.awareness;
+
+    if (awareness) {
+      if (this.localUser) {
+        awareness.setLocalStateField('user', this.localUser);
+      }
+
+      awareness.on('change', () => this.updatePeers());
+      this.updatePeers();
+    }
+  }
+
+  setLocalUser(user: PeerUser | null): void {
+    this.localUser = user;
+
+    const awareness = this.provider?.awareness;
+
+    if (awareness) {
+      awareness.setLocalStateField('user', user);
+    }
+
+    this.updatePeers();
+  }
+
+  private updatePeers(): void {
+    const awareness = this.provider?.awareness;
+
+    if (!awareness) {
+      this.setState({ peers: [] });
+      return;
+    }
+
+    const peers: Peer[] = [];
+
+    awareness.getStates().forEach((state, clientId) => {
+      const user = (state as { user?: PeerUser }).user;
+
+      if (user) {
+        peers.push({ clientId, user });
+      }
+    });
+
+    this.setState({ peers });
   }
 
   async applyRemoteSnapshot(snapshot: SessionSnapshot): Promise<void> {
@@ -169,6 +228,7 @@ export class SessionStore {
     this.provider = null;
     this.indexeddb?.destroy();
     this.indexeddb = null;
+    this.state = { ...this.state, peers: [] };
   }
 
   private resetDocument(): void {

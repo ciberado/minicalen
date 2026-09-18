@@ -488,7 +488,7 @@ npm run build
 3. Frontend: Lit shell, Yjs + IndexedDB, auth UI, session list/share — **done**
 4. Interactive `<year-grid>` — **done**
 5. Forked neatocal read-only view — **done**
-6. Awareness/presence + read-only enforcement
+6. Awareness/presence + read-only enforcement — **done**
 7. Docker/CI, docs, final verification
 
 ### v2 conventions

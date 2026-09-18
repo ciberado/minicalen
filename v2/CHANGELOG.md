@@ -5,6 +5,20 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-alpha.5] - 2026-09-18
+
+### Added
+
+- **Frontend**: awareness/presence — connected peers are shown in the sidebar and the
+  local user identity is broadcast over Yjs awareness.
+- **Frontend**: read-only banner for viewer sessions.
+- **Server**: integration tests for the collaboration server (owner authentication and
+  persistence, viewer read-only scope, anonymous rejection).
+
+### Changed
+
+- Bumped all v2 packages to `2.0.0-alpha.5`.
+
 ## [2.0.0-alpha.4] - 2026-09-18
 
 ### Added

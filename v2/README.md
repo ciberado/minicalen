@@ -40,7 +40,8 @@ npm run build
 - Phase 3 (frontend: Lit shell, Yjs + IndexedDB, auth/session UI) — done
 - Phase 4 (interactive `<year-grid>`) — done
 - Phase 5 (forked neatocal read-only view) — done
-- Phase 6 (awareness/presence + read-only enforcement) — next
+- Phase 6 (awareness/presence + read-only enforcement) — done
+- Phase 7 (Docker/CI, docs, final verification) — next
 
 ## NeatoCal attribution
 
