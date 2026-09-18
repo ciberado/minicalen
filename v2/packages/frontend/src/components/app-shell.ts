@@ -89,14 +89,20 @@ export class AppShell extends StoreElement {
       <div class="layout">
         <app-sidebar></app-sidebar>
         <main>
-          <year-grid
-            .year=${new Date().getFullYear()}
-            .categories=${state.session.categories}
-            .dateMarks=${state.session.dateMarks}
-            .readOnly=${!appStore.canEdit}
-            .selectedCategoryId=${state.selectedCategoryId}
-            @date-click=${(event: CustomEvent<{ date: string }>) => this.handleDateClick(event)}
-          ></year-grid>
+          ${state.view === 'grid'
+            ? html`<year-grid
+                .year=${new Date().getFullYear()}
+                .categories=${state.session.categories}
+                .dateMarks=${state.session.dateMarks}
+                .readOnly=${!appStore.canEdit}
+                .selectedCategoryId=${state.selectedCategoryId}
+                @date-click=${(event: CustomEvent<{ date: string }>) => this.handleDateClick(event)}
+              ></year-grid>`
+            : html`<neatocal-view
+                .year=${new Date().getFullYear()}
+                .categories=${state.session.categories}
+                .dateMarks=${state.session.dateMarks}
+              ></neatocal-view>`}
         </main>
       </div>
       <auth-dialog .open=${state.showAuthDialog}></auth-dialog>

@@ -5,6 +5,23 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-alpha.4] - 2026-09-18
+
+### Added
+
+- **Renderer**: forked **NeatoCal** (MIT) into a dependency-free `renderYear()` module
+  supporting the `aligned-weekdays` and `default` layouts, plus a `<neatocal-view>` Web
+  Component for the read-only/print view.
+- **Frontend**: Grid / Print view switcher in the sidebar.
+
+### Tests
+
+- 12 renderer tests for `renderYear` and `<neatocal-view>` (87 tests total).
+
+### Changed
+
+- Bumped all v2 packages to `2.0.0-alpha.4`.
+
 ## [2.0.0-alpha.3] - 2026-09-18
 
 ### Added

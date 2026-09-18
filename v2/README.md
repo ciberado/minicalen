@@ -39,7 +39,15 @@ npm run build
 - Phase 2 (server: auth, REST, Hocuspocus, SQLite) — done
 - Phase 3 (frontend: Lit shell, Yjs + IndexedDB, auth/session UI) — done
 - Phase 4 (interactive `<year-grid>`) — done
-- Phase 5 (forked neatocal read-only view) — next
+- Phase 5 (forked neatocal read-only view) — done
+- Phase 6 (awareness/presence + read-only enforcement) — next
+
+## NeatoCal attribution
+
+`@minicalen/renderer` includes a focused TypeScript adaptation of the
+[NeatoCal](https://github.com/abetusk/neatocal) `aligned-weekdays` and `default` layouts
+(MIT). See `packages/renderer/src/neatocal/LICENSE`. Moon phases, ICS import and other
+NeatoCal features are intentionally omitted.
 
 See `CHANGELOG.md` for details.
 

@@ -144,6 +144,30 @@ export class AppSidebar extends StoreElement {
       background: #f0f0f0;
     }
 
+    .view-switch {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 14px;
+    }
+
+    .view-switch button {
+      flex: 1;
+      border: 1px solid #ddd;
+      background: #fff;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      color: #555;
+    }
+
+    .view-switch button.active {
+      background: #1976d2;
+      border-color: #1976d2;
+      color: #fff;
+    }
+
     .status {
       margin-top: 12px;
       font-size: 11px;
@@ -190,6 +214,21 @@ export class AppSidebar extends StoreElement {
         @change=${(event: Event) =>
           appStore.renameSession((event.target as HTMLInputElement).value || 'Untitled Calendar')}
       />
+
+      <div class="view-switch">
+        <button
+          class=${state.view === 'grid' ? 'active' : ''}
+          @click=${() => appStore.setView('grid')}
+        >
+          Grid
+        </button>
+        <button
+          class=${state.view === 'print' ? 'active' : ''}
+          @click=${() => appStore.setView('print')}
+        >
+          Print
+        </button>
+      </div>
 
       <category-list type="foreground"></category-list>
       <category-list type="text"></category-list>
