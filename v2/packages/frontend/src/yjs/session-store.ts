@@ -2,7 +2,6 @@ import { HocuspocusProvider } from '@hocuspocus/provider';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import * as Y from 'yjs';
 import {
-  SCHEMA_VERSION,
   applySnapshot,
   createSessionDocument,
   getCategories,
@@ -46,15 +45,9 @@ export interface SessionViewState {
 
 type Listener = () => void;
 
-const EMPTY_SNAPSHOT: SessionSnapshot = {
-  schemaVersion: SCHEMA_VERSION,
-  categories: [],
-  dateMarks: {},
-};
-
 export class SessionStore {
-  private readonly doc = new Y.Doc();
-  private readonly session: SessionDocument;
+  private doc!: Y.Doc;
+  private session!: SessionDocument;
   private readonly listeners = new Set<Listener>();
   private indexeddb: IndexeddbPersistence | null = null;
   private provider: HocuspocusProvider | null = null;
@@ -71,10 +64,15 @@ export class SessionStore {
   };
 
   constructor() {
+    this.createDocument();
+    this.refresh();
+  }
+
+  private createDocument(): void {
+    this.doc = new Y.Doc();
     this.session = createSessionDocument(this.doc);
     this.session.categories.observe(() => this.refresh());
     this.session.dateMarks.observe(() => this.refresh());
-    this.refresh();
   }
 
   subscribe(listener: Listener): () => void {
@@ -98,7 +96,7 @@ export class SessionStore {
 
   async loadLocal(): Promise<void> {
     this.teardown();
-    this.resetDocument();
+    this.createDocument();
     this.indexeddb = new IndexeddbPersistence('minicalen-anonymous', this.doc);
     await this.indexeddb.whenSynced;
     this.setState({ sessionId: null, status: 'local', readOnly: false });
@@ -109,7 +107,7 @@ export class SessionStore {
     options: { readOnly?: boolean; token?: string | null } = {},
   ): Promise<void> {
     this.teardown();
-    this.resetDocument();
+    this.createDocument();
     this.setState({ sessionId, status: 'connecting', readOnly: options.readOnly ?? false });
 
     this.indexeddb = new IndexeddbPersistence(`minicalen-${sessionId}`, this.doc);
@@ -229,11 +227,6 @@ export class SessionStore {
     this.indexeddb?.destroy();
     this.indexeddb = null;
     this.state = { ...this.state, peers: [] };
-  }
-
-  private resetDocument(): void {
-    applySnapshot(this.session, EMPTY_SNAPSHOT);
-    this.refresh();
   }
 
   private refresh(): void {

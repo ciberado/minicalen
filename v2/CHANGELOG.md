@@ -5,6 +5,26 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-beta.0] - 2026-09-18
+
+### Added
+
+- **E2E**: Playwright happy-path tests (anonymous calendar persistence and sign-up flow).
+- **Docker**: server and frontend images plus `docker-compose.yml` (nginx proxies `/api`
+  and `/collaboration`).
+- **CI**: `v2-ci.yml` now runs the E2E suite; `v2-docker-release.yml` publishes images on
+  `v2-*-RELEASE` tags.
+- **Docs**: v2 README, architecture notes and operational commands.
+
+### Fixed
+
+- Session store now creates a fresh `Y.Doc` per session so switching/connecting no longer
+  propagates deletes that wiped persisted state.
+
+### Changed
+
+- Bumped all v2 packages to `2.0.0-beta.0` (all planned phases complete).
+
 ## [2.0.0-alpha.5] - 2026-09-18
 
 ### Added

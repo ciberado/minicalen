@@ -27,7 +27,7 @@ function resolveCollabUrl(): string {
 
   if (!isDev && typeof window !== 'undefined') {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${window.location.host}`;
+    return `${protocol}//${window.location.host}/collaboration`;
   }
 
   return 'ws://localhost:3002';

@@ -1,10 +1,10 @@
 node_modules
-dist
-*.local
-.env
-.env.local
+**/node_modules
+**/dist
 data
 logs
 .playwright-mcp
 test-results
 playwright-report
+*.db
+*.log

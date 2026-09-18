@@ -1,0 +1,33 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: packages/server/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - COLLAB_PORT=3002
+      - DATABASE_URL=/app/data/minicalen.db
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-change-me-change-me-change-me-change-me}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:8080}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:8080}
+    volumes:
+      - minicalen-data:/app/data
+    expose:
+      - '3001'
+      - '3002'
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: packages/frontend/Dockerfile
+    ports:
+      - '8080:8080'
+    depends_on:
+      - server
+    restart: unless-stopped
+
+volumes:
+  minicalen-data:
+    driver: local

@@ -25,14 +25,27 @@ product behaviour and the v1 reference implementation.
 
 ```bash
 npm install
-npm run dev:all      # server (3001) + frontend (5173)
+npm run dev:all      # server (3001/3002) + frontend (5173)
 npm run lint
 npm run type-check
-npm run test
+npm run test         # Vitest (unit + integration)
+npm run test:e2e     # Playwright (starts servers; reuses running ones)
 npm run build
 ```
 
+## Docker
+
+```bash
+docker compose up -d --build   # frontend on :8080, server on :3001/:3002
+```
+
+The frontend nginx container serves the SPA and proxies `/api` to the server and
+`/collaboration` (WebSocket) to the collaboration server. Set `BETTER_AUTH_SECRET`,
+`BETTER_AUTH_URL` and `ALLOWED_ORIGINS` for non-local deployments.
+
 ## Status
+
+All planned phases are complete at `2.0.0-beta.0`:
 
 - Phase 0 (scaffold) — done
 - Phase 1 (`shared` domain + Yjs helpers) — done
@@ -41,7 +54,26 @@ npm run build
 - Phase 4 (interactive `<year-grid>`) — done
 - Phase 5 (forked neatocal read-only view) — done
 - Phase 6 (awareness/presence + read-only enforcement) — done
-- Phase 7 (Docker/CI, docs, final verification) — next
+- Phase 7 (Docker/CI, docs, final verification) — done
+
+## Testing
+
+- **Vitest** — `shared` (domain, Zod, Yjs helpers, dates), `renderer` (year grid,
+  neatocal) and `server` (authz, REST via Supertest, persistence, collaboration
+  integration).
+- **Playwright** — `e2e/` covers the anonymous calendar persistence flow and the
+  sign-up flow.
+
+## Architecture notes
+
+- The calendar state is a single `Y.Doc`: `categories` and `dateMarks` maps plus a `meta`
+  map with `schemaVersion`. `@minicalen/shared` owns the document helpers and migrations.
+- The server persists encoded Yjs updates in `session_documents` (snapshot per session)
+  through Hocuspocus `onLoadDocument`/`onStoreDocument`.
+- Authorization is deny-by-default in `authz.ts`, shared by REST and Hocuspocus. Anonymous
+  creators get a per-session token (hashed at rest) stored in the browser and sent as a
+  bearer token / provider token.
+- Presence uses Yjs awareness; viewers connect with `readOnly` enforced by the server.
 
 ## NeatoCal attribution
 

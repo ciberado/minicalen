@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const APP_VERSION = '2.0.0-alpha.5';
+export const APP_VERSION = '2.0.0-beta.0';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),

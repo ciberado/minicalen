@@ -452,20 +452,20 @@ so it does not interfere with v1. See `v2/README.md` for package details.
 | Area | Choice |
 | --- | --- |
 | UI | Vanilla TypeScript + **Lit** Web Components (no React) |
-| Sync | **Yjs** CRDT (Hocuspocus server + IndexedDB provider planned) |
-| Persistence | SQLite via Drizzle ORM (single path) |
-| Rendering | Custom year grid + forked **neatocal** (MIT) for the read-only view |
-| Auth | **Better-Auth** (email/password), anonymous-first |
-| Tooling | TypeScript 5.9, ESLint 10 (flat), Vite 8, Vitest 5 |
+| Sync | **Yjs** CRDT (Hocuspocus + IndexedDB) with awareness/presence |
+| Persistence | SQLite via Drizzle ORM (single path: Yjs snapshots) |
+| Rendering | Custom `<year-grid>` + forked **neatocal** (MIT) `<neatocal-view>` |
+| Auth | **Better-Auth** (email/password), anonymous-first with per-session tokens |
+| Tooling | TypeScript 5.9, ESLint 10 (flat), Vite 8, Vitest 5, Playwright |
 
 ### v2 packages
 
 | Package | Responsibility | Status |
 | --- | --- | --- |
-| `@minicalen/shared` | Domain types, Zod schemas, Yjs document helpers | Phase 1 done |
-| `@minicalen/renderer` | Lit year grid + neatocal read-only view | Phase 5 done |
-| `@minicalen/frontend` | App shell, Yjs wiring, auth/session UI | Phase 3 done |
-| `@minicalen/server` | Express + Hocuspocus + Better-Auth + SQLite | Phase 2 done |
+| `@minicalen/shared` | Domain types, Zod schemas, Yjs document helpers, dates | done |
+| `@minicalen/renderer` | Lit year grid + neatocal read-only view | done |
+| `@minicalen/frontend` | App shell, Yjs wiring, auth/session UI | done |
+| `@minicalen/server` | Express + Hocuspocus + Better-Auth + SQLite | done |
 
 ### v2 commands
 
@@ -473,11 +473,13 @@ Run from `v2/`:
 
 ```bash
 npm install
-npm run dev:all      # server (3001) + frontend (5173)
+npm run dev:all      # server (3001/3002) + frontend (5173)
 npm run lint
 npm run type-check
-npm run test
+npm run test         # Vitest (unit + integration)
+npm run test:e2e     # Playwright (starts servers; reuses running ones)
 npm run build
+docker compose up -d --build   # frontend on :8080, server on :3001/:3002
 ```
 
 ### v2 phase plan
@@ -489,7 +491,9 @@ npm run build
 4. Interactive `<year-grid>` — **done**
 5. Forked neatocal read-only view — **done**
 6. Awareness/presence + read-only enforcement — **done**
-7. Docker/CI, docs, final verification
+7. Docker/CI, docs, final verification — **done**
+
+All planned phases are complete at `2.0.0-beta.0`.
 
 ### v2 conventions
 

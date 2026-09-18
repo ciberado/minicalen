@@ -1,7 +1,7 @@
 {
   "name": "minicalen-v2",
   "private": true,
-  "version": "2.0.0-alpha.5",
+  "version": "2.0.0-beta.0",
   "type": "module",
   "workspaces": [
     "packages/shared",
@@ -17,10 +17,12 @@
     "lint": "eslint .",
     "type-check": "npm run type-check --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
+    "test:e2e": "playwright test --config e2e/playwright.config.ts",
     "test:watch": "vitest"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.0-alpha-2026-09-14",
     "@types/node": "^24.0.0",
     "concurrently": "^10.0.5",
     "eslint": "^10.11.0",
