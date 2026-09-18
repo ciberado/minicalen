@@ -5,6 +5,23 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-alpha.3] - 2026-09-18
+
+### Added
+
+- **Renderer**: interactive `<year-grid>` Web Component — 12-month 4×3 layout, today
+  highlight, foreground colors, text symbols, click handling and read-only mode.
+- **Shared**: date utilities (`toDateKey`, `monthCells`, `daysInMonth`, …) with tests.
+- **Frontend**: wired the year grid to the session store with toggle behaviour.
+
+### Tests
+
+- 11 renderer component tests and 6 shared date tests (75 tests total).
+
+### Changed
+
+- Bumped all v2 packages to `2.0.0-alpha.3`.
+
 ## [2.0.0-alpha.2] - 2026-09-18
 
 ### Added

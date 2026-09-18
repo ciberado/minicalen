@@ -38,7 +38,8 @@ npm run build
 - Phase 1 (`shared` domain + Yjs helpers) — done
 - Phase 2 (server: auth, REST, Hocuspocus, SQLite) — done
 - Phase 3 (frontend: Lit shell, Yjs + IndexedDB, auth/session UI) — done
-- Phase 4 (interactive `<year-grid>`) — next
+- Phase 4 (interactive `<year-grid>`) — done
+- Phase 5 (forked neatocal read-only view) — next
 
 See `CHANGELOG.md` for details.
 

@@ -64,6 +64,20 @@ export class AppShell extends StoreElement {
     void appStore.init();
   }
 
+  private handleDateClick(event: CustomEvent<{ date: string }>): void {
+    const selected = appStore.selectedCategory;
+
+    if (!selected) {
+      return;
+    }
+
+    if (selected.type === 'foreground') {
+      appStore.setDateCategory(event.detail.date, selected.id);
+    } else {
+      appStore.toggleTextCategory(event.detail.date, selected.id);
+    }
+  }
+
   render() {
     const state: AppState = appStore.getState();
 
@@ -75,7 +89,14 @@ export class AppShell extends StoreElement {
       <div class="layout">
         <app-sidebar></app-sidebar>
         <main>
-          <year-grid></year-grid>
+          <year-grid
+            .year=${new Date().getFullYear()}
+            .categories=${state.session.categories}
+            .dateMarks=${state.session.dateMarks}
+            .readOnly=${!appStore.canEdit}
+            .selectedCategoryId=${state.selectedCategoryId}
+            @date-click=${(event: CustomEvent<{ date: string }>) => this.handleDateClick(event)}
+          ></year-grid>
         </main>
       </div>
       <auth-dialog .open=${state.showAuthDialog}></auth-dialog>

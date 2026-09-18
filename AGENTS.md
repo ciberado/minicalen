@@ -463,7 +463,7 @@ so it does not interfere with v1. See `v2/README.md` for package details.
 | Package | Responsibility | Status |
 | --- | --- | --- |
 | `@minicalen/shared` | Domain types, Zod schemas, Yjs document helpers | Phase 1 done |
-| `@minicalen/renderer` | Lit year grid + neatocal read-only view | scaffold |
+| `@minicalen/renderer` | Lit year grid + neatocal read-only view | Phase 4 done |
 | `@minicalen/frontend` | App shell, Yjs wiring, auth/session UI | Phase 3 done |
 | `@minicalen/server` | Express + Hocuspocus + Better-Auth + SQLite | Phase 2 done |
 
@@ -486,7 +486,7 @@ npm run build
 1. `shared`: domain + Zod + Yjs helpers + tests — **done**
 2. Server: Better-Auth, REST metadata, Hocuspocus, authz, SQLite persistence — **done**
 3. Frontend: Lit shell, Yjs + IndexedDB, auth UI, session list/share — **done**
-4. Interactive `<year-grid>`
+4. Interactive `<year-grid>` — **done**
 5. Forked neatocal read-only view
 6. Awareness/presence + read-only enforcement
 7. Docker/CI, docs, final verification
