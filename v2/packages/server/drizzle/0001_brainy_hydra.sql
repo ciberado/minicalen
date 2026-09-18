@@ -1,0 +1,1 @@
+ALTER TABLE `sessions` ADD `anonymous_token_hash` text;

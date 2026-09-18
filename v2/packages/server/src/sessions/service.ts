@@ -1,9 +1,16 @@
+import { randomBytes } from 'node:crypto';
 import { and, eq, inArray } from 'drizzle-orm';
 import { createId, type AccessLevel } from '@minicalen/shared';
 import type { AppDatabase } from '../db';
 import { sessionPermissions, sessions, users } from '../db/schema';
+import { hashToken } from '../authz';
 
 export type SessionRecord = typeof sessions.$inferSelect;
+
+export interface CreatedSession {
+  session: SessionRecord;
+  token?: string;
+}
 
 export interface SessionSummary {
   id: string;
@@ -24,8 +31,9 @@ export interface CreateSessionInput {
 export async function createSession(
   db: AppDatabase,
   input: CreateSessionInput,
-): Promise<SessionRecord> {
+): Promise<CreatedSession> {
   const id = createId();
+  const token = input.userId ? undefined : randomBytes(32).toString('base64url');
 
   const [session] = await db
     .insert(sessions)
@@ -33,6 +41,7 @@ export async function createSession(
       id,
       userId: input.userId,
       isAnonymous: input.userId === null,
+      anonymousTokenHash: token ? hashToken(token) : null,
       name: input.name ?? 'Untitled Calendar',
     })
     .returning();
@@ -47,7 +56,7 @@ export async function createSession(
     });
   }
 
-  return session;
+  return { session, token };
 }
 
 export async function listSessionsForUser(

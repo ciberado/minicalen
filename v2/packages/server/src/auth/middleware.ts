@@ -10,6 +10,23 @@ export interface AuthUser {
 
 export interface AuthRequest extends Request {
   user?: AuthUser;
+  sessionToken?: string;
+}
+
+export function extractSessionToken(req: Request): string | undefined {
+  const header = req.headers['x-session-token'];
+
+  if (typeof header === 'string' && header.length > 0) {
+    return header;
+  }
+
+  const authorization = req.headers.authorization;
+
+  if (authorization?.startsWith('Bearer ')) {
+    return authorization.slice(7);
+  }
+
+  return undefined;
 }
 
 export function headersFromRequest(req: Request): Headers {
@@ -33,6 +50,8 @@ export function createAuthMiddleware(auth: Auth) {
   }
 
   const optionalAuth = async (req: AuthRequest, _res: Response, next: NextFunction): Promise<void> => {
+    req.sessionToken = extractSessionToken(req);
+
     try {
       req.user = await resolveUser(req);
     } catch {
@@ -43,6 +62,8 @@ export function createAuthMiddleware(auth: Auth) {
   };
 
   const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    req.sessionToken = extractSessionToken(req);
+
     try {
       const user = await resolveUser(req);
 

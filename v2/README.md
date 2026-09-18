@@ -37,7 +37,8 @@ npm run build
 - Phase 0 (scaffold) — done
 - Phase 1 (`shared` domain + Yjs helpers) — done
 - Phase 2 (server: auth, REST, Hocuspocus, SQLite) — done
-- Phase 3 (frontend) — next
+- Phase 3 (frontend: Lit shell, Yjs + IndexedDB, auth/session UI) — done
+- Phase 4 (interactive `<year-grid>`) — next
 
 See `CHANGELOG.md` for details.
 

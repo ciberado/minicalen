@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import type { AppDatabase } from './db';
 import { sessionPermissions, sessions } from './db/schema';
@@ -11,15 +12,35 @@ export interface SessionAccess {
   isOwner: boolean;
 }
 
+export function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+function tokenMatches(token: string, expectedHash: string | null): boolean {
+  if (!expectedHash) {
+    return false;
+  }
+
+  const actual = Buffer.from(hashToken(token));
+  const expected = Buffer.from(expectedHash);
+
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
 export async function resolveSessionAccess(
   db: AppDatabase,
   sessionId: string,
   userId: string | null,
+  token?: string | null,
 ): Promise<SessionAccess | null> {
   const [session] = await db.select().from(sessions).where(eq(sessions.id, sessionId));
 
   if (!session) {
     return null;
+  }
+
+  if (session.isAnonymous && token && tokenMatches(token, session.anonymousTokenHash)) {
+    return { sessionId, userId: null, accessLevel: 'owner', isOwner: true };
   }
 
   if (userId && session.userId === userId) {

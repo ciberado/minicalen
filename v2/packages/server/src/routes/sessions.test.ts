@@ -55,6 +55,29 @@ describe('sessions API', () => {
     expect(response.status).toBe(404);
   });
 
+  it('lets an anonymous creator save and read state with the issued token', async () => {
+    const app = buildApp();
+    const created = await request(app).post('/api/sessions').send({ name: 'Anon' });
+    const id = created.body.session.id as string;
+    const token = created.body.token as string;
+
+    expect(token).toBeTruthy();
+
+    const put = await request(app)
+      .put(`/api/sessions/${id}/state`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(snapshot());
+    expect(put.status).toBe(200);
+
+    const read = await request(app)
+      .get(`/api/sessions/${id}/state`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(read.body.snapshot).toEqual(snapshot());
+
+    const withoutToken = await request(app).get(`/api/sessions/${id}/state`);
+    expect(withoutToken.status).toBe(404);
+  });
+
   it('lists owned sessions for authenticated users', async () => {
     const app = buildApp();
     const owner = await signUp(app, 'owner@example.com');

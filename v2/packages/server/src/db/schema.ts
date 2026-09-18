@@ -54,6 +54,7 @@ export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
   isAnonymous: integer('is_anonymous', { mode: 'boolean' }).notNull().default(true),
+  anonymousTokenHash: text('anonymous_token_hash'),
   name: text('name').notNull().default('Untitled Calendar'),
   visibility: text('visibility', { enum: ['private', 'public'] })
     .notNull()

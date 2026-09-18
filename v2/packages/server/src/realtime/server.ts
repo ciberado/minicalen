@@ -36,7 +36,7 @@ export function createCollaborationServer({ db, auth, config, logger }: Collabor
 
       const session = await auth.api.getSession({ headers });
       const userId = session?.user?.id ?? null;
-      const access = await resolveSessionAccess(db, documentName, userId);
+      const access = await resolveSessionAccess(db, documentName, userId, token || null);
 
       if (!access) {
         throw new Error('Access denied');

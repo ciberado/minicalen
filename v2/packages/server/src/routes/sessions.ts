@@ -65,12 +65,15 @@ export function createSessionsRouter({ db, auth, logger }: SessionsRouterDeps): 
         return;
       }
 
-      const session = await createSession(db, {
+      const created = await createSession(db, {
         userId: req.user?.id ?? null,
         name: parsed.data.name,
       });
 
-      res.status(201).json({ session: serializeSession(session) });
+      res.status(201).json({
+        session: serializeSession(created.session),
+        token: created.token,
+      });
     }),
   );
 
@@ -79,7 +82,7 @@ export function createSessionsRouter({ db, auth, logger }: SessionsRouterDeps): 
     auth.optionalAuth,
     asyncHandler(async (req, res) => {
       const id = String(String(req.params.id));
-      const access = await resolveSessionAccess(db, id, req.user?.id ?? null);
+      const access = await resolveSessionAccess(db, id, req.user?.id ?? null, req.sessionToken);
 
       if (!access) {
         res.status(404).json({ error: 'Session not found' });
@@ -103,7 +106,7 @@ export function createSessionsRouter({ db, auth, logger }: SessionsRouterDeps): 
     '/:id',
     auth.optionalAuth,
     asyncHandler(async (req, res) => {
-      const access = await resolveSessionAccess(db, String(req.params.id), req.user?.id ?? null);
+      const access = await resolveSessionAccess(db, String(req.params.id), req.user?.id ?? null, req.sessionToken);
 
       if (!canEdit(access)) {
         res.status(access ? 403 : 404).json({ error: access ? 'Access denied' : 'Session not found' });
@@ -126,7 +129,12 @@ export function createSessionsRouter({ db, auth, logger }: SessionsRouterDeps): 
     '/:id',
     auth.optionalAuth,
     asyncHandler(async (req, res) => {
-      const access = await resolveSessionAccess(db, String(req.params.id), req.user?.id ?? null);
+      const access = await resolveSessionAccess(
+        db,
+        String(req.params.id),
+        req.user?.id ?? null,
+        req.sessionToken,
+      );
 
       if (!canDelete(access)) {
         res.status(access ? 403 : 404).json({ error: access ? 'Access denied' : 'Session not found' });
@@ -164,7 +172,12 @@ export function createSessionsRouter({ db, auth, logger }: SessionsRouterDeps): 
     '/:id/share',
     auth.requireAuth,
     asyncHandler(async (req, res) => {
-      const access = await resolveSessionAccess(db, String(req.params.id), req.user!.id);
+      const access = await resolveSessionAccess(
+        db,
+        String(req.params.id),
+        req.user!.id,
+        req.sessionToken,
+      );
 
       if (!canShare(access)) {
         res.status(access ? 403 : 404).json({ error: access ? 'Access denied' : 'Session not found' });
@@ -200,7 +213,12 @@ export function createSessionsRouter({ db, auth, logger }: SessionsRouterDeps): 
     '/:id/permissions',
     auth.optionalAuth,
     asyncHandler(async (req, res) => {
-      const access = await resolveSessionAccess(db, String(req.params.id), req.user?.id ?? null);
+      const access = await resolveSessionAccess(
+        db,
+        String(req.params.id),
+        req.user?.id ?? null,
+        req.sessionToken,
+      );
 
       if (!canRead(access)) {
         res.status(404).json({ error: 'Session not found' });
@@ -215,7 +233,7 @@ export function createSessionsRouter({ db, auth, logger }: SessionsRouterDeps): 
     '/:id/state',
     auth.optionalAuth,
     asyncHandler(async (req, res) => {
-      const access = await resolveSessionAccess(db, String(req.params.id), req.user?.id ?? null);
+      const access = await resolveSessionAccess(db, String(req.params.id), req.user?.id ?? null, req.sessionToken);
 
       if (!canRead(access)) {
         res.status(404).json({ error: 'Session not found' });
@@ -231,7 +249,7 @@ export function createSessionsRouter({ db, auth, logger }: SessionsRouterDeps): 
     '/:id/state',
     auth.optionalAuth,
     asyncHandler(async (req, res) => {
-      const access = await resolveSessionAccess(db, String(req.params.id), req.user?.id ?? null);
+      const access = await resolveSessionAccess(db, String(req.params.id), req.user?.id ?? null, req.sessionToken);
 
       if (!canEdit(access)) {
         res.status(access ? 403 : 404).json({ error: access ? 'Access denied' : 'Session not found' });

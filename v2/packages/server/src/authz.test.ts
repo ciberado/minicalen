@@ -4,6 +4,7 @@ import {
   canEdit,
   canRead,
   canShare,
+  hashToken,
   resolveSessionAccess,
 } from './authz';
 import { createTestContext } from './test/helpers';
@@ -70,6 +71,33 @@ describe('resolveSessionAccess', () => {
     expect(access).toMatchObject({ accessLevel: 'viewer', isOwner: false });
     expect(canRead(access)).toBe(true);
     expect(canEdit(access)).toBe(false);
+  });
+
+  it('grants owner access to a valid anonymous token', async () => {
+    const { db } = createTestContext();
+    const token = 'anonymous-secret-token';
+    await seedSession(db, { id: 's1', anonymousTokenHash: hashToken(token) });
+
+    const access = await resolveSessionAccess(db, 's1', null, token);
+
+    expect(access).toMatchObject({ accessLevel: 'owner', isOwner: true });
+    expect(await resolveSessionAccess(db, 's1', null, 'wrong-token')).toBeNull();
+    expect(await resolveSessionAccess(db, 's1', null)).toBeNull();
+  });
+
+  it('ignores anonymous tokens once a session is claimed', async () => {
+    const { db } = createTestContext();
+    const token = 'anonymous-secret-token';
+    await seedUser(db, 'u1', 'u1@example.com');
+    await seedSession(db, {
+      id: 's1',
+      anonymousTokenHash: hashToken(token),
+      userId: 'u1',
+      isAnonymous: false,
+    });
+
+    expect(await resolveSessionAccess(db, 's1', null, token)).toBeNull();
+    expect(await resolveSessionAccess(db, 's1', 'u1')).toMatchObject({ accessLevel: 'owner' });
   });
 
   it('resolves explicit viewer and editor permissions', async () => {

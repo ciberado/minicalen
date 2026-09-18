@@ -11,8 +11,7 @@ export interface SessionDocument {
   meta: Y.Map<unknown>;
 }
 
-export function createSessionDocument(): SessionDocument {
-  const doc = new Y.Doc();
+export function createSessionDocument(doc: Y.Doc = new Y.Doc()): SessionDocument {
   const categories = doc.getMap<Category>('categories');
   const dateMarks = doc.getMap<DateMark>('dateMarks');
   const meta = doc.getMap<unknown>('meta');
