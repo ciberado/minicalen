@@ -13,49 +13,70 @@ export class SessionListDialog extends StoreElement {
     .overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(46, 56, 51, 0.28);
+      backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 100;
-      font-family: system-ui, sans-serif;
+      font-family: var(--zen-font);
     }
 
     .dialog {
-      background: #fff;
-      border-radius: 10px;
-      padding: 20px;
-      width: 520px;
+      background: var(--zen-surface);
+      border: 1px solid var(--zen-line);
+      border-radius: var(--zen-radius);
+      padding: 24px;
+      width: 540px;
       max-width: 92vw;
       max-height: 80vh;
       overflow: auto;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+      box-shadow: var(--zen-shadow-lg);
+      animation: rise 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.99);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
     }
 
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
     }
 
     h2 {
       margin: 0;
-      font-size: 18px;
+      font-size: 19px;
+      font-weight: 600;
     }
 
     button {
       border: none;
-      border-radius: 6px;
-      padding: 6px 12px;
+      border-radius: 999px;
+      padding: 9px 16px;
       font: inherit;
       font-size: 13px;
       cursor: pointer;
+      transition: background var(--zen-transition), transform var(--zen-transition);
     }
 
     button.primary {
-      background: #1976d2;
-      color: #fff;
+      background: var(--zen-accent);
+      color: var(--zen-surface);
+    }
+
+    button.primary:hover {
+      background: var(--zen-accent-strong);
+      transform: translateY(-1px);
     }
 
     ul {
@@ -67,9 +88,15 @@ export class SessionListDialog extends StoreElement {
     li {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 8px;
-      border-bottom: 1px solid #eee;
+      gap: 10px;
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--zen-line);
+      border-radius: var(--zen-radius-md);
+      transition: background var(--zen-transition);
+    }
+
+    li:hover {
+      background: var(--zen-surface-2);
     }
 
     li:last-child {
@@ -84,33 +111,43 @@ export class SessionListDialog extends StoreElement {
 
     .name {
       font-size: 14px;
+      font-weight: 500;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
 
     .meta {
       font-size: 12px;
-      color: #888;
+      color: var(--zen-ink-faint);
+      margin-top: 2px;
     }
 
     .chip {
-      font-size: 11px;
-      background: #eee;
-      border-radius: 10px;
-      padding: 1px 8px;
-      color: #555;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: var(--zen-accent-soft);
+      border-radius: 999px;
+      padding: 2px 9px;
+      color: var(--zen-accent-strong);
     }
 
     .row-actions button {
       background: none;
-      padding: 4px 6px;
+      padding: 6px 8px;
+      font-size: 14px;
+      border-radius: var(--zen-radius-sm);
+    }
+
+    .row-actions button:hover {
+      background: var(--zen-accent-soft);
     }
 
     .empty {
-      color: #777;
+      color: var(--zen-ink-soft);
       font-size: 14px;
-      padding: 16px 0;
+      padding: 20px 0;
       text-align: center;
     }
   `;

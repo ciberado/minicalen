@@ -14,71 +14,107 @@ export class AuthDialog extends StoreElement {
     .overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(46, 56, 51, 0.28);
+      backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 100;
-      font-family: system-ui, sans-serif;
+      font-family: var(--zen-font);
     }
 
     .dialog {
-      background: #fff;
-      border-radius: 10px;
-      padding: 24px;
-      width: 360px;
+      background: var(--zen-surface);
+      border: 1px solid var(--zen-line);
+      border-radius: var(--zen-radius);
+      padding: 28px;
+      width: 380px;
       max-width: 90vw;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+      box-shadow: var(--zen-shadow-lg);
+      animation: rise 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.99);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
     }
 
     h2 {
-      margin: 0 0 16px;
-      font-size: 18px;
+      margin: 0 0 18px;
+      font-size: 19px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
     }
 
     form {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
 
     input {
-      padding: 8px 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      padding: 11px 13px;
+      border: 1px solid var(--zen-line);
+      border-radius: var(--zen-radius-md);
+      background: var(--zen-surface);
+      color: var(--zen-ink);
       font: inherit;
       font-size: 14px;
+      transition: border-color var(--zen-transition), box-shadow var(--zen-transition);
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--zen-accent);
+      box-shadow: 0 0 0 3px var(--zen-accent-ring);
     }
 
     .actions {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 8px;
+      margin-top: 10px;
     }
 
     button {
       border: none;
-      border-radius: 6px;
-      padding: 8px 14px;
+      border-radius: 999px;
+      padding: 10px 18px;
       font: inherit;
+      font-size: 13px;
       cursor: pointer;
+      transition: background var(--zen-transition), transform var(--zen-transition);
     }
 
     button.primary {
-      background: #1976d2;
-      color: #fff;
+      background: var(--zen-accent);
+      color: var(--zen-surface);
+    }
+
+    button.primary:hover {
+      background: var(--zen-accent-strong);
+      transform: translateY(-1px);
     }
 
     button.link {
       background: none;
-      color: #1976d2;
+      color: var(--zen-accent-strong);
       padding: 4px;
       font-size: 13px;
     }
 
+    button.link:hover {
+      text-decoration: underline;
+    }
+
     button:disabled {
-      opacity: 0.6;
+      opacity: 0.55;
       cursor: not-allowed;
     }
   `;

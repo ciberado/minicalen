@@ -15,41 +15,66 @@ export class ShareDialog extends StoreElement {
     .overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(46, 56, 51, 0.28);
+      backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 100;
-      font-family: system-ui, sans-serif;
+      font-family: var(--zen-font);
     }
 
     .dialog {
-      background: #fff;
-      border-radius: 10px;
-      padding: 20px;
-      width: 460px;
+      background: var(--zen-surface);
+      border: 1px solid var(--zen-line);
+      border-radius: var(--zen-radius);
+      padding: 24px;
+      width: 480px;
       max-width: 92vw;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+      box-shadow: var(--zen-shadow-lg);
+      animation: rise 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.99);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
     }
 
     h2 {
-      margin: 0 0 14px;
-      font-size: 18px;
+      margin: 0 0 16px;
+      font-size: 19px;
+      font-weight: 600;
     }
 
     form {
       display: flex;
       gap: 8px;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
 
     input,
     select {
-      padding: 8px 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      padding: 10px 12px;
+      border: 1px solid var(--zen-line);
+      border-radius: var(--zen-radius-md);
+      background: var(--zen-surface);
+      color: var(--zen-ink);
       font: inherit;
       font-size: 14px;
+      transition: border-color var(--zen-transition), box-shadow var(--zen-transition);
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--zen-accent);
+      box-shadow: 0 0 0 3px var(--zen-accent-ring);
     }
 
     input {
@@ -59,16 +84,22 @@ export class ShareDialog extends StoreElement {
 
     button {
       border: none;
-      border-radius: 6px;
-      padding: 8px 14px;
+      border-radius: 999px;
+      padding: 10px 18px;
       font: inherit;
       font-size: 13px;
       cursor: pointer;
+      transition: background var(--zen-transition), transform var(--zen-transition);
     }
 
     button.primary {
-      background: #1976d2;
-      color: #fff;
+      background: var(--zen-accent);
+      color: var(--zen-surface);
+    }
+
+    button.primary:hover {
+      background: var(--zen-accent-strong);
+      transform: translateY(-1px);
     }
 
     ul {
@@ -80,8 +111,8 @@ export class ShareDialog extends StoreElement {
     li {
       display: flex;
       justify-content: space-between;
-      padding: 8px 4px;
-      border-bottom: 1px solid #eee;
+      padding: 10px 6px;
+      border-bottom: 1px solid var(--zen-line);
       font-size: 13px;
     }
 
@@ -90,7 +121,8 @@ export class ShareDialog extends StoreElement {
     }
 
     .level {
-      color: #666;
+      color: var(--zen-ink-soft);
+      text-transform: capitalize;
     }
   `;
 

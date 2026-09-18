@@ -10,16 +10,17 @@ export class CategoryList extends StoreElement {
   static styles = css`
     :host {
       display: block;
-      margin-bottom: 20px;
-      font-family: system-ui, sans-serif;
+      margin-bottom: 26px;
+      font-family: var(--zen-font);
     }
 
     h3 {
-      margin: 0 0 8px;
-      font-size: 13px;
+      margin: 0 0 10px;
+      font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: #666;
+      letter-spacing: 0.14em;
+      color: var(--zen-ink-faint);
+      font-weight: 600;
     }
 
     ul {
@@ -28,62 +29,97 @@ export class CategoryList extends StoreElement {
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 5px;
     }
 
     li {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 4px;
-      border-radius: 6px;
+      gap: 7px;
+      padding: 6px 8px;
+      border-radius: var(--zen-radius-md);
       border: 1px solid transparent;
+      transition: background var(--zen-transition), border-color var(--zen-transition),
+        box-shadow var(--zen-transition);
+    }
+
+    li:hover {
+      background: var(--zen-surface-2);
     }
 
     li.selected {
-      border-color: #1976d2;
-      background: #e3f2fd;
+      background: var(--zen-surface);
+      border-color: var(--zen-accent);
+      box-shadow: 0 0 0 3px var(--zen-accent-ring);
     }
 
     .swatch {
-      width: 22px;
-      height: 22px;
-      border-radius: 4px;
-      border: 1px solid rgba(0, 0, 0, 0.2);
+      width: 26px;
+      height: 26px;
+      border-radius: 9px;
+      border: none;
       cursor: pointer;
       flex: none;
       font-size: 10px;
-      font-weight: 700;
+      font-weight: 800;
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: transform var(--zen-transition), box-shadow var(--zen-transition);
+    }
+
+    .swatch:hover {
+      transform: scale(1.08);
+    }
+
+    li.selected .swatch {
+      transform: scale(1.06);
     }
 
     .label {
       flex: 1;
       min-width: 0;
-      border: none;
+      border: 1px solid transparent;
       background: transparent;
+      color: var(--zen-ink);
       font: inherit;
       font-size: 13px;
-      padding: 2px 4px;
-      border-radius: 4px;
+      padding: 4px 6px;
+      border-radius: var(--zen-radius-sm);
+      transition: background var(--zen-transition), border-color var(--zen-transition),
+        box-shadow var(--zen-transition);
+    }
+
+    .label:hover {
+      background: var(--zen-surface-2);
     }
 
     .label:focus {
-      outline: 1px solid #1976d2;
-      background: #fff;
+      outline: none;
+      background: var(--zen-surface);
+      border-color: var(--zen-accent);
+      box-shadow: 0 0 0 3px var(--zen-accent-ring);
     }
 
     input[type='color'] {
       width: 24px;
-      height: 22px;
+      height: 24px;
       padding: 0;
-      border: none;
+      border: 1px solid var(--zen-line);
+      border-radius: 7px;
       background: none;
       cursor: pointer;
       flex: none;
+    }
+
+    input[type='color']::-webkit-color-swatch-wrapper {
+      padding: 2px;
+    }
+
+    input[type='color']::-webkit-color-swatch {
+      border: none;
+      border-radius: 5px;
     }
 
     .toggle {
@@ -91,34 +127,57 @@ export class CategoryList extends StoreElement {
       align-items: center;
       gap: 2px;
       font-size: 10px;
-      color: #666;
+      color: var(--zen-ink-faint);
       flex: none;
+      cursor: pointer;
+    }
+
+    .toggle input {
+      accent-color: var(--zen-accent);
+      cursor: pointer;
     }
 
     .delete {
       border: none;
       background: none;
       cursor: pointer;
-      color: #b71c1c;
-      font-size: 14px;
+      color: var(--zen-ink-faint);
+      font-size: 15px;
+      line-height: 1;
+      padding: 3px 5px;
+      border-radius: 7px;
       flex: none;
+      transition: background var(--zen-transition), color var(--zen-transition);
+    }
+
+    .delete:hover {
+      background: #f3e2df;
+      color: var(--zen-danger);
     }
 
     .add {
-      margin-top: 6px;
-      border: 1px dashed #bbb;
+      margin-top: 8px;
+      border: 1px dashed var(--zen-line-strong);
       background: none;
-      border-radius: 6px;
-      padding: 4px 8px;
+      border-radius: 999px;
+      padding: 6px 14px;
       cursor: pointer;
       font: inherit;
       font-size: 12px;
-      color: #555;
+      color: var(--zen-ink-soft);
+      transition: background var(--zen-transition), border-color var(--zen-transition),
+        color var(--zen-transition);
+    }
+
+    .add:hover {
+      background: var(--zen-accent-soft);
+      border-color: var(--zen-accent);
+      color: var(--zen-accent-strong);
     }
 
     .add:disabled,
     input:disabled {
-      opacity: 0.5;
+      opacity: 0.45;
       cursor: not-allowed;
     }
   `;
@@ -140,7 +199,7 @@ export class CategoryList extends StoreElement {
               <li class=${selected ? 'selected' : ''}>
                 <span
                   class="swatch"
-                  style="background:${category.color}"
+                  style="background:${category.color};box-shadow:0 0 0 2px var(--zen-surface),0 0 0 3px ${category.color}55,0 10px 18px -10px ${category.color}"
                   title="Select ${category.label}"
                   @click=${() => appStore.selectCategory(category.id)}
                   >${this.type === 'text' ? appStore.symbolFor(category) : ''}</span

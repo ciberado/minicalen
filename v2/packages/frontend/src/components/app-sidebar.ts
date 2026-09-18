@@ -6,15 +6,16 @@ import './category-list';
 export class AppSidebar extends StoreElement {
   static styles = css`
     :host {
-      width: 300px;
+      width: 312px;
       flex: none;
       height: 100%;
       overflow: auto;
-      background: #fff;
-      border-right: 1px solid #e0e0e0;
-      padding: 16px;
+      background: color-mix(in srgb, var(--zen-surface) 88%, transparent);
+      backdrop-filter: blur(8px);
+      border-right: 1px solid var(--zen-line);
+      padding: 22px 20px 28px;
       box-sizing: border-box;
-      font-family: system-ui, sans-serif;
+      font-family: var(--zen-font);
       display: block;
     }
 
@@ -22,87 +23,110 @@ export class AppSidebar extends StoreElement {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 12px;
+      margin-bottom: 18px;
     }
 
     h1 {
       flex: 1;
       margin: 0;
-      font-size: 18px;
+      font-size: 19px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: var(--zen-ink);
     }
 
     .icon-button {
-      border: none;
+      border: 1px solid transparent;
       background: none;
       cursor: pointer;
       font-size: 16px;
-      padding: 4px 6px;
-      border-radius: 6px;
+      padding: 6px 8px;
+      border-radius: var(--zen-radius-sm);
+      transition: background var(--zen-transition), border-color var(--zen-transition),
+        transform var(--zen-transition);
     }
 
     .icon-button:hover {
-      background: #f0f0f0;
+      background: var(--zen-accent-soft);
+      border-color: var(--zen-line);
+      transform: translateY(-1px);
     }
 
     .session-name {
       width: 100%;
       box-sizing: border-box;
-      padding: 6px 8px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
+      padding: 10px 12px;
+      border: 1px solid var(--zen-line);
+      border-radius: var(--zen-radius-md);
+      background: var(--zen-surface);
+      color: var(--zen-ink);
       font: inherit;
       font-size: 13px;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
+      transition: border-color var(--zen-transition), box-shadow var(--zen-transition);
+    }
+
+    .session-name:focus {
+      outline: none;
+      border-color: var(--zen-accent);
+      box-shadow: 0 0 0 3px var(--zen-accent-ring);
     }
 
     .banner {
-      background: #e3f2fd;
-      border: 1px solid #bbdefb;
-      border-radius: 6px;
-      padding: 8px;
+      background: var(--zen-accent-soft);
+      border: 1px solid var(--zen-line);
+      border-radius: var(--zen-radius-md);
+      padding: 10px 12px;
       font-size: 12px;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      gap: 10px;
+      color: var(--zen-accent-strong);
     }
 
     .banner button {
       border: none;
-      background: #1976d2;
-      color: #fff;
-      border-radius: 4px;
-      padding: 4px 8px;
+      background: var(--zen-accent);
+      color: var(--zen-surface);
+      border-radius: 999px;
+      padding: 5px 12px;
       cursor: pointer;
       font: inherit;
       font-size: 12px;
       flex: none;
+      transition: background var(--zen-transition), transform var(--zen-transition);
+    }
+
+    .banner button:hover {
+      background: var(--zen-accent-strong);
+      transform: translateY(-1px);
     }
 
     .banner.readonly {
-      background: #fff3e0;
-      border-color: #ffe0b2;
-      color: #e65100;
+      background: var(--zen-warn-soft);
+      color: var(--zen-warn);
     }
 
     .peers {
       display: flex;
-      gap: 4px;
-      margin-bottom: 12px;
+      gap: 6px;
+      margin-bottom: 14px;
     }
 
     .peer {
-      width: 24px;
-      height: 24px;
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
-      background: #455a64;
-      color: #fff;
+      background: var(--zen-accent-strong);
+      color: var(--zen-surface);
       font-size: 11px;
       font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 0 0 2px var(--zen-surface);
     }
 
     .user-menu {
@@ -112,17 +136,22 @@ export class AppSidebar extends StoreElement {
     .user-menu summary {
       list-style: none;
       cursor: pointer;
-      width: 28px;
-      height: 28px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
-      background: #1976d2;
-      color: #fff;
+      background: var(--zen-accent);
+      color: var(--zen-surface);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
+      transition: background var(--zen-transition);
+    }
+
+    .user-menu summary:hover {
+      background: var(--zen-accent-strong);
     }
 
     .user-menu summary::-webkit-details-marker {
@@ -132,13 +161,13 @@ export class AppSidebar extends StoreElement {
     .user-menu .menu {
       position: absolute;
       right: 0;
-      top: 34px;
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      top: 38px;
+      background: var(--zen-surface);
+      border: 1px solid var(--zen-line);
+      border-radius: var(--zen-radius-md);
+      box-shadow: var(--zen-shadow-lg);
       padding: 6px;
-      min-width: 180px;
+      min-width: 190px;
       z-index: 20;
     }
 
@@ -149,54 +178,63 @@ export class AppSidebar extends StoreElement {
       text-align: left;
       border: none;
       background: none;
-      padding: 6px 8px;
-      border-radius: 4px;
+      padding: 8px 10px;
+      border-radius: var(--zen-radius-sm);
       font: inherit;
       font-size: 13px;
       cursor: pointer;
       box-sizing: border-box;
+      color: var(--zen-ink);
     }
 
     .user-menu .menu .email {
-      color: #666;
+      color: var(--zen-ink-faint);
       cursor: default;
       font-size: 12px;
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid var(--zen-line);
       border-radius: 0;
+      margin-bottom: 4px;
     }
 
     .user-menu .menu button:hover {
-      background: #f0f0f0;
+      background: var(--zen-accent-soft);
     }
 
     .view-switch {
       display: flex;
-      gap: 4px;
-      margin-bottom: 14px;
+      gap: 3px;
+      margin-bottom: 18px;
+      padding: 3px;
+      background: var(--zen-surface-2);
+      border-radius: 999px;
     }
 
     .view-switch button {
       flex: 1;
-      border: 1px solid #ddd;
-      background: #fff;
-      border-radius: 6px;
-      padding: 4px 8px;
+      border: none;
+      background: none;
+      border-radius: 999px;
+      padding: 7px 8px;
       font: inherit;
       font-size: 12px;
       cursor: pointer;
-      color: #555;
+      color: var(--zen-ink-soft);
+      transition: background var(--zen-transition), color var(--zen-transition),
+        box-shadow var(--zen-transition);
     }
 
     .view-switch button.active {
-      background: #1976d2;
-      border-color: #1976d2;
-      color: #fff;
+      background: var(--zen-surface);
+      color: var(--zen-ink);
+      box-shadow: var(--zen-shadow-sm);
     }
 
     .status {
-      margin-top: 12px;
+      margin-top: 16px;
       font-size: 11px;
-      color: #888;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--zen-ink-faint);
     }
   `;
 

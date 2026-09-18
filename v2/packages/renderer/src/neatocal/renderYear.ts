@@ -177,20 +177,20 @@ function applyPostProcess(container: HTMLElement, options: ReturnType<typeof nor
     weekend.style.background = options.highlightColor;
   }
 
-  for (const colorCell of options.colorCell) {
-    const cell = container.querySelector<HTMLElement>(`[data-date="${colorCell.date}"]`);
-
-    if (cell) {
-      cell.style.background = colorCell.color;
-    }
-  }
-
   const today = new Date();
   const todayKey = formatDate(today.getFullYear(), today.getMonth(), today.getDate());
   const todayCell = container.querySelector<HTMLElement>(`[data-date="${todayKey}"]`);
 
   if (todayCell) {
     todayCell.style.background = options.todayHighlightColor;
+  }
+
+  for (const colorCell of options.colorCell) {
+    const cell = container.querySelector<HTMLElement>(`[data-date="${colorCell.date}"]`);
+
+    if (cell) {
+      cell.style.background = colorCell.color;
+    }
   }
 }
 

@@ -5,6 +5,19 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-beta.1] - 2026-09-18
+
+### Changed
+
+- **Theme**: introduced a calm "zen" visual language driven by CSS custom properties that
+  pierce the shadow DOM: warm stone background, sage accent, soft cards, generous spacing
+  and gentle transitions across the app shell, sidebar, category editor, dialogs, year grid
+  and the neatocal view.
+- **Categories**: vibrant per-category highlights — swatches keep their saturated colors
+  with a soft colored glow, selected rows get a sage ring, and marked days render as
+  rounded, elevated color chips.
+- Bumped all v2 packages to `2.0.0-beta.1`.
+
 ## [2.0.0-beta.0] - 2026-09-18
 
 ### Added

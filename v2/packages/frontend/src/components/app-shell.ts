@@ -23,9 +23,9 @@ export class AppShell extends StoreElement {
     main {
       flex: 1;
       min-width: 0;
-      padding: 16px;
+      padding: 24px 28px;
       overflow: auto;
-      background: #fafafa;
+      box-sizing: border-box;
     }
 
     .loading {
@@ -33,30 +33,45 @@ export class AppShell extends StoreElement {
       align-items: center;
       justify-content: center;
       height: 100%;
-      color: #666;
-      font-family: system-ui, sans-serif;
+      color: var(--zen-ink-soft);
+      font-family: var(--zen-font);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 12px;
     }
 
     .toast {
       position: fixed;
-      right: 16px;
-      bottom: 16px;
+      right: 22px;
+      bottom: 22px;
       max-width: 360px;
-      padding: 10px 14px;
-      border-radius: 6px;
-      font: 14px system-ui, sans-serif;
-      color: white;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      padding: 12px 18px;
+      border-radius: var(--zen-radius-md);
+      font: 13px var(--zen-font);
+      color: var(--zen-surface);
+      box-shadow: var(--zen-shadow-lg);
       cursor: pointer;
       z-index: 1000;
+      animation: rise 240ms cubic-bezier(0.22, 0.61, 0.36, 1);
     }
 
     .toast.error {
-      background: #d32f2f;
+      background: var(--zen-danger);
     }
 
     .toast.notice {
-      background: #2e7d32;
+      background: var(--zen-accent-strong);
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   `;
 

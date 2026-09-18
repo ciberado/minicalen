@@ -13,49 +13,65 @@ export class NeatocalView extends LitElement {
   static styles = css`
     :host {
       display: block;
-      font-family: system-ui, sans-serif;
+      font-family: var(--zen-font, ui-sans-serif, system-ui, sans-serif);
+      color: var(--zen-ink, #2e3833);
       overflow: auto;
     }
 
     .host {
       display: inline-block;
       min-width: 100%;
+      box-sizing: border-box;
+      background: var(--zen-surface, #fff);
+      border: 1px solid var(--zen-line, #e4e2d9);
+      border-radius: var(--zen-radius, 16px);
+      padding: 12px 14px 14px;
+      box-shadow: var(--zen-shadow-sm, 0 1px 2px rgba(46, 56, 51, 0.05));
     }
 
     .host table {
       border-collapse: collapse;
       width: 100%;
-      font-size: 11px;
+      font-size: 11.5px;
     }
 
     .host th {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 4px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--zen-ink-soft, #66736d);
+      padding: 6px;
       text-align: left;
-      border-bottom: 2px solid #333;
+      border-bottom: 1px solid var(--zen-line-strong, #d6d3c8);
     }
 
     .host td {
-      padding: 1px 4px;
+      padding: 2px 6px;
       vertical-align: top;
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid var(--zen-line, #e4e2d9);
       white-space: nowrap;
+    }
+
+    .host tbody tr:hover td {
+      background: color-mix(in srgb, var(--zen-accent-soft, #e6efe9) 45%, transparent);
     }
 
     .host .date {
       font-weight: 600;
-      margin-right: 3px;
+      color: var(--zen-ink, #2e3833);
     }
 
     .host .day {
-      color: #999;
+      color: var(--zen-ink-faint, #98a39d);
       font-size: 9px;
+      margin-left: 3px;
     }
 
     .host .cell-data {
       font-size: 9px;
-      color: #333;
+      font-weight: 700;
+      color: var(--zen-ink, #2e3833);
     }
   `;
 
@@ -115,6 +131,8 @@ export class NeatocalView extends LitElement {
     renderYear(host, {
       year: this.year,
       layout: this.layout,
+      highlightColor: 'var(--zen-surface-2, #f1f0ea)',
+      todayHighlightColor: 'var(--zen-accent-soft, #e6efe9)',
       colorCell: this.colorCells(),
       data: this.cellData(),
     });
