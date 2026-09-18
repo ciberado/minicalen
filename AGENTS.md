@@ -465,7 +465,7 @@ so it does not interfere with v1. See `v2/README.md` for package details.
 | `@minicalen/shared` | Domain types, Zod schemas, Yjs document helpers | Phase 1 done |
 | `@minicalen/renderer` | Lit year grid + neatocal read-only view | scaffold |
 | `@minicalen/frontend` | App shell, Yjs wiring, auth/session UI | scaffold |
-| `@minicalen/server` | Express + Hocuspocus + Better-Auth + SQLite | scaffold |
+| `@minicalen/server` | Express + Hocuspocus + Better-Auth + SQLite | Phase 2 done |
 
 ### v2 commands
 
@@ -484,7 +484,7 @@ npm run build
 
 0. Scaffold monorepo, tooling, CI — **done**
 1. `shared`: domain + Zod + Yjs helpers + tests — **done**
-2. Server: Better-Auth, REST metadata, Hocuspocus, authz, SQLite persistence
+2. Server: Better-Auth, REST metadata, Hocuspocus, authz, SQLite persistence — **done**
 3. Frontend: Lit shell, Yjs + IndexedDB, auth UI, session list/share
 4. Interactive `<year-grid>`
 5. Forked neatocal read-only view

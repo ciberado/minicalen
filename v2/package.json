@@ -1,7 +1,7 @@
 {
   "name": "minicalen-v2",
   "private": true,
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0-alpha.1",
   "type": "module",
   "workspaces": [
     "packages/shared",
@@ -28,5 +28,8 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.70.0",
     "vitest": "^5.0.1"
+  },
+  "allowScripts": {
+    "better-sqlite3@13.0.3": true
   }
 }

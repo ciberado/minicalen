@@ -1,6 +1,6 @@
 {
   "name": "@minicalen/server",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0-alpha.1",
   "private": true,
   "type": "module",
   "main": "src/index.ts",
@@ -8,9 +8,14 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "type-check": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@hocuspocus/server": "^4.7.0",
     "@minicalen/shared": "*",
     "better-auth": "^1.7.5",
     "better-sqlite3": "^13.0.3",

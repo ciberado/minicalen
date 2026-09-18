@@ -34,4 +34,17 @@ npm run build
 
 ## Status
 
-Phase 0 (scaffold). No features implemented yet.
+- Phase 0 (scaffold) — done
+- Phase 1 (`shared` domain + Yjs helpers) — done
+- Phase 2 (server: auth, REST, Hocuspocus, SQLite) — done
+- Phase 3 (frontend) — next
+
+See `CHANGELOG.md` for details.
+
+## Server layout
+
+- REST API on `PORT` (default 3001): `/api/auth/*`, `/api/sessions/*`, `/health`.
+- Collaboration WebSocket on `COLLAB_PORT` (default 3002) via Hocuspocus.
+
+The server runs with `tsx` (TypeScript source). Database migrations live in
+`packages/server/drizzle/` and are applied automatically on startup.
