@@ -12,12 +12,25 @@
 # In both cases, OpenSSH is started so you can SSH in when Tailscale is active,
 # or use the container's SSH server through other means.
 #
-# Env vars (injected via docker --env-file from .devcontainer/.env):
+# Env vars (read from .devcontainer/.env on every start):
 #   TAILSCALE_AUTHKEY  — optional. A reusable / ephemeral auth key from the
 #                        Tailscale console. Leave empty to skip Tailscale.
 #   PROJECT_NAME       — optional. Used as the Tailscale node hostname:
 #                        vs-<PROJECT_NAME>. Only meaningful with Tailscale.
 set -euo pipefail
+
+# ── Load .env fresh on every start ────────────────────────────────────────────
+# Docker's --env-file is only evaluated when the container is created, so
+# editing .devcontainer/.env and restarting would keep the old values until a
+# full rebuild. Sourcing it here makes key rotations take effect on the next
+# start. `sed` strips CRLF in case the file was edited on Windows/WSL.
+ENV_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.env"
+if [[ -f "$ENV_FILE" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source <(sed 's/\r$//' "$ENV_FILE")
+  set +a
+fi
 
 # ── Tailscale check ───────────────────────────────────────────────────────────
 
@@ -54,14 +67,27 @@ else
   # console. Falls back to the Docker hostname if PROJECT_NAME is unset.
 
   HOSTNAME="vs-${PROJECT_NAME:-devcontainer}"
+
+  # If the authkey changed since the last successful `up`, force a re-auth so
+  # the node switches to the new key instead of silently keeping the old login.
+  KEY_HASH_FILE=/var/lib/tailscale/.minicalen-authkey.sha256
+  KEY_HASH="$(printf '%s' "$TAILSCALE_AUTHKEY" | sha256sum | awk '{print $1}')"
+  FORCE_REAUTH=()
+  if [[ -f "$KEY_HASH_FILE" ]] && [[ "$(sudo cat "$KEY_HASH_FILE" 2>/dev/null)" != "$KEY_HASH" ]]; then
+    echo "(tailscale) Auth key changed — forcing re-authentication."
+    FORCE_REAUTH=(--force-reauth)
+  fi
+
   echo "(tailscale) Bringing Tailscale up as: ${HOSTNAME}"
   sudo tailscale up \
+    "${FORCE_REAUTH[@]}" \
     --authkey="${TAILSCALE_AUTHKEY}" \
     --ssh \
     --advertise-tags=tag:vscode,tag:container \
     --hostname="${HOSTNAME}" \
     --accept-routes
 
+  printf '%s' "$KEY_HASH" | sudo tee "$KEY_HASH_FILE" > /dev/null
   echo "(tailscale) Tailscale up. Node address: $(tailscale ip -4 2>/dev/null || echo 'pending')"
 
   # — MagicDNS —————————————————————————————————————————————————————————————————

@@ -2,7 +2,7 @@
 {
 	"name": "Node.js & TypeScript",
 
-	// Ensure .env exists so the --env-file flag in runArgs doesn't fail.
+	// Ensure .env exists so start-tailscale.sh can source it.
 	// If it already exists, this is a no-op.
 	"initializeCommand": "mkdir -p .devcontainer && [ -f .devcontainer/.env ] || touch .devcontainer/.env",
 
@@ -18,9 +18,12 @@
 
 	// Give the container a stable Docker hostname.
 	// Tailscale still uses its own --hostname flag (vs-<PROJECT_NAME>).
+	// Note: .devcontainer/.env is intentionally NOT passed via --env-file.
+	// Docker only reads --env-file at container creation, so rotating the
+	// key in .env would keep the stale value until a full rebuild.
+	// start-tailscale.sh sources .env on every start instead.
 	"runArgs": [
 		"--hostname", "devcontainer",
-		"--env-file", "${localWorkspaceFolder}/.devcontainer/.env",
 		"--name", "vs-${localWorkspaceFolderBasename}",
 		"--dns=1.1.1.1"
 	],

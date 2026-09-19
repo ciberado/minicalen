@@ -71,7 +71,8 @@ TAILSCALE_AUTHKEY=tskey-auth-xxxxxxxxxxxxxxxx
 PROJECT_NAME=my-project
 ```
 
-Rebuild the container to pick up the env vars:
+Restart the container to pick up the env vars (a full rebuild is not needed —
+`start-tailscale.sh` reads `.env` on every start):
 
 ```bash
 devcontainer up --workspace-folder .
@@ -119,8 +120,8 @@ ssh dev@vs-my-project
 |---|---|
 | `initproject.sh` | Bootstrap script. Run via `curl … \| bash` to guide you through creating a new project. |
 | `Dockerfile` | Builds the image: Ubuntu 24.04, Node 22 (via nvm), TypeScript tooling, tmux. Renames the default user to `dev`. |
-| `devcontainer.json` | Devcontainer orchestrator. Sets `runArgs` for Docker (hostname, env file, container name), loads features (Tailscale, GitHub CLI, Docker-in-Docker, OpenSSH), wires lifecycle hooks. |
-| `start-tailscale.sh` | Runs on every container start. If `TAILSCALE_AUTHKEY` is set: starts `tailscaled`, authenticates to your tailnet, enables SSH + MagicDNS, advertises tags. If empty: skipped gracefully. |
+| `devcontainer.json` | Devcontainer orchestrator. Sets `runArgs` for Docker (hostname, container name), loads features (Tailscale, GitHub CLI, Docker-in-Docker, OpenSSH), wires lifecycle hooks. |
+| `start-tailscale.sh` | Runs on every container start. Reads `.env` on each start, then if `TAILSCALE_AUTHKEY` is set: starts `tailscaled`, authenticates to your tailnet, enables SSH + MagicDNS, advertises tags. If empty: skipped gracefully. |
 | `post-create.sh` | Runs once after the image is built. Installs oh-my-tmux and the Fresh editor. |
 | `README.md` | This file. |
 
@@ -168,9 +169,11 @@ auth key, Docker container naming — comes from the template or your `.env`.
 | `TAILSCALE_AUTHKEY` | No | Tailscale auth key (reusable or ephemeral). Leave empty to skip Tailscale. Generate at [admin console](https://login.tailscale.com/admin/settings/authkeys). |
 | `PROJECT_NAME` | No | Used for the Tailscale hostname: `vs-<PROJECT_NAME>`. Only meaningful when `TAILSCALE_AUTHKEY` is set. |
 
-Docker reads these from `.env` via `--env-file` at container start — they are
-not baked into the image. If `.env` doesn't exist, it's created automatically
-as an empty file and the container starts without Tailscale.
+`start-tailscale.sh` reads these from `.env` on every container start — they are
+not baked into the image. Because the file is read at start time (not passed to
+Docker via `--env-file`), rotating the key takes effect on the next restart
+without recreating the container. If `.env` doesn't exist, it's created
+automatically as an empty file and the container starts without Tailscale.
 
 ## Docker container naming
 
