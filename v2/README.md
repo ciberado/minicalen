@@ -91,6 +91,9 @@ All planned phases are complete at `2.0.0-beta.0`:
   Two categories render as a bottom-left → top-right diagonal split (lower `order` on the
   top-left); the day number uses contrast-computed ink. Schema `v1 → v2` migration runs on
   document load (server and client).
+- Day cells stack the number and text symbols in normal flow and use a responsive height
+  (`clamp(30px, 3.6vh, 52px)`), so symbols never overlap the number and months use available
+  vertical space without stretching.
 - The server persists encoded Yjs updates in `session_documents` (snapshot per session)
   through Hocuspocus `onLoadDocument`/`onStoreDocument`.
 - Authorization is deny-by-default in `authz.ts`, shared by REST and Hocuspocus. Anonymous

@@ -173,6 +173,21 @@ describe('year-grid', () => {
     expect(day(element, '2026-01-15').querySelector('.symbol')?.textContent).toBe('H');
   });
 
+  it('stacks the day number above its text symbols', async () => {
+    const element = await mount({
+      categories: [foreground, text],
+      dateMarks: { '2026-01-15': { categoryIds: ['fg'], textCategoryIds: ['tx'] } },
+    });
+
+    const cell = day(element, '2026-01-15');
+    const number = cell.querySelector('.number');
+    const symbols = cell.querySelector('.symbols');
+
+    expect(number).not.toBeNull();
+    expect(symbols).not.toBeNull();
+    expect(symbols?.previousElementSibling).toBe(number);
+  });
+
   it('emits date-click when an editable date is clicked', async () => {
     const element = await mount({ categories: [foreground], selectedCategoryId: 'fg' });
     const events: string[] = [];

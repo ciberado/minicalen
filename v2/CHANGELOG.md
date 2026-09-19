@@ -5,6 +5,17 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-beta.4] - 2026-09-19
+
+### Changed
+
+- **Day cell layout**: the number and the text symbols now stack in normal flow (no absolute
+  overlay), so symbols can no longer overlap the day number.
+- **Responsive cell height**: day cells grow with the viewport
+  (`min-height: clamp(30px, 3.6vh, 52px)`) and expand further only when their content needs
+  it. Months are taller when there is room without looking stretched; on short screens the
+  grid scrolls instead of compressing.
+
 ## [2.0.0-beta.3] - 2026-09-19
 
 ### Added

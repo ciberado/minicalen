@@ -28,6 +28,7 @@ export class YearGrid extends LitElement {
       display: block;
       font-family: var(--zen-font, ui-sans-serif, system-ui, sans-serif);
       color: var(--zen-ink, #2e3833);
+      --cell: clamp(30px, 3.6vh, 52px);
     }
 
     .months {
@@ -90,12 +91,13 @@ export class YearGrid extends LitElement {
 
     .day {
       position: relative;
-      min-height: 30px;
+      min-height: var(--cell, 30px);
       border-radius: 8px;
       font-size: 11.5px;
       display: flex;
+      flex-direction: column;
       align-items: flex-start;
-      justify-content: flex-start;
+      gap: 2px;
       padding: 3px 4px;
       box-sizing: border-box;
       cursor: pointer;
@@ -136,13 +138,9 @@ export class YearGrid extends LitElement {
     }
 
     .symbols {
-      position: absolute;
-      top: 15px;
-      left: 3px;
       display: flex;
       flex-wrap: wrap;
       gap: 2px;
-      z-index: 2;
       pointer-events: none;
     }
 
