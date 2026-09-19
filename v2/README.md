@@ -33,6 +33,25 @@ npm run test:e2e     # Playwright (starts servers; reuses running ones)
 npm run build
 ```
 
+## Single entry point
+
+In development the Vite server proxies `/api` (REST) and `/collaboration` (WebSocket) to the
+backend, so **one URL is enough** — including from another device over Tailscale:
+
+```
+http://vs-minicalen:5173
+```
+
+Start both processes from `v2/`:
+
+```bash
+npm run dev:all
+```
+
+The proxy rewrites the `Origin` header for `/api` to `http://localhost:5173`, which the
+server trusts in development. In production the nginx container performs the equivalent
+proxying, so the app is also reachable through a single origin.
+
 ## Docker
 
 ```bash

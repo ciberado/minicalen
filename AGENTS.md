@@ -473,7 +473,7 @@ Run from `v2/`:
 
 ```bash
 npm install
-npm run dev:all      # server (3001/3002) + frontend (5173)
+npm run dev:all      # server (3001/3002) + frontend (5173); single entry via Vite proxy
 npm run lint
 npm run type-check
 npm run test         # Vitest (unit + integration)

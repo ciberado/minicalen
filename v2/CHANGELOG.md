@@ -5,6 +5,20 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-beta.2] - 2026-09-19
+
+### Added
+
+- **Single entry point**: the Vite dev server now proxies `/api` and `/collaboration`
+  (WebSocket) to the backend, so the app is reachable through one URL — e.g.
+  `http://vs-minicalen:5173` from another device over Tailscale.
+- The frontend derives the API and WebSocket URLs from `window.location` (same origin) in
+  both development and production; explicit `VITE_API_URL`/`VITE_COLLAB_URL` still override.
+
+### Changed
+
+- Bumped all v2 packages to `2.0.0-beta.2`.
+
 ## [2.0.0-beta.1] - 2026-09-18
 
 ### Changed

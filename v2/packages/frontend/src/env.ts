@@ -1,5 +1,3 @@
-const isDev = import.meta.env.DEV;
-
 function trimTrailingSlash(value: string): string {
   return value.replace(/\/$/, '');
 }
@@ -11,7 +9,7 @@ function resolveApiBaseUrl(): string {
     return trimTrailingSlash(configured);
   }
 
-  if (!isDev && typeof window !== 'undefined') {
+  if (typeof window !== 'undefined') {
     return window.location.origin;
   }
 
@@ -25,7 +23,7 @@ function resolveCollabUrl(): string {
     return trimTrailingSlash(configured);
   }
 
-  if (!isDev && typeof window !== 'undefined') {
+  if (typeof window !== 'undefined') {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${protocol}//${window.location.host}/collaboration`;
   }
