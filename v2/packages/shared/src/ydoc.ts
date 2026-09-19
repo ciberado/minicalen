@@ -2,7 +2,8 @@ import * as Y from 'yjs';
 import type { Category, CategoryType, DateMark, DateMarkMap, SessionSnapshot } from './domain';
 import { sessionSnapshotSchema } from './schema';
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
+export const MAX_FOREGROUND_CATEGORIES = 2;
 
 export interface SessionDocument {
   doc: Y.Doc;
@@ -30,7 +31,7 @@ export function getSchemaVersion(session: SessionDocument): number {
 
 function normalizeMark(mark: DateMark): DateMark {
   return {
-    ...(mark.categoryId ? { categoryId: mark.categoryId } : {}),
+    categoryIds: mark.categoryIds ? [...mark.categoryIds] : [],
     textCategoryIds: mark.textCategoryIds ? [...mark.textCategoryIds] : [],
   };
 }
@@ -60,19 +61,21 @@ export function removeCategory(session: SessionDocument, id: string): void {
     const updates: Array<[string, DateMark | null]> = [];
 
     session.dateMarks.forEach((mark, date) => {
-      if (mark.categoryId !== id && !(mark.textCategoryIds ?? []).includes(id)) {
+      const categoryIds = mark.categoryIds ?? [];
+
+      if (!categoryIds.includes(id) && !(mark.textCategoryIds ?? []).includes(id)) {
         return;
       }
 
+      const nextCategoryIds = categoryIds.filter((categoryId) => categoryId !== id);
       const textCategoryIds = (mark.textCategoryIds ?? []).filter(
         (textId) => textId !== id,
       );
-      const categoryId = mark.categoryId === id ? undefined : mark.categoryId;
 
       updates.push([
         date,
-        categoryId || textCategoryIds.length > 0
-          ? { ...(categoryId ? { categoryId } : {}), textCategoryIds }
+        nextCategoryIds.length > 0 || textCategoryIds.length > 0
+          ? { categoryIds: nextCategoryIds, textCategoryIds }
           : null,
       ]);
     });
@@ -114,25 +117,31 @@ export function getDateMarks(session: SessionDocument): DateMarkMap {
   return result;
 }
 
-export function setDateCategory(
+export function toggleDateCategory(
   session: SessionDocument,
   date: string,
-  categoryId: string | null,
+  categoryId: string,
 ): void {
   const existing = session.dateMarks.get(date);
-  const textCategoryIds = existing?.textCategoryIds ? [...existing.textCategoryIds] : [];
-  const next: DateMark = { textCategoryIds };
+  const current = existing?.categoryIds ?? [];
+  let categoryIds: string[];
 
-  if (categoryId) {
-    next.categoryId = categoryId;
+  if (current.includes(categoryId)) {
+    categoryIds = current.filter((id) => id !== categoryId);
+  } else if (current.length < MAX_FOREGROUND_CATEGORIES) {
+    categoryIds = [...current, categoryId];
+  } else {
+    categoryIds = [...current.slice(1), categoryId];
   }
 
-  if (!next.categoryId && next.textCategoryIds.length === 0) {
+  const textCategoryIds = existing?.textCategoryIds ? [...existing.textCategoryIds] : [];
+
+  if (categoryIds.length === 0 && textCategoryIds.length === 0) {
     session.dateMarks.delete(date);
     return;
   }
 
-  session.dateMarks.set(date, next);
+  session.dateMarks.set(date, { categoryIds, textCategoryIds });
 }
 
 export function toggleDateTextCategory(
@@ -145,18 +154,14 @@ export function toggleDateTextCategory(
   const textCategoryIds = current.includes(textCategoryId)
     ? current.filter((id) => id !== textCategoryId)
     : [...current, textCategoryId];
-  const next: DateMark = { textCategoryIds };
+  const categoryIds = existing?.categoryIds ? [...existing.categoryIds] : [];
 
-  if (existing?.categoryId) {
-    next.categoryId = existing.categoryId;
-  }
-
-  if (!next.categoryId && textCategoryIds.length === 0) {
+  if (categoryIds.length === 0 && textCategoryIds.length === 0) {
     session.dateMarks.delete(date);
     return;
   }
 
-  session.dateMarks.set(date, next);
+  session.dateMarks.set(date, { categoryIds, textCategoryIds });
 }
 
 export function clearDateMark(session: SessionDocument, date: string): void {
@@ -195,7 +200,26 @@ export function isEmptySnapshot(snapshot: SessionSnapshot): boolean {
 
 export type SessionMigration = (session: SessionDocument) => void;
 
-const migrations: Record<number, SessionMigration> = {};
+interface LegacyDateMark {
+  categoryId?: string;
+  categoryIds?: string[];
+  textCategoryIds?: string[];
+}
+
+const migrations: Record<number, SessionMigration> = {
+  1: (session) => {
+    session.dateMarks.forEach((mark, date) => {
+      const legacy = mark as unknown as LegacyDateMark;
+      const categoryIds =
+        legacy.categoryIds ?? (legacy.categoryId ? [legacy.categoryId] : []);
+
+      session.dateMarks.set(date, {
+        categoryIds: categoryIds.slice(0, MAX_FOREGROUND_CATEGORIES),
+        textCategoryIds: legacy.textCategoryIds ?? [],
+      });
+    });
+  },
+};
 
 export function migrateSessionDocument(session: SessionDocument): void {
   let version = getSchemaVersion(session);

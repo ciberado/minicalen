@@ -14,6 +14,6 @@ describe('GET /health', () => {
     const response = await request(app).get('/health');
 
     expect(response.status).toBe(200);
-    expect(response.body).toMatchObject({ status: 'ok', schemaVersion: 1 });
+    expect(response.body).toMatchObject({ status: 'ok', schemaVersion: 2 });
   });
 });

@@ -380,9 +380,8 @@ class AppStore {
     }
   }
 
-  setDateCategory(date: string, categoryId: string | null): void {
-    const current = this.state.session.dateMarks[date]?.categoryId ?? null;
-    sessionStore.setDateCategory(date, current === categoryId ? null : categoryId);
+  toggleDateCategory(date: string, categoryId: string): void {
+    sessionStore.toggleDateCategory(date, categoryId);
   }
 
   toggleTextCategory(date: string, categoryId: string): void {

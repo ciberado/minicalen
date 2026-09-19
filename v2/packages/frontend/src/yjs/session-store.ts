@@ -4,13 +4,14 @@ import * as Y from 'yjs';
 import {
   applySnapshot,
   createSessionDocument,
+  migrateSessionDocument,
   getCategories,
   getDateMark,
   getDateMarks,
   removeCategory,
   setCategoryOrder,
-  setDateCategory,
   snapshotFromDoc,
+  toggleDateCategory,
   toggleDateTextCategory,
   upsertCategory,
   type Category,
@@ -99,6 +100,7 @@ export class SessionStore {
     this.createDocument();
     this.indexeddb = new IndexeddbPersistence('minicalen-anonymous', this.doc);
     await this.indexeddb.whenSynced;
+    this.migrateDocument();
     this.setState({ sessionId: null, status: 'local', readOnly: false });
   }
 
@@ -112,6 +114,7 @@ export class SessionStore {
 
     this.indexeddb = new IndexeddbPersistence(`minicalen-${sessionId}`, this.doc);
     await this.indexeddb.whenSynced;
+    this.migrateDocument();
 
     this.provider = new HocuspocusProvider({
       url: COLLAB_URL,
@@ -177,12 +180,12 @@ export class SessionStore {
     this.refresh();
   }
 
-  setDateCategory(date: string, categoryId: string | null): void {
+  toggleDateCategory(date: string, categoryId: string): void {
     if (this.state.readOnly) {
       return;
     }
 
-    setDateCategory(this.session, date, categoryId);
+    toggleDateCategory(this.session, date, categoryId);
   }
 
   toggleTextCategory(date: string, textCategoryId: string): void {
@@ -227,6 +230,11 @@ export class SessionStore {
     this.indexeddb?.destroy();
     this.indexeddb = null;
     this.state = { ...this.state, peers: [] };
+  }
+
+  private migrateDocument(): void {
+    migrateSessionDocument(this.session);
+    this.refresh();
   }
 
   private refresh(): void {

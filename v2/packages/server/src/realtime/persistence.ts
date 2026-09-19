@@ -50,9 +50,9 @@ export async function loadSnapshot(
     return null;
   }
 
-  const session = createSessionDocument();
-  Y.applyUpdate(session.doc, update);
-  return snapshotFromDoc(session);
+  const document = new Y.Doc();
+  Y.applyUpdate(document, update);
+  return snapshotFromDoc(createSessionDocument(document));
 }
 
 export async function storeSnapshot(

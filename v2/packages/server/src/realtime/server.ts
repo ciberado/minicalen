@@ -1,6 +1,6 @@
 import { Server } from '@hocuspocus/server';
 import * as Y from 'yjs';
-import { SCHEMA_VERSION } from '@minicalen/shared';
+import { SCHEMA_VERSION, createSessionDocument, migrateSessionDocument } from '@minicalen/shared';
 import type { AppConfig } from '../config';
 import type { AppLogger } from '../logger';
 import type { AppDatabase } from '../db';
@@ -53,6 +53,8 @@ export function createCollaborationServer({ db, auth, config, logger }: Collabor
       if (update) {
         Y.applyUpdate(document, update);
       }
+
+      migrateSessionDocument(createSessionDocument(document));
 
       return document;
     },

@@ -11,7 +11,7 @@ export interface Category {
 }
 
 export interface DateMark {
-  categoryId?: string;
+  categoryIds: string[];
   textCategoryIds: string[];
 }
 

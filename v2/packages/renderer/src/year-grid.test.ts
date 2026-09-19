@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Category } from '@minicalen/shared';
-import { hexToRgba } from './color';
+import { INK_DARK, INK_LIGHT, contrastInk, hexToRgba } from './color';
 import './year-grid';
 import type { YearGrid } from './year-grid';
 
@@ -10,6 +10,16 @@ const foreground: Category = {
   label: 'Work',
   color: '#2196F3',
   order: 0,
+  active: true,
+  visible: true,
+};
+
+const dark: Category = {
+  id: 'dark',
+  type: 'foreground',
+  label: 'Deep',
+  color: '#795548',
+  order: 1,
   active: true,
   visible: true,
 };
@@ -44,6 +54,21 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
+describe('contrastInk', () => {
+  it('picks dark ink for light colors', () => {
+    expect(contrastInk('#F44336')).toBe(INK_DARK);
+    expect(contrastInk('#2196F3')).toBe(INK_DARK);
+    expect(contrastInk('#4CAF50')).toBe(INK_DARK);
+    expect(contrastInk('#ffffff')).toBe(INK_DARK);
+  });
+
+  it('picks light ink for dark colors', () => {
+    expect(contrastInk('#795548')).toBe(INK_LIGHT);
+    expect(contrastInk('#9C27B0')).toBe(INK_LIGHT);
+    expect(contrastInk('#000000')).toBe(INK_LIGHT);
+  });
+});
+
 describe('hexToRgba', () => {
   it('converts hex colors to rgba', () => {
     expect(hexToRgba('#2196F3', 0.2)).toBe('rgba(33, 150, 243, 0.2)');
@@ -68,20 +93,72 @@ describe('year-grid', () => {
     expect(day(element, '2026-02-01')).toBeDefined();
   });
 
-  it('applies the foreground category color to a marked date', async () => {
+  it('applies a single foreground category with contrasting ink', async () => {
     const element = await mount({
       categories: [foreground],
-      dateMarks: { '2026-01-15': { categoryId: 'fg', textCategoryIds: [] } },
+      dateMarks: { '2026-01-15': { categoryIds: ['fg'], textCategoryIds: [] } },
     });
 
-    expect(day(element, '2026-01-15').getAttribute('style')).toContain('2196F3');
-    expect(day(element, '2026-01-16').getAttribute('style') ?? '').not.toContain('2196F3');
+    const cell = day(element, '2026-01-15');
+    expect(cell.className).toContain('marked');
+    expect(cell.getAttribute('style')).toContain('#2196F3');
+    expect(cell.querySelector('.number')?.getAttribute('style')).toContain(INK_DARK);
+  });
+
+  it('uses light ink on dark categories', async () => {
+    const element = await mount({
+      categories: [dark],
+      dateMarks: { '2026-01-15': { categoryIds: ['dark'], textCategoryIds: [] } },
+    });
+
+    expect(day(element, '2026-01-15').querySelector('.number')?.getAttribute('style')).toContain(
+      INK_LIGHT,
+    );
+  });
+
+  it('splits the cell diagonally for two categories', async () => {
+    const element = await mount({
+      categories: [foreground, dark],
+      dateMarks: { '2026-01-15': { categoryIds: ['dark', 'fg'], textCategoryIds: [] } },
+    });
+
+    const style = day(element, '2026-01-15').getAttribute('style') ?? '';
+    expect(style).toContain('linear-gradient(to bottom right');
+    expect(style).toContain('#2196F3');
+    expect(style).toContain('#795548');
+  });
+
+  it('places the lower-order category first (same half regardless of insertion order)', async () => {
+    const element = await mount({
+      categories: [foreground, dark],
+      dateMarks: {
+        '2026-01-15': { categoryIds: ['dark', 'fg'], textCategoryIds: [] },
+        '2026-01-16': { categoryIds: ['fg', 'dark'], textCategoryIds: [] },
+      },
+    });
+
+    const first = day(element, '2026-01-15').getAttribute('style') ?? '';
+    const second = day(element, '2026-01-16').getAttribute('style') ?? '';
+
+    expect(first).toContain('linear-gradient(to bottom right, #2196F3 0 50%, #795548 50% 100%)');
+    expect(second).toContain('linear-gradient(to bottom right, #2196F3 0 50%, #795548 50% 100%)');
+  });
+
+  it('uses the primary category ink for two categories', async () => {
+    const element = await mount({
+      categories: [foreground, dark],
+      dateMarks: { '2026-01-15': { categoryIds: ['fg', 'dark'], textCategoryIds: [] } },
+    });
+
+    expect(day(element, '2026-01-15').querySelector('.number')?.getAttribute('style')).toContain(
+      INK_DARK,
+    );
   });
 
   it('reduces opacity for hidden categories', async () => {
     const element = await mount({
       categories: [{ ...foreground, visible: false }],
-      dateMarks: { '2026-01-15': { categoryId: 'fg', textCategoryIds: [] } },
+      dateMarks: { '2026-01-15': { categoryIds: ['fg'], textCategoryIds: [] } },
     });
 
     expect(day(element, '2026-01-15').getAttribute('style')).toContain('rgba');
@@ -90,7 +167,7 @@ describe('year-grid', () => {
   it('renders text symbols for text categories', async () => {
     const element = await mount({
       categories: [text],
-      dateMarks: { '2026-01-15': { textCategoryIds: ['tx'] } },
+      dateMarks: { '2026-01-15': { categoryIds: [], textCategoryIds: ['tx'] } },
     });
 
     expect(day(element, '2026-01-15').querySelector('.symbol')?.textContent).toBe('H');

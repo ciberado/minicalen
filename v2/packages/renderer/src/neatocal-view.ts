@@ -1,7 +1,7 @@
 import { LitElement, css, html } from 'lit';
 import { property } from 'lit/decorators.js';
 import { generateSymbol, type Category, type DateMarkMap } from '@minicalen/shared';
-import { hexToRgba } from './color';
+import { INK_DARK, contrastInk, hexToRgba } from './color';
 import { renderYear, type NeatocalColorCell, type NeatocalLayout } from './neatocal/renderYear';
 
 export class NeatocalView extends LitElement {
@@ -79,19 +79,42 @@ export class NeatocalView extends LitElement {
     return id ? this.categories.find((category) => category.id === id) : undefined;
   }
 
+  private foregroundCategories(mark: { categoryIds?: string[] }): Category[] {
+    return (mark.categoryIds ?? [])
+      .map((id) => this.categoryById(id))
+      .filter((category): category is Category => Boolean(category))
+      .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+  }
+
+  private fillFor(category: Category): string {
+    return category.visible === false ? hexToRgba(category.color, 0.18) : category.color;
+  }
+
+  private inkFor(category: Category): string {
+    return category.visible === false ? INK_DARK : contrastInk(category.color);
+  }
+
   private colorCells(): NeatocalColorCell[] {
     const cells: NeatocalColorCell[] = [];
 
     for (const [date, mark] of Object.entries(this.dateMarks)) {
-      const category = this.categoryById(mark.categoryId);
+      const categories = this.foregroundCategories(mark);
 
-      if (!category) {
+      if (categories.length === 0) {
         continue;
       }
 
+      if (categories.length === 1) {
+        cells.push({ date, color: this.fillFor(categories[0]), ink: this.inkFor(categories[0]) });
+        continue;
+      }
+
+      const [primary, secondary] = categories;
+
       cells.push({
         date,
-        color: category.visible === false ? hexToRgba(category.color, 0.18) : category.color,
+        color: `linear-gradient(to bottom right, ${this.fillFor(primary)} 0 50%, ${this.fillFor(secondary)} 50% 100%)`,
+        ink: this.inkFor(primary),
       });
     }
 

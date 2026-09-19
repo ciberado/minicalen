@@ -10,7 +10,7 @@ function buildApp(): Express {
 
 function snapshot() {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     categories: [
       {
         id: 'c1',
@@ -22,7 +22,7 @@ function snapshot() {
         visible: true,
       },
     ],
-    dateMarks: { '2026-01-01': { categoryId: 'c1', textCategoryIds: [] } },
+    dateMarks: { '2026-01-01': { categoryIds: ['c1'], textCategoryIds: [] } },
   };
 }
 

@@ -25,19 +25,42 @@ describe('shareSessionSchema', () => {
 });
 
 describe('sessionSnapshotSchema', () => {
-  it('applies default text category ids', () => {
+  it('applies default category arrays', () => {
     const parsed = sessionSnapshotSchema.parse({
-      schemaVersion: 1,
+      schemaVersion: 2,
       categories: [],
-      dateMarks: { '2026-01-01': { categoryId: 'c1' } },
+      dateMarks: { '2026-01-01': {} },
     });
 
-    expect(parsed.dateMarks['2026-01-01']).toEqual({ categoryId: 'c1', textCategoryIds: [] });
+    expect(parsed.dateMarks['2026-01-01']).toEqual({ categoryIds: [], textCategoryIds: [] });
+  });
+
+  it('accepts up to two foreground categories', () => {
+    const parsed = sessionSnapshotSchema.parse({
+      schemaVersion: 2,
+      categories: [],
+      dateMarks: { '2026-01-01': { categoryIds: ['a', 'b'], textCategoryIds: ['t'] } },
+    });
+
+    expect(parsed.dateMarks['2026-01-01']).toEqual({
+      categoryIds: ['a', 'b'],
+      textCategoryIds: ['t'],
+    });
+  });
+
+  it('rejects more than two foreground categories', () => {
+    const result = sessionSnapshotSchema.safeParse({
+      schemaVersion: 2,
+      categories: [],
+      dateMarks: { '2026-01-01': { categoryIds: ['a', 'b', 'c'] } },
+    });
+
+    expect(result.success).toBe(false);
   });
 
   it('rejects invalid colors', () => {
     const result = sessionSnapshotSchema.safeParse({
-      schemaVersion: 1,
+      schemaVersion: 2,
       categories: [
         { id: 'c1', type: 'foreground', label: 'X', color: 'red', order: 0, active: true, visible: true },
       ],

@@ -17,7 +17,7 @@ export const categorySchema = z.object({
 });
 
 export const dateMarkSchema = z.object({
-  categoryId: z.string().min(1).optional(),
+  categoryIds: z.array(z.string().min(1)).max(2).default([]),
   textCategoryIds: z.array(z.string().min(1)).default([]),
 });
 

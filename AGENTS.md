@@ -498,6 +498,9 @@ All planned phases are complete at `2.0.0-beta.0`.
 ### v2 conventions
 
 - **Exhaustive tests** for every module (Vitest; Playwright for E2E).
+- Calendar state lives in a versioned `Y.Doc` (`schemaVersion`, currently 2). `DateMark`
+  supports up to two foreground categories rendered as a diagonal split, plus text symbols.
+  Bump `SCHEMA_VERSION` and add a migration in `shared/src/ydoc.ts` when changing the model.
 - **No comments** unless requested; 2-space indent, single quotes, TypeScript.
 - Commit regularly with Conventional Commits; semantic versioning (started at
   `2.0.0-alpha.0`).

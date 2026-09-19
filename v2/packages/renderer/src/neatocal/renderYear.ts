@@ -1,6 +1,7 @@
 export interface NeatocalColorCell {
   date: string;
   color: string;
+  ink?: string;
 }
 
 export type NeatocalLayout = 'default' | 'aligned-weekdays';
@@ -188,8 +189,18 @@ function applyPostProcess(container: HTMLElement, options: ReturnType<typeof nor
   for (const colorCell of options.colorCell) {
     const cell = container.querySelector<HTMLElement>(`[data-date="${colorCell.date}"]`);
 
-    if (cell) {
-      cell.style.background = colorCell.color;
+    if (!cell) {
+      continue;
+    }
+
+    cell.style.background = colorCell.color;
+
+    if (colorCell.ink) {
+      const date = cell.querySelector<HTMLElement>('.date');
+
+      if (date) {
+        date.style.color = colorCell.ink;
+      }
     }
   }
 }

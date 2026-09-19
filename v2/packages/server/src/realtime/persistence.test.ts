@@ -49,7 +49,7 @@ describe('collaboration persistence', () => {
           visible: true,
         },
       ],
-      dateMarks: { '2026-01-01': { categoryId: 'c1', textCategoryIds: [] } },
+      dateMarks: { '2026-01-01': { categoryIds: ['c1'], textCategoryIds: [] } },
     };
 
     await storeSnapshot(db, 's1', snapshot);
@@ -64,7 +64,7 @@ describe('collaboration persistence', () => {
     await storeSnapshot(db, 's1', {
       schemaVersion: SCHEMA_VERSION,
       categories: [],
-      dateMarks: { '2026-01-01': { textCategoryIds: ['t1'] } },
+      dateMarks: { '2026-01-01': { categoryIds: [], textCategoryIds: ['t1'] } },
     });
     await storeSnapshot(db, 's1', {
       schemaVersion: SCHEMA_VERSION,

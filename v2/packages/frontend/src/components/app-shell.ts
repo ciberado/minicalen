@@ -87,7 +87,7 @@ export class AppShell extends StoreElement {
     }
 
     if (selected.type === 'foreground') {
-      appStore.setDateCategory(event.detail.date, selected.id);
+      appStore.toggleDateCategory(event.detail.date, selected.id);
     } else {
       appStore.toggleTextCategory(event.detail.date, selected.id);
     }

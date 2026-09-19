@@ -5,6 +5,27 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-beta.3] - 2026-09-19
+
+### Added
+
+- **Two foreground categories per day**: `DateMark.categoryIds` now holds up to two
+  categories. A day with two is split along the bottom-left → top-right diagonal; the
+  category with the lower `order` always occupies the top-left half, so the same category
+  keeps the same half across days.
+- **Adaptive day-number ink**: the number (now top-left) picks dark or light ink based on
+  the WCAG relative luminance of the category color (and of the top-left half when there
+  are two), so it is always legible.
+- **Add/remove click behaviour**: clicking a selected foreground category toggles it;
+  adding a third replaces the oldest one on that day.
+
+### Changed
+
+- **Schema version 2** with a `v1 → v2` migration (`categoryId` → `categoryIds`) applied
+  on document load on both the server and the client.
+- The neatocal print view renders the same diagonal split and ink via `NeatoCalColorCell.ink`.
+- Bumped all v2 packages to `2.0.0-beta.3`.
+
 ## [2.0.0-beta.2] - 2026-09-19
 
 ### Added

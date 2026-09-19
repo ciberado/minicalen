@@ -3,7 +3,7 @@ import request from 'supertest';
 import type { Express } from 'express';
 import * as Y from 'yjs';
 import { HocuspocusProvider } from '@hocuspocus/provider';
-import { createSessionDocument, setDateCategory } from '@minicalen/shared';
+import { createSessionDocument, toggleDateCategory } from '@minicalen/shared';
 import { createApp } from '../app';
 import { createTestContext, type TestContext } from '../test/helpers';
 import { createCollaborationServer } from './server';
@@ -74,14 +74,14 @@ describe('collaboration server', () => {
     expect(await scope).toBe('read-write');
 
     const sessionDoc = createSessionDocument(doc);
-    setDateCategory(sessionDoc, '2026-01-01', 'fg');
+    toggleDateCategory(sessionDoc, '2026-01-01', 'fg');
 
     await new Promise((resolve) => setTimeout(resolve, 400));
     collaboration.hocuspocus.flushPendingStores();
     await new Promise((resolve) => setTimeout(resolve, 300));
 
     const snapshot = await loadSnapshot(ctx.db, session.id);
-    expect(snapshot?.dateMarks['2026-01-01']?.categoryId).toBe('fg');
+    expect(snapshot?.dateMarks['2026-01-01']?.categoryIds).toEqual(['fg']);
 
     provider.destroy();
   });

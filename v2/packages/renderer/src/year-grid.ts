@@ -10,7 +10,7 @@ import {
   type Category,
   type DateMarkMap,
 } from '@minicalen/shared';
-import { hexToRgba } from './color';
+import { INK_DARK, contrastInk, hexToRgba } from './color';
 
 export interface DateClickDetail {
   date: string;
@@ -95,7 +95,7 @@ export class YearGrid extends LitElement {
       font-size: 11.5px;
       display: flex;
       align-items: flex-start;
-      justify-content: flex-end;
+      justify-content: flex-start;
       padding: 3px 4px;
       box-sizing: border-box;
       cursor: pointer;
@@ -137,7 +137,7 @@ export class YearGrid extends LitElement {
 
     .symbols {
       position: absolute;
-      top: 13px;
+      top: 15px;
       left: 3px;
       display: flex;
       flex-wrap: wrap;
@@ -161,15 +161,44 @@ export class YearGrid extends LitElement {
     return id ? this.categories.find((category) => category.id === id) : undefined;
   }
 
-  private dayBackground(dateKey: string): string {
+  private foregroundCategories(dateKey: string): Category[] {
     const mark = this.dateMarks[dateKey];
-    const category = this.categoryById(mark?.categoryId);
+    const ids = mark?.categoryIds ?? [];
 
-    if (!category) {
-      return '';
+    return ids
+      .map((id) => this.categoryById(id))
+      .filter((category): category is Category => Boolean(category))
+      .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+  }
+
+  private fillFor(category: Category): string {
+    return category.visible === false ? hexToRgba(category.color, 0.18) : category.color;
+  }
+
+  private inkFor(category: Category): string {
+    return category.visible === false ? INK_DARK : contrastInk(category.color);
+  }
+
+  private dayStyle(dateKey: string): { background: string; ink: string } | null {
+    const categories = this.foregroundCategories(dateKey);
+
+    if (categories.length === 0) {
+      return null;
     }
 
-    return category.visible === false ? hexToRgba(category.color, 0.18) : category.color;
+    if (categories.length === 1) {
+      return {
+        background: this.fillFor(categories[0]),
+        ink: this.inkFor(categories[0]),
+      };
+    }
+
+    const [primary, secondary] = categories;
+
+    return {
+      background: `linear-gradient(to bottom right, ${this.fillFor(primary)} 0 50%, ${this.fillFor(secondary)} 50% 100%)`,
+      ink: this.inkFor(primary),
+    };
   }
 
   private renderSymbols(dateKey: string): TemplateResult {
@@ -227,11 +256,11 @@ export class YearGrid extends LitElement {
             }
 
             const dateKey = dateKeyFromParts(this.year, monthIndex, day);
-            const background = this.dayBackground(dateKey);
+            const style = this.dayStyle(dateKey);
             const classes = [
               'day',
               dateKey === todayKey ? 'today' : '',
-              background ? 'marked' : '',
+              style ? 'marked' : '',
             ]
               .filter(Boolean)
               .join(' ');
@@ -239,10 +268,10 @@ export class YearGrid extends LitElement {
             return html`<div
               class=${classes}
               data-date=${dateKey}
-              style=${background ? `background:${background}` : ''}
+              style=${style ? `background:${style.background}` : ''}
               @click=${() => this.handleDayClick(dateKey, selected)}
             >
-              <span class="number">${day}</span>
+              <span class="number" style=${style ? `color:${style.ink}` : ''}>${day}</span>
               ${this.renderSymbols(dateKey)}
             </div>`;
           })}

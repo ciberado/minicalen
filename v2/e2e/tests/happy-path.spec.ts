@@ -20,6 +20,34 @@ test('anonymous calendar marks a date and keeps it after reload', async ({ page 
   );
 });
 
+test('adds, removes and combines two categories on a day', async ({ page }) => {
+  await page.goto('/');
+
+  const day = page.locator('year-grid [data-date="2026-04-10"]');
+  const select = (title: string) => page.locator(`app-sidebar [title="Select ${title}"]`);
+
+  await select('Important').click();
+  await day.click();
+  await expect(day).toHaveAttribute('style', /f44336/i);
+
+  await day.click();
+  await expect(day).not.toHaveAttribute('style', /f44336/i);
+
+  await day.click();
+  await select('Work').click();
+  await day.click();
+  await expect(day).toHaveAttribute('style', /linear-gradient/i);
+  await expect(day).toHaveAttribute('style', /f44336/i);
+  await expect(day).toHaveAttribute('style', /2196f3/i);
+
+  await select('Personal').click();
+  await day.click();
+  await expect(day).toHaveAttribute('style', /linear-gradient/i);
+  await expect(day).not.toHaveAttribute('style', /f44336/i);
+  await expect(day).toHaveAttribute('style', /2196f3/i);
+  await expect(day).toHaveAttribute('style', /4caf50/i);
+});
+
 test('user can sign up and create an owned calendar', async ({ page }) => {
   const email = `e2e-${Date.now()}@example.com`;
 

@@ -87,6 +87,10 @@ All planned phases are complete at `2.0.0-beta.0`:
 
 - The calendar state is a single `Y.Doc`: `categories` and `dateMarks` maps plus a `meta`
   map with `schemaVersion`. `@minicalen/shared` owns the document helpers and migrations.
+- A `DateMark` holds up to two foreground `categoryIds` and any number of `textCategoryIds`.
+  Two categories render as a bottom-left → top-right diagonal split (lower `order` on the
+  top-left); the day number uses contrast-computed ink. Schema `v1 → v2` migration runs on
+  document load (server and client).
 - The server persists encoded Yjs updates in `session_documents` (snapshot per session)
   through Hocuspocus `onLoadDocument`/`onStoreDocument`.
 - Authorization is deny-by-default in `authz.ts`, shared by REST and Hocuspocus. Anonymous
