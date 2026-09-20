@@ -29,7 +29,7 @@ services:
     image: tailscale/tailscale:latest
     environment:
       - TS_AUTHKEY=${CLIENT_SECRET:?set CLIENT_SECRET}
-      - TS_EXTRA_ARGS=--advertise-tags=tag:container
+      - TS_EXTRA_ARGS=${TS_EXTRA_ARGS:-}
       - TS_STATE_DIR=/var/lib/tailscale
     volumes:
       - tailscale-data-minicalen:/var/lib/tailscale

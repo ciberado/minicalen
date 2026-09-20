@@ -77,6 +77,11 @@ cp .env.example .env
 docker compose -f docker-compose.tailscale.yml up -d
 ```
 
+By default the node joins as your own device (no ACL tags). To use a tag, set
+`TS_EXTRA_ARGS=--advertise-tags=tag:container` and create the auth key **with** that tag
+(or declare it in the ACL `tagOwners`); otherwise Tailscale rejects it with
+`requested tags ... are invalid or not permitted`.
+
 Then a Caddy on another tailnet node (e.g. an EC2 with a public IP) exposes it:
 
 ```
