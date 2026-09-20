@@ -101,7 +101,7 @@ internal Caddy routes `/api` and `/collaboration` to the local server.
 
 ## Status
 
-All planned phases are complete at `2.1.0`:
+All planned phases are complete at `2.2.0`:
 
 - Phase 0 (scaffold) — done
 - Phase 1 (`shared` domain + Yjs helpers) — done

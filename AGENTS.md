@@ -8,13 +8,15 @@ MiniCalen is a lightweight, collaborative **year-view calendar**.
 
 - Click days to assign up to **two foreground color categories** (rendered as a diagonal
   split) and any number of **text label categories** (rendered as symbols).
+- Each category has a single **Enabled** toggle that controls both whether it can be applied
+  to days and whether its existing marks are shown (disabled categories are faded).
 - Sessions are shareable via URL and synchronized in **real time** across clients.
 - **Anonymous-first**: a calendar is usable immediately; optional email/password accounts
   let users persist calendars across devices and share them with viewer/editor/owner roles.
 
 | Item | Value |
 | --- | --- |
-| Version | `2.1.0` (lockstep across all `package.json`) |
+| Version | `2.2.0` (lockstep across all `package.json`) |
 | Node | 22 (Docker) / 24 (dev container) |
 | Persistence | SQLite (`data/minicalen.db`) via Drizzle ORM |
 | Sync | Yjs CRDT over Hocuspocus WebSocket + IndexedDB |
@@ -74,7 +76,7 @@ Agent shortcuts:
 
 - **"patch bump"** → `npm run build`, fix errors, bump the patch version in **all**
   `package.json` files, update `CHANGELOG.md`, commit and tag.
-- **"release"** → push a tag ending in `-RELEASE` (e.g. `v2.1.0-RELEASE`); the
+- **"release"** → push a tag ending in `-RELEASE` (e.g. `v2.2.0-RELEASE`); the
   `Docker Release` workflow builds and pushes the multi-arch image to Docker Hub.
 
 ## 4. Architecture
