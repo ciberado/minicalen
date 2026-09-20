@@ -5,20 +5,20 @@
 # No ports need to be published and no Tailscale Serve config is required: the
 # node is reachable by name inside the tailnet.
 #
-#   CLIENT_SECRET=tskey-auth-... BETTER_AUTH_SECRET=$(openssl rand -hex 32) \
-#     docker compose -f docker-compose.tailscale.yml up -d
+# Copy `.env.example` to `.env`, fill it in, then:
+#   docker compose -f docker-compose.tailscale.yml up -d
 
 services:
   minicalen:
-    image: ciberado/minicalen:latest
+    image: ciberado/minicalen:${IMAGE_TAG:-latest}
     network_mode: service:minicalen-ts
     environment:
       - NODE_ENV=production
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET}
-      - BETTER_AUTH_URL=https://minicalen.mininube.com
-      - ALLOWED_ORIGINS=https://minicalen.mininube.com
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-https://minicalen.mininube.com}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://minicalen.mininube.com}
     volumes:
-      - /home/javi/services/minicalen/data:/app/data
+      - ${DATA_DIR:-/home/javi/services/minicalen/data}:/app/data
     depends_on:
       - minicalen-ts
     restart: unless-stopped

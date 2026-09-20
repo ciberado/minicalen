@@ -65,15 +65,16 @@ docker compose up -d --build          # http://localhost:8080
 Set `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` and `ALLOWED_ORIGINS` for non-local
 deployments. The SQLite database lives in the `minicalen-data` volume at `/app/data`.
 
-### Deployment with Tailscale + Caddy
+### Deployment with Tailscale
 
 `docker-compose.tailscale.yml` joins the app to a tailnet through a sidecar; no ports are
-published and no Tailscale Serve config is needed — the node is reachable by name:
+published and no Tailscale Serve config is needed — the node is reachable by name. Copy
+`.env.example` to `.env`, fill in `CLIENT_SECRET` and `BETTER_AUTH_SECRET`, then:
 
 ```bash
-CLIENT_SECRET=tskey-auth-... \
-BETTER_AUTH_SECRET=$(openssl rand -hex 32) \
-  docker compose -f docker-compose.tailscale.yml up -d
+cp .env.example .env
+# edit .env
+docker compose -f docker-compose.tailscale.yml up -d
 ```
 
 Then a Caddy on another tailnet node (e.g. an EC2 with a public IP) exposes it:
