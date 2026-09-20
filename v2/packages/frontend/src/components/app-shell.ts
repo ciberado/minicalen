@@ -74,9 +74,34 @@ export class AppShell extends StoreElement {
       }
     }
 
+    .print-title {
+      display: none;
+    }
+
     @media print {
       :host {
         height: auto;
+      }
+
+      .print-title {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8mm;
+        margin: 0 0 4mm;
+        color: #2e3833;
+      }
+
+      .print-title__name {
+        font-size: 15pt;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+
+      .print-title__year {
+        font-size: 10pt;
+        color: #66736d;
+        letter-spacing: 0.14em;
       }
 
       .layout {
@@ -129,6 +154,10 @@ export class AppShell extends StoreElement {
       <div class="layout">
         <app-sidebar></app-sidebar>
         <main>
+          <div class="print-title">
+            <span class="print-title__name">${state.sessionName}</span>
+            <span class="print-title__year">${new Date().getFullYear()}</span>
+          </div>
           ${state.view === 'grid'
             ? html`<year-grid
                 .year=${new Date().getFullYear()}

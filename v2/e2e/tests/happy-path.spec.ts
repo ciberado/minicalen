@@ -57,6 +57,10 @@ test('print button triggers the browser print dialog', async ({ page }) => {
   });
 
   await page.goto('/');
+
+  const title = await page.locator('.print-title__name').textContent();
+  expect(title?.trim().length ?? 0).toBeGreaterThan(0);
+
   await page.locator('button[title="Print"]').click();
 
   expect(await page.evaluate(() => (window as unknown as { __printed?: boolean }).__printed)).toBe(

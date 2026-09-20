@@ -156,7 +156,7 @@ export class YearGrid extends LitElement {
 
     @media print {
       :host {
-        --cell: 7.7mm;
+        --cell: 7.4mm;
         overflow: visible;
       }
 
