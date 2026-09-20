@@ -49,22 +49,48 @@ npm run dev:all
 ```
 
 The proxy rewrites the `Origin` header for `/api` to `http://localhost:5173`, which the
-server trusts in development. In production the nginx container performs the equivalent
+server trusts in development. In production the container's Caddy performs the equivalent
 proxying, so the app is also reachable through a single origin.
 
-## Docker
+## Docker (all-in-one image)
+
+A single image (`ciberado/minicalen`) runs everything: Caddy serves the SPA and proxies
+`/api` and `/collaboration` to the Node server (REST + Hocuspocus) running in the same
+container. Only port `8080` is exposed.
 
 ```bash
-docker compose up -d --build   # frontend on :8080, server on :3001/:3002
+docker compose up -d --build          # http://localhost:8080
 ```
 
-The frontend nginx container serves the SPA and proxies `/api` to the server and
-`/collaboration` (WebSocket) to the collaboration server. Set `BETTER_AUTH_SECRET`,
-`BETTER_AUTH_URL` and `ALLOWED_ORIGINS` for non-local deployments.
+Set `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` and `ALLOWED_ORIGINS` for non-local
+deployments. The SQLite database lives in the `minicalen-data` volume at `/app/data`.
+
+### Deployment with Tailscale + Caddy
+
+`docker-compose.tailscale.yml` joins the app to a tailnet through a sidecar; no ports are
+published and no Tailscale Serve config is needed — the node is reachable by name:
+
+```bash
+CLIENT_SECRET=tskey-auth-... \
+BETTER_AUTH_SECRET=$(openssl rand -hex 32) \
+  docker compose -f docker-compose.tailscale.yml up -d
+```
+
+Then a Caddy on another tailnet node (e.g. an EC2 with a public IP) exposes it:
+
+```
+minicalen.mininube.com {
+    encode gzip
+    reverse_proxy http://minicalen:8080
+}
+```
+
+Caddy handles the `/collaboration` WebSocket upgrade automatically, and the container's
+internal Caddy routes `/api` and `/collaboration` to the local server.
 
 ## Status
 
-All planned phases are complete at `2.0.0`:
+All planned phases are complete at `2.1.0`:
 
 - Phase 0 (scaffold) — done
 - Phase 1 (`shared` domain + Yjs helpers) — done

@@ -479,7 +479,7 @@ npm run type-check
 npm run test         # Vitest (unit + integration)
 npm run test:e2e     # Playwright (starts servers; reuses running ones)
 npm run build
-docker compose up -d --build   # frontend on :8080, server on :3001/:3002
+docker compose up -d --build   # single all-in-one image on :8080 (Caddy + Node)
 ```
 
 ### v2 phase plan
@@ -506,5 +506,9 @@ All planned phases are complete at `2.0.0`.
   pre-release suffixes).
 - `shared`/`renderer` are consumed as TypeScript source via workspace `exports`; the
   server runs with `tsx`.
+- Production ships as a **single all-in-one image** (`ciberado/minicalen`): Caddy serves the
+  SPA and proxies `/api` and `/collaboration` to the Node server in the same container
+  (port `8080`). See `v2/docker-compose.tailscale.yml` for the Tailscale + external Caddy
+  deployment.
 - Note: this environment's npm blocks lifecycle scripts; approve `better-sqlite3`
   (`npm install-scripts approve better-sqlite3`) before Phase 2 uses it.
