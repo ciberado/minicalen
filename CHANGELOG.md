@@ -5,6 +5,13 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] - 2026-09-20
+
+### Fixed
+
+- Moved the year control into the sidebar so the 12-month grid no longer loses vertical
+  space above the fold on 1080p screens (it now fits down to ~950px of viewport height).
+
 ## [2.4.0] - 2026-09-20
 
 ### Added
