@@ -82,6 +82,11 @@ By default the node joins as your own device (no ACL tags). To use a tag, set
 (or declare it in the ACL `tagOwners`); otherwise Tailscale rejects it with
 `requested tags ... are invalid or not permitted`.
 
+> **Changing the auth key?** The sidecar persists its login state in the
+> `tailscale-data-minicalen` volume and `TS_AUTHKEY` is only used on the **first** login.
+> Replacing `CLIENT_SECRET` has no effect while that volume exists — reset it with
+> `docker compose -f docker-compose.tailscale.yml down -v` before starting again.
+
 Then a Caddy on another tailnet node (e.g. an EC2 with a public IP) exposes it:
 
 ```

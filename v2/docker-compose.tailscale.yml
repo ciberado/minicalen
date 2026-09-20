@@ -32,6 +32,9 @@ services:
       - TS_EXTRA_ARGS=${TS_EXTRA_ARGS:-}
       - TS_STATE_DIR=/var/lib/tailscale
     volumes:
+      # Login state is persisted here. TS_AUTHKEY is only used on the first
+      # login, so changing CLIENT_SECRET has no effect while this volume exists.
+      # To re-authenticate with a new key: `docker compose down -v`.
       - tailscale-data-minicalen:/var/lib/tailscale
       - /dev/net/tun:/dev/net/tun
     # Uncomment to reach the app from the Docker host as well.
