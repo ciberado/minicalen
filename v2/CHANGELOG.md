@@ -5,6 +5,26 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-09-20
+
+### Added
+
+- **All-in-one Docker image**: a single `ciberado/minicalen` image runs **Caddy** (serves the
+  SPA and proxies `/api` and `/collaboration`) and the **Node server** (REST + Hocuspocus) in
+  one container, exposing only port `8080`.
+- **Tailscale deployment example** (`docker-compose.tailscale.yml`): a Tailscale sidecar joins
+  the app to a tailnet with no published ports; an external Caddy reaches the node by name.
+- `HOST` configuration to bind the server and collaboration listeners.
+
+### Changed
+
+- The Docker release workflow now publishes the single `ciberado/minicalen` image (tags
+  version, commit sha and `latest`) instead of separate frontend and server images.
+- Removed the per-package Dockerfiles and the nginx config in favour of the single image and
+  a `Caddyfile`.
+- `app.set('trust proxy', 1)` in production so Better-Auth sees the forwarded protocol behind
+  Caddy.
+
 ## [2.0.0] - 2026-09-20
 
 First stable release of the v2 reimplementation.
