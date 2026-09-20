@@ -1,9 +1,12 @@
 import { css, html } from 'lit';
+import { property } from 'lit/decorators.js';
 import { appStore } from '../app/app-store';
 import { StoreElement } from './base-element';
 import './category-list';
 
 export class AppSidebar extends StoreElement {
+  @property({ type: Boolean, reflect: true }) open = false;
+
   static styles = css`
     :host {
       width: 312px;
@@ -240,6 +243,22 @@ export class AppSidebar extends StoreElement {
       text-transform: uppercase;
       color: var(--zen-ink-faint);
     }
+
+    @media (pointer: coarse) and (max-width: 900px) {
+      :host {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 40;
+        width: min(84vw, 340px);
+        transform: translateX(-100%);
+        transition: transform var(--zen-transition);
+        box-shadow: var(--zen-shadow-lg);
+      }
+
+      :host([open]) {
+        transform: translateX(0);
+      }
+    }
   `;
 
   render() {
@@ -317,6 +336,12 @@ export class AppSidebar extends StoreElement {
           @click=${() => appStore.setView('grid')}
         >
           Grid
+        </button>
+        <button
+          class=${state.view === 'months' ? 'active' : ''}
+          @click=${() => appStore.setView('months')}
+        >
+          Months
         </button>
         <button
           class=${state.view === 'print' ? 'active' : ''}

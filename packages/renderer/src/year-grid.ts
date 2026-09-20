@@ -22,6 +22,9 @@ export class YearGrid extends LitElement {
   @property({ attribute: false }) dateMarks: DateMarkMap = {};
   @property({ type: Boolean }) readOnly = false;
   @property({ type: String }) selectedCategoryId: string | null = null;
+  @property({ type: Number }) startMonth = 0;
+  @property({ type: Number }) monthCount = MONTH_NAMES.length;
+  @property({ type: Number }) columns = 0;
 
   static styles = css`
     :host {
@@ -38,15 +41,26 @@ export class YearGrid extends LitElement {
     }
 
     @media (max-width: 1100px) {
-      .months {
+      .months.auto {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
 
     @media (max-width: 820px) {
-      .months {
+      .months.auto {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+    }
+
+    .months:not(.auto) .day {
+      min-height: clamp(38px, 6vh, 64px);
+      font-size: 13px;
+      padding: 5px 6px;
+    }
+
+    .months:not(.auto) .month-name {
+      font-size: 13px;
+      margin-bottom: 10px;
     }
 
     .month {
@@ -347,11 +361,27 @@ export class YearGrid extends LitElement {
     `;
   }
 
+  private clampStartMonth(): number {
+    return Math.max(0, Math.min(MONTH_NAMES.length - 1, Math.floor(this.startMonth)));
+  }
+
+  private visibleMonthCount(start: number): number {
+    const requested = Math.max(1, Math.floor(this.monthCount));
+    return Math.min(requested, MONTH_NAMES.length - start);
+  }
+
   render(): TemplateResult {
     const todayKey = toDateKey(new Date());
+    const start = this.clampStartMonth();
+    const count = this.visibleMonthCount(start);
+    const auto = this.columns <= 0;
+    const months = Array.from({ length: count }, (_, index) => start + index);
 
-    return html`<div class="months">
-      ${MONTH_NAMES.map((_, monthIndex) => this.renderMonth(monthIndex, todayKey))}
+    return html`<div
+      class="months${auto ? ' auto' : ''}"
+      style=${auto ? '' : `grid-template-columns: repeat(${this.columns}, minmax(0, 1fr))`}
+    >
+      ${months.map((monthIndex) => this.renderMonth(monthIndex, todayKey))}
     </div>`;
   }
 }

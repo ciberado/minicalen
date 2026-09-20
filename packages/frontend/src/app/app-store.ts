@@ -1,5 +1,6 @@
 import type { AccessLevel, Category, CategoryType } from '@minicalen/shared';
 import {
+  MONTH_NAMES,
   SCHEMA_VERSION,
   createId,
   defaultCategories,
@@ -15,8 +16,16 @@ import {
   type AuthUser,
 } from '../auth/client';
 import { sessionStore, type SessionViewState } from '../yjs/session-store';
+import { readViewport, subscribeViewport, type ViewportState } from './viewport';
 
-export type AppView = 'grid' | 'print';
+export type AppView = 'grid' | 'print' | 'months';
+
+const MONTH_PAIR_SIZE = 2;
+
+function currentMonthPair(): number {
+  const month = new Date().getMonth();
+  return month - (month % MONTH_PAIR_SIZE);
+}
 
 const PALETTE = [
   '#F44336',
@@ -40,6 +49,9 @@ export interface AppState {
   isAnonymous: boolean;
   accessLevel: AccessLevel | null;
   view: AppView;
+  viewport: ViewportState;
+  mobileMonthStart: number;
+  sidebarOpen: boolean;
   selectedCategoryId: string | null;
   showAuthDialog: boolean;
   showSessionList: boolean;
@@ -62,6 +74,9 @@ class AppStore {
     isAnonymous: true,
     accessLevel: null,
     view: 'grid',
+    viewport: readViewport(),
+    mobileMonthStart: currentMonthPair(),
+    sidebarOpen: false,
     selectedCategoryId: null,
     showAuthDialog: false,
     showSessionList: false,
@@ -71,8 +86,26 @@ class AppStore {
     notice: null,
   };
 
+  private viewUserChosen = false;
+
   constructor() {
     sessionStore.subscribe(() => this.syncSession());
+    this.applyViewport(readViewport());
+    subscribeViewport((viewport) => this.applyViewport(viewport));
+  }
+
+  private applyViewport(viewport: ViewportState): void {
+    const patch: Partial<AppState> = { viewport };
+
+    if (!this.viewUserChosen) {
+      if (viewport.isMobile) {
+        patch.view = 'months';
+      } else if (this.state.view === 'months') {
+        patch.view = 'grid';
+      }
+    }
+
+    this.setState(patch);
   }
 
   subscribe(listener: Listener): () => void {
@@ -189,7 +222,43 @@ class AppStore {
   }
 
   setView(view: AppView): void {
+    this.viewUserChosen = true;
     this.setState({ view });
+  }
+
+  get canGoPrevMonthPair(): boolean {
+    return this.state.mobileMonthStart > 0;
+  }
+
+  get canGoNextMonthPair(): boolean {
+    return this.state.mobileMonthStart + MONTH_PAIR_SIZE < MONTH_NAMES.length;
+  }
+
+  nextMonthPair(): void {
+    this.setState({
+      mobileMonthStart: Math.min(
+        this.state.mobileMonthStart + MONTH_PAIR_SIZE,
+        MONTH_NAMES.length - MONTH_PAIR_SIZE,
+      ),
+    });
+  }
+
+  prevMonthPair(): void {
+    this.setState({
+      mobileMonthStart: Math.max(this.state.mobileMonthStart - MONTH_PAIR_SIZE, 0),
+    });
+  }
+
+  goToToday(): void {
+    this.setState({ mobileMonthStart: currentMonthPair() });
+  }
+
+  toggleSidebar(): void {
+    this.setState({ sidebarOpen: !this.state.sidebarOpen });
+  }
+
+  closeSidebar(): void {
+    this.setState({ sidebarOpen: false });
   }
 
   get selectedCategory(): Category | null {
@@ -200,6 +269,7 @@ class AppStore {
   selectCategory(categoryId: string | null): void {
     this.setState({
       selectedCategoryId: this.state.selectedCategoryId === categoryId ? null : categoryId,
+      sidebarOpen: this.state.viewport.isMobile ? false : this.state.sidebarOpen,
     });
   }
 

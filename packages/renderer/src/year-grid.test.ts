@@ -85,6 +85,56 @@ describe('year-grid', () => {
     expect(element.shadowRoot?.querySelectorAll('.month')).toHaveLength(12);
   });
 
+  it('renders a subset of months from startMonth', async () => {
+    const element = await mount({ startMonth: 4, monthCount: 2 });
+
+    const names = Array.from(element.shadowRoot?.querySelectorAll('.month-name') ?? []).map(
+      (node) => node.textContent?.trim(),
+    );
+    expect(names).toEqual(['May', 'June']);
+  });
+
+  it('clamps the month range to the end of the year', async () => {
+    const element = await mount({ startMonth: 11, monthCount: 2 });
+    expect(element.shadowRoot?.querySelectorAll('.month')).toHaveLength(1);
+    expect(element.shadowRoot?.querySelector('.month-name')?.textContent?.trim()).toBe('December');
+  });
+
+  it('clamps startMonth into the valid range', async () => {
+    const element = await mount({ startMonth: 42, monthCount: 2 });
+    expect(element.shadowRoot?.querySelector('.month-name')?.textContent?.trim()).toBe('December');
+  });
+
+  it('applies explicit columns as an inline grid template', async () => {
+    const element = await mount({ startMonth: 0, monthCount: 2, columns: 1 });
+    const months = element.shadowRoot?.querySelector('.months') as HTMLElement;
+    expect(months.getAttribute('style')).toContain('repeat(1');
+    expect(months.classList.contains('auto')).toBe(false);
+  });
+
+  it('keeps responsive auto layout when columns is not set', async () => {
+    const element = await mount();
+    const months = element.shadowRoot?.querySelector('.months') as HTMLElement;
+    expect(months.classList.contains('auto')).toBe(true);
+    expect(months.getAttribute('style') ?? '').toBe('');
+  });
+
+  it('emits date-click for a date inside the paged range', async () => {
+    const element = await mount({
+      categories: [foreground],
+      selectedCategoryId: 'fg',
+      startMonth: 2,
+      monthCount: 2,
+    });
+    const events: string[] = [];
+    element.addEventListener('date-click', (event) => {
+      events.push((event as CustomEvent<{ date: string }>).detail.date);
+    });
+
+    day(element, '2026-03-10').click();
+    expect(events).toEqual(['2026-03-10']);
+  });
+
   it('renders day cells with date keys', async () => {
     const element = await mount();
 

@@ -89,12 +89,19 @@ Agent shortcuts:
   `schemaVersion`. `@minicalen/shared` owns the document helpers and migrations.
 - `appStore` is a small observable singleton consumed by Lit `StoreElement` subclasses.
 - Grid and sheet views; a Print button prints the current view (see Printing below).
+- **Mobile two-month view**: `appStore` tracks a `viewport` (`matchMedia` on
+  `(pointer: coarse) and (max-width: 900px)` plus orientation) and defaults to the `months`
+  view on smartphones, paginating two months at a time (stacked in portrait, side by side in
+  landscape). A manual view choice overrides the automatic switch. The sidebar becomes a
+  drawer on mobile.
 
 ### 4.2 Rendering (`@minicalen/renderer`)
 
 - `<year-grid>`: interactive 12-month 4×3 grid. A day with two foreground categories is
   split along the bottom-left → top-right diagonal (lower `order` on the top-left). The day
-  number uses contrast-computed ink and stacks above the text symbols.
+  number uses contrast-computed ink and stacks above the text symbols. `startMonth`,
+  `monthCount` and `columns` render a subset of the year (used by the mobile two-month view);
+  when `columns` is unset the grid keeps its responsive auto layout.
 - `<neatocal-view>` + `renderYear()`: a focused TypeScript adaptation of
   [NeatoCal](https://github.com/abetusk/neatocal) (MIT) for the sheet/print view. See
   `packages/renderer/src/neatocal/LICENSE`.
@@ -158,7 +165,7 @@ Server:
 - **Vitest** — `shared` (domain, Zod, Yjs helpers, dates), `renderer` (year grid, neatocal)
   and `server` (authz, REST via Supertest, persistence, collaboration integration).
 - **Playwright** — `e2e/` covers anonymous persistence, add/remove/combine categories,
-  printing and sign-up.
+  printing, sign-up and the mobile two-month view (Pixel 5 project).
 
 ## 8. Conventions
 

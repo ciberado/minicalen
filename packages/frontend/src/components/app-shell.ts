@@ -4,6 +4,7 @@ import type { AppState } from '../app/app-store';
 import { StoreElement } from './base-element';
 import './app-sidebar';
 import './auth-dialog';
+import './mobile-year-view';
 import './session-list-dialog';
 import './share-dialog';
 
@@ -74,6 +75,51 @@ export class AppShell extends StoreElement {
       }
     }
 
+    .backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(46, 56, 51, 0.35);
+      z-index: 30;
+    }
+
+    .mobile-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .mobile-bar__menu {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      flex: none;
+      border: 1px solid var(--zen-line);
+      border-radius: var(--zen-radius-md);
+      background: var(--zen-surface);
+      color: var(--zen-ink);
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .mobile-bar__name {
+      min-width: 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--zen-ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @media (pointer: coarse) and (max-width: 900px) {
+      main {
+        padding: 16px 14px 28px;
+      }
+    }
+
     .print-title {
       display: none;
     }
@@ -114,6 +160,8 @@ export class AppShell extends StoreElement {
       auth-dialog,
       session-list-dialog,
       share-dialog,
+      .mobile-bar,
+      .backdrop,
       .toast {
         display: none !important;
       }
@@ -143,6 +191,31 @@ export class AppShell extends StoreElement {
     }
   }
 
+  private renderView(state: AppState) {
+    if (state.view === 'months') {
+      return html`<mobile-year-view
+        @date-click=${(event: CustomEvent<{ date: string }>) => this.handleDateClick(event)}
+      ></mobile-year-view>`;
+    }
+
+    if (state.view === 'print') {
+      return html`<neatocal-view
+        .year=${new Date().getFullYear()}
+        .categories=${state.session.categories}
+        .dateMarks=${state.session.dateMarks}
+      ></neatocal-view>`;
+    }
+
+    return html`<year-grid
+      .year=${new Date().getFullYear()}
+      .categories=${state.session.categories}
+      .dateMarks=${state.session.dateMarks}
+      .readOnly=${!appStore.canEdit}
+      .selectedCategoryId=${state.selectedCategoryId}
+      @date-click=${(event: CustomEvent<{ date: string }>) => this.handleDateClick(event)}
+    ></year-grid>`;
+  }
+
   render() {
     const state: AppState = appStore.getState();
 
@@ -152,26 +225,28 @@ export class AppShell extends StoreElement {
 
     return html`
       <div class="layout">
-        <app-sidebar></app-sidebar>
+        <app-sidebar .open=${state.sidebarOpen}></app-sidebar>
+        ${state.viewport.isMobile && state.sidebarOpen
+          ? html`<div class="backdrop" @click=${() => appStore.closeSidebar()}></div>`
+          : ''}
         <main>
+          ${state.viewport.isMobile
+            ? html`<div class="mobile-bar">
+                <button
+                  class="mobile-bar__menu"
+                  title="Menu"
+                  @click=${() => appStore.toggleSidebar()}
+                >
+                  ☰
+                </button>
+                <span class="mobile-bar__name">${state.sessionName}</span>
+              </div>`
+            : ''}
           <div class="print-title">
             <span class="print-title__name">${state.sessionName}</span>
             <span class="print-title__year">${new Date().getFullYear()}</span>
           </div>
-          ${state.view === 'grid'
-            ? html`<year-grid
-                .year=${new Date().getFullYear()}
-                .categories=${state.session.categories}
-                .dateMarks=${state.session.dateMarks}
-                .readOnly=${!appStore.canEdit}
-                .selectedCategoryId=${state.selectedCategoryId}
-                @date-click=${(event: CustomEvent<{ date: string }>) => this.handleDateClick(event)}
-              ></year-grid>`
-            : html`<neatocal-view
-                .year=${new Date().getFullYear()}
-                .categories=${state.session.categories}
-                .dateMarks=${state.session.dateMarks}
-              ></neatocal-view>`}
+          ${this.renderView(state)}
         </main>
       </div>
       <auth-dialog .open=${state.showAuthDialog}></auth-dialog>
