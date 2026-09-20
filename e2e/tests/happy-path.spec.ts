@@ -102,6 +102,20 @@ test('an anonymous session opened from the magic link syncs on another device', 
   await other.close();
 });
 
+test('scales the year grid down on short viewports instead of overflowing', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 620 });
+  await page.goto('/');
+
+  await expect(page.locator('year-grid .months')).toHaveAttribute('style', /scale\(/);
+
+  const overflows = await page.evaluate(() => {
+    const main = document.querySelector('app-shell')?.shadowRoot?.querySelector('main');
+    return (main?.scrollHeight ?? 0) > (main?.clientHeight ?? 0);
+  });
+
+  expect(overflows).toBe(false);
+});
+
 test('navigates between years with the subtle year control', async ({ page }) => {
   await page.goto('/');
 

@@ -171,12 +171,15 @@ export class YearGrid extends LitElement {
     @media print {
       :host {
         --cell: 7.4mm;
-        overflow: visible;
+        height: auto !important;
+        overflow: visible !important;
       }
 
       .months {
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 3mm;
+        transform: none !important;
+        width: auto !important;
       }
 
       .month {
@@ -237,6 +240,64 @@ export class YearGrid extends LitElement {
       }
     }
   `;
+
+  private static readonly MIN_SCALE = 0.55;
+
+  private readonly handleResize = (): void => {
+    this.applyScale();
+  };
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    window.addEventListener('resize', this.handleResize);
+  }
+
+  override disconnectedCallback(): void {
+    window.removeEventListener('resize', this.handleResize);
+    super.disconnectedCallback();
+  }
+
+  override updated(): void {
+    this.applyScale();
+  }
+
+  private applyScale(): void {
+    const months = this.renderRoot.querySelector<HTMLElement>('.months');
+
+    if (!months) {
+      return;
+    }
+
+    months.style.transform = '';
+    months.style.width = '';
+    this.style.height = '';
+    this.style.overflow = '';
+
+    if (this.columns > 0) {
+      return;
+    }
+
+    const availableWidth = this.clientWidth;
+    const availableHeight = this.clientHeight;
+    const naturalWidth = months.offsetWidth;
+    const naturalHeight = months.offsetHeight;
+
+    if (!availableWidth || !availableHeight || !naturalWidth || !naturalHeight) {
+      return;
+    }
+
+    const fit = Math.min(1, availableWidth / naturalWidth, availableHeight / naturalHeight);
+
+    if (fit >= 1) {
+      return;
+    }
+
+    const scale = Math.max(YearGrid.MIN_SCALE, fit);
+    months.style.transformOrigin = 'top center';
+    months.style.transform = `scale(${scale})`;
+    this.style.height = `${naturalHeight * scale}px`;
+    this.style.overflow = 'hidden';
+  }
 
   private categoryById(id: string | undefined): Category | undefined {
     return id ? this.categories.find((category) => category.id === id) : undefined;

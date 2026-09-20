@@ -29,6 +29,15 @@ export class AppShell extends StoreElement {
       box-sizing: border-box;
     }
 
+    .fit-view {
+      height: 100%;
+    }
+
+    .fit-view year-grid {
+      display: block;
+      height: 100%;
+    }
+
     .loading {
       display: flex;
       align-items: center;
@@ -118,6 +127,11 @@ export class AppShell extends StoreElement {
       main {
         padding: 16px 14px 28px;
       }
+
+      .fit-view,
+      .fit-view year-grid {
+        height: auto;
+      }
     }
 
     .print-title {
@@ -170,6 +184,11 @@ export class AppShell extends StoreElement {
         padding: 0;
         overflow: visible;
       }
+
+      .fit-view,
+      .fit-view year-grid {
+        height: auto;
+      }
     }
   `;
 
@@ -206,14 +225,16 @@ export class AppShell extends StoreElement {
       ></neatocal-view>`;
     }
 
-    return html`<year-grid
-      .year=${state.year}
-      .categories=${state.session.categories}
-      .dateMarks=${state.session.dateMarks}
-      .readOnly=${!appStore.canEdit}
-      .selectedCategoryId=${state.selectedCategoryId}
-      @date-click=${(event: CustomEvent<{ date: string }>) => this.handleDateClick(event)}
-    ></year-grid>`;
+    return html`<div class="fit-view">
+      <year-grid
+        .year=${state.year}
+        .categories=${state.session.categories}
+        .dateMarks=${state.session.dateMarks}
+        .readOnly=${!appStore.canEdit}
+        .selectedCategoryId=${state.selectedCategoryId}
+        @date-click=${(event: CustomEvent<{ date: string }>) => this.handleDateClick(event)}
+      ></year-grid>
+    </div>`;
   }
 
   render() {
