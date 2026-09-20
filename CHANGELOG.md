@@ -5,6 +5,19 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-09-20
+
+### Added
+
+- **Mobile two-month view**: on coarse-pointer, narrow viewports the app defaults to a
+  paginated view showing two months at a time — stacked in portrait, side by side in
+  landscape — with previous/next and **Today** navigation.
+- Collapsible sidebar drawer on mobile, opened from a top bar button and closed after
+  selecting a category.
+- `<year-grid>` now accepts `startMonth`, `monthCount` and `columns` to render a subset of
+  the year, keeping the full 12-month responsive layout when unset.
+- Playwright `mobile` project (Pixel 5) and mobile end-to-end coverage.
+
 ## [2.2.0] - 2026-09-20
 
 ### Changed
