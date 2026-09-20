@@ -73,6 +73,31 @@ export class AppShell extends StoreElement {
         transform: translateY(0);
       }
     }
+
+    @media print {
+      :host {
+        height: auto;
+      }
+
+      .layout {
+        display: block;
+        height: auto;
+        overflow: visible;
+      }
+
+      app-sidebar,
+      auth-dialog,
+      session-list-dialog,
+      share-dialog,
+      .toast {
+        display: none !important;
+      }
+
+      main {
+        padding: 0;
+        overflow: visible;
+      }
+    }
   `;
 
   override firstUpdated(): void {

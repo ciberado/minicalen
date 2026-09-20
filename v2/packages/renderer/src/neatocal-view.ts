@@ -73,6 +73,44 @@ export class NeatocalView extends LitElement {
       font-weight: 700;
       color: var(--zen-ink, #2e3833);
     }
+
+    @media print {
+      :host {
+        overflow: visible;
+      }
+
+      .host {
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 0;
+      }
+
+      .host table {
+        font-size: 6pt;
+      }
+
+      .host th {
+        font-size: 5.5pt;
+        padding: 1mm 1.5mm;
+      }
+
+      .host td {
+        padding: 0.35mm 1.5mm;
+      }
+
+      .host tbody tr:hover td {
+        background: transparent;
+      }
+
+      .host .day {
+        font-size: 5pt;
+      }
+
+      .host .cell-data {
+        font-size: 5pt;
+      }
+    }
   `;
 
   private categoryById(id: string | undefined): Category | undefined {

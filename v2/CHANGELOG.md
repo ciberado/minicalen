@@ -5,6 +5,16 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0-beta.5] - 2026-09-20
+
+### Added
+
+- **Printing**: a Print button in the sidebar calls `window.print()`. The current view
+  (grid or sheet) prints on **A4 landscape**, **in colour**, scaled to fit a single page:
+  `@page { size: A4 landscape; margin: 6mm }` plus `print-color-adjust: exact` and compact
+  `@media print` styles in the shell, the year grid and the neatocal view. UI chrome
+  (sidebar, dialogs, toasts) is hidden when printing.
+
 ## [2.0.0-beta.4] - 2026-09-19
 
 ### Changed

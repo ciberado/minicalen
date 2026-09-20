@@ -75,6 +75,14 @@ All planned phases are complete at `2.0.0-beta.0`:
 - Phase 6 (awareness/presence + read-only enforcement) — done
 - Phase 7 (Docker/CI, docs, final verification) — done
 
+## Printing
+
+The Print button in the sidebar prints the **current view** (grid or sheet) on
+**A4 landscape** and **in colour**, fitted to one page. This is driven by
+`@page { size: A4 landscape; margin: 6mm }` and `print-color-adjust: exact` in
+`styles/global.css`, plus compact `@media print` rules inside the app shell (which hides the
+sidebar, dialogs and toasts), `<year-grid>` and `<neatocal-view>`.
+
 ## Testing
 
 - **Vitest** — `shared` (domain, Zod, Yjs helpers, dates), `renderer` (year grid,

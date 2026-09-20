@@ -153,6 +153,75 @@ export class YearGrid extends LitElement {
       background: var(--zen-surface, #fff);
       box-shadow: 0 1px 3px rgba(46, 56, 51, 0.18);
     }
+
+    @media print {
+      :host {
+        --cell: 7.7mm;
+        overflow: visible;
+      }
+
+      .months {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 3mm;
+      }
+
+      .month {
+        box-shadow: none;
+        border: 0.2mm solid #c8c6bd;
+        border-radius: 2mm;
+        padding: 1.6mm;
+        break-inside: avoid;
+      }
+
+      .month:hover {
+        box-shadow: none;
+        transform: none;
+      }
+
+      .month-name {
+        font-size: 7pt;
+        letter-spacing: 0.08em;
+        margin-bottom: 1mm;
+      }
+
+      .weekday {
+        font-size: 5pt;
+        padding-bottom: 0.4mm;
+      }
+
+      .weekdays,
+      .days {
+        gap: 0.4mm;
+      }
+
+      .day {
+        border-radius: 1mm;
+        font-size: 6.5pt;
+        gap: 0.3mm;
+        padding: 0.4mm 0.6mm;
+      }
+
+      .day:not(.blank):hover {
+        background: transparent;
+        box-shadow: none;
+      }
+
+      .day.marked {
+        box-shadow: inset 0 0 0 0.15mm rgba(0, 0, 0, 0.15);
+      }
+
+      .day.today,
+      .day.marked.today {
+        box-shadow: inset 0 0 0 0.4mm var(--zen-accent, #6f9384);
+      }
+
+      .symbol {
+        font-size: 5pt;
+        padding: 0 0.4mm;
+        border-radius: 0.6mm;
+        box-shadow: none;
+      }
+    }
   `;
 
   private categoryById(id: string | undefined): Category | undefined {

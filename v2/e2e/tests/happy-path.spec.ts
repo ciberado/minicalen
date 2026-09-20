@@ -48,6 +48,22 @@ test('adds, removes and combines two categories on a day', async ({ page }) => {
   await expect(day).toHaveAttribute('style', /4caf50/i);
 });
 
+test('print button triggers the browser print dialog', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as unknown as { __printed?: boolean }).__printed = false;
+    window.print = () => {
+      (window as unknown as { __printed?: boolean }).__printed = true;
+    };
+  });
+
+  await page.goto('/');
+  await page.locator('button[title="Print"]').click();
+
+  expect(await page.evaluate(() => (window as unknown as { __printed?: boolean }).__printed)).toBe(
+    true,
+  );
+});
+
 test('user can sign up and create an owned calendar', async ({ page }) => {
   const email = `e2e-${Date.now()}@example.com`;
 
