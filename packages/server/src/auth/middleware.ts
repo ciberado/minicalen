@@ -1,122 +1,85 @@
-import { Request, Response, NextFunction } from 'express';
-import { Socket } from 'socket.io';
-import { auth } from './index';
+import type { NextFunction, Request, Response } from 'express';
+import type { Auth } from './index';
 
-export interface AuthSocket extends Socket {
-  user?: {
-    id: string;
-    email: string;
-    name?: string;
-    emailVerified: boolean;
-  };
-  session?: {
-    id: string;
-    userId: string;
-    expiresAt: Date;
-  };
+export interface AuthUser {
+  id: string;
+  email: string;
+  name?: string | null;
+  emailVerified: boolean;
 }
 
 export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    name?: string;
-    emailVerified: boolean;
-  };
-  session?: {
-    id: string;
-    userId: string;
-    expiresAt: Date;
-  };
+  user?: AuthUser;
+  sessionToken?: string;
 }
 
-export async function optionalAuth(
-  req: AuthRequest,
-  _res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.startsWith('Bearer ') 
-      ? authHeader.substring(7) 
-      : req.cookies?.['minicalen.session_token'];
+export function extractSessionToken(req: Request): string | undefined {
+  const header = req.headers['x-session-token'];
 
-    if (token) {
-      const session = await auth.api.getSession({ headers: req.headers });
-      
-      if (session) {
-        req.user = session.user;
-        req.session = session.session;
+  if (typeof header === 'string' && header.length > 0) {
+    return header;
+  }
+
+  const authorization = req.headers.authorization;
+
+  if (authorization?.startsWith('Bearer ')) {
+    return authorization.slice(7);
+  }
+
+  return undefined;
+}
+
+export function headersFromRequest(req: Request): Headers {
+  const headers = new Headers();
+
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (typeof value === 'string') {
+      headers.set(key, value);
+    } else if (Array.isArray(value)) {
+      headers.set(key, value.join(', '));
+    }
+  }
+
+  return headers;
+}
+
+export function createAuthMiddleware(auth: Auth) {
+  async function resolveUser(req: Request): Promise<AuthUser | undefined> {
+    const session = await auth.api.getSession({ headers: headersFromRequest(req) });
+    return session?.user ?? undefined;
+  }
+
+  const optionalAuth = async (req: AuthRequest, _res: Response, next: NextFunction): Promise<void> => {
+    req.sessionToken = extractSessionToken(req);
+
+    try {
+      req.user = await resolveUser(req);
+    } catch {
+      req.user = undefined;
+    }
+
+    next();
+  };
+
+  const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    req.sessionToken = extractSessionToken(req);
+
+    try {
+      const user = await resolveUser(req);
+
+      if (!user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
       }
-    }
-    
-    next();
-  } catch (error) {
-    // Log error but don't block request for optional auth
-    console.error('Optional auth error:', error);
-    next();
-  }
-}
 
-export async function requireAuth(
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.startsWith('Bearer ') 
-      ? authHeader.substring(7) 
-      : req.cookies?.['minicalen.session_token'];
-
-    if (!token) {
-      res.status(401).json({ error: 'Authentication required' });
-      return;
-    }
-
-    const session = await auth.api.getSession({ headers: req.headers });
-    
-    if (!session) {
-      res.status(401).json({ error: 'Invalid or expired session' });
-      return;
-    }
-
-    req.user = session.user;
-    req.session = session.session;
-    
-    next();
-  } catch (error) {
-    console.error('Auth middleware error:', error);
-    res.status(401).json({ error: 'Authentication failed' });
-  }
-}
-
-export function optionalAuthSocket(
-  socket: AuthSocket,
-  next: (err?: Error) => void
-): void {
-  try {
-    const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.substring(7);
-
-    if (token) {
-      auth.api
-        .getSession({ headers: { cookie: `minicalen.session_token=${token}` } })
-        .then((session) => {
-          if (session) {
-            socket.user = session.user;
-            socket.session = session.session;
-          }
-          next();
-        })
-        .catch((error) => {
-          console.error('Socket auth error:', error);
-          next();
-        });
-    } else {
+      req.user = user;
       next();
+    } catch {
+      res.status(401).json({ error: 'Authentication failed' });
     }
-  } catch (error) {
-    console.error('Socket auth middleware error:', error);
-    next();
-  }
+  };
+
+  return { optionalAuth, requireAuth };
 }
+
+export type AuthMiddleware = ReturnType<typeof createAuthMiddleware>;

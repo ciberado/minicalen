@@ -222,27 +222,19 @@ export class CategoryList extends StoreElement {
                       color: (event.target as HTMLInputElement).value,
                     })}
                 />
-                <label class="toggle" title="Active">
+                <label
+                  class="toggle"
+                  title="Enabled — can be applied to days and its marks are shown"
+                >
                   <input
                     type="checkbox"
-                    .checked=${category.active}
+                    .checked=${category.active && category.visible}
                     ?disabled=${readOnly}
-                    @change=${(event: Event) =>
-                      appStore.updateCategory(category.id, {
-                        active: (event.target as HTMLInputElement).checked,
-                      })}
-                  />A
-                </label>
-                <label class="toggle" title="Visible">
-                  <input
-                    type="checkbox"
-                    .checked=${category.visible}
-                    ?disabled=${readOnly}
-                    @change=${(event: Event) =>
-                      appStore.updateCategory(category.id, {
-                        visible: (event.target as HTMLInputElement).checked,
-                      })}
-                  />V
+                    @change=${(event: Event) => {
+                      const enabled = (event.target as HTMLInputElement).checked;
+                      appStore.updateCategory(category.id, { active: enabled, visible: enabled });
+                    }}
+                  />
                 </label>
                 <button
                   class="delete"

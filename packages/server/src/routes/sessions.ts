@@ -1,434 +1,295 @@
-import { Router } from 'express';
-import { db } from '../db';
-import { sessions, sessionPermissions } from '../db/schema';
-import { eq, and, or } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
-import { optionalAuth, requireAuth, AuthRequest } from '../auth/middleware';
-import logger from '../logger';
+import { Router, type NextFunction, type Request, type Response } from 'express';
+import type { AppLogger } from '../logger';
+import {
+  createSessionSchema,
+  sessionSnapshotSchema,
+  shareSessionSchema,
+  updateSessionSchema,
+} from '@minicalen/shared';
+import type { AppDatabase } from '../db';
+import type { AuthMiddleware, AuthRequest } from '../auth/middleware';
+import {
+  canDelete,
+  canEdit,
+  canRead,
+  canShare,
+  resolveSessionAccess,
+} from '../authz';
+import {
+  claimSession,
+  createSession,
+  deleteSession,
+  getSession,
+  listPermissions,
+  listSessionsForUser,
+  renameSession,
+  shareSession,
+  touchSession,
+} from '../sessions/service';
+import { loadSnapshot, storeSnapshot } from '../realtime/persistence';
 
-const router = Router();
+interface SessionsRouterDeps {
+  db: AppDatabase;
+  auth: AuthMiddleware;
+  logger: AppLogger;
+}
 
-// GET /api/sessions - List user's sessions (authenticated users only)
-router.get('/', requireAuth, async (req: AuthRequest, res) => {
-  try {
-    const userId = req.user!.id;
+function asyncHandler(
+  handler: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>,
+) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    handler(req as AuthRequest, res, next).catch(next);
+  };
+}
 
-    // Get sessions where user is owner or has permissions
-    const userSessions = await db
-      .select({
-        id: sessions.id,
-        name: sessions.name,
-        isAnonymous: sessions.isAnonymous,
-        createdAt: sessions.createdAt,
-        updatedAt: sessions.updatedAt,
-        lastAccessedAt: sessions.lastAccessedAt,
-        accessLevel: sessionPermissions.accessLevel,
-      })
-      .from(sessions)
-      .leftJoin(
-        sessionPermissions,
-        eq(sessionPermissions.sessionId, sessions.id)
-      )
-      .where(
-        or(
-          eq(sessions.userId, userId),
-          eq(sessionPermissions.userId, userId)
-        )
-      );
+export function createSessionsRouter({ db, auth, logger }: SessionsRouterDeps): Router {
+  const router = Router();
 
-    res.json({ sessions: userSessions });
-  } catch (error) {
-    logger.error('Error listing sessions:', error);
-    res.status(500).json({ error: 'Failed to list sessions' });
-  }
-});
+  router.get(
+    '/',
+    auth.requireAuth,
+    asyncHandler(async (req, res) => {
+      const sessions = await listSessionsForUser(db, req.user!.id);
+      res.json({ sessions });
+    }),
+  );
 
-// POST /api/sessions - Create or update session (upsert)
-router.post('/', optionalAuth, async (req: AuthRequest, res) => {
-  try {
-    const userId = req.user?.id;
-    const { id, name, state } = req.body;
-    
-    // Use provided ID or generate new one
-    const sessionId = id || uuidv4();
-    
-    // Use provided state or create empty state
-    const sessionState = state || {
-      foregroundCategories: [],
-      dateInfoMap: [],
-      timestamp: new Date().toISOString(),
-    };
+  router.post(
+    '/',
+    auth.optionalAuth,
+    asyncHandler(async (req, res) => {
+      const parsed = createSessionSchema.safeParse(req.body ?? {});
 
-    // Check if session already exists
-    const [existingSession] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.id, sessionId));
-
-    let resultSession;
-
-    if (existingSession) {
-      // Update existing session
-      logger.info(`Updating existing session: ${sessionId}`);
-      const [updatedSession] = await db
-        .update(sessions)
-        .set({
-          state: JSON.stringify(sessionState),
-          updatedAt: new Date(),
-          lastAccessedAt: new Date(),
-          ...(name && { name }),
-        })
-        .where(eq(sessions.id, sessionId))
-        .returning();
-      resultSession = updatedSession;
-    } else {
-      // Create new session
-      logger.info(`Creating new session: ${sessionId}`);
-      const [newSession] = await db
-        .insert(sessions)
-        .values({
-          id: sessionId,
-          userId: userId || null,
-          isAnonymous: !userId,
-          name: name || 'Untitled Calendar',
-          state: JSON.stringify(sessionState),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          lastAccessedAt: new Date(),
-        })
-        .returning();
-      resultSession = newSession;
-
-      // If user is authenticated, create owner permission for new sessions
-      if (userId) {
-        await db.insert(sessionPermissions).values({
-          id: uuidv4(),
-          sessionId,
-          userId,
-          accessLevel: 'owner',
-          grantedAt: new Date(),
-          grantedBy: userId,
-        });
-      }
-    }
-
-    res.json({ session: resultSession });
-  } catch (error) {
-    logger.error('Error saving session:', error);
-    res.status(500).json({ error: 'Failed to save session' });
-  }
-});
-
-// GET /api/sessions/:id - Get session state
-router.get('/:id', optionalAuth, async (req: AuthRequest, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user?.id;
-
-    // Get session
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.id, id));
-
-    if (!session) {
-      res.status(404).json({ error: 'Session not found' });
-      return;
-    }
-
-    // Check if user has access (if authenticated)
-    if (userId && session.userId && session.userId !== userId) {
-      const [permission] = await db
-        .select()
-        .from(sessionPermissions)
-        .where(
-          and(
-            eq(sessionPermissions.sessionId, id),
-            eq(sessionPermissions.userId, userId)
-          )
-        );
-
-      if (!permission) {
-        res.status(403).json({ error: 'Access denied' });
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Invalid payload' });
         return;
       }
-    }
 
-    // Update last accessed timestamp
-    await db
-      .update(sessions)
-      .set({ lastAccessedAt: new Date() })
-      .where(eq(sessions.id, id));
-
-    res.json({
-      session: {
-        id: session.id,
-        name: session.name,
-        isAnonymous: session.isAnonymous,
-        state: session.state,
-        createdAt: session.createdAt,
-        updatedAt: session.updatedAt,
-      },
-    });
-  } catch (error) {
-    logger.error('Error getting session:', error);
-    res.status(500).json({ error: 'Failed to get session' });
-  }
-});
-
-// PUT /api/sessions/:id - Update session state
-router.put('/:id', optionalAuth, async (req: AuthRequest, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user?.id;
-    const { state, name } = req.body;
-
-    // Get session
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.id, id));
-
-    if (!session) {
-      res.status(404).json({ error: 'Session not found' });
-      return;
-    }
-
-    // Check if user has edit access
-    if (userId && session.userId && session.userId !== userId) {
-      const [permission] = await db
-        .select()
-        .from(sessionPermissions)
-        .where(
-          and(
-            eq(sessionPermissions.sessionId, id),
-            eq(sessionPermissions.userId, userId)
-          )
-        );
-
-      if (!permission || permission.accessLevel === 'viewer') {
-        res.status(403).json({ error: 'Access denied' });
-        return;
-      }
-    }
-
-    // Update session
-    const updates: {
-      updatedAt: Date;
-      state?: string;
-      name?: string;
-    } = {
-      updatedAt: new Date(),
-    };
-
-    if (state !== undefined) {
-      updates.state = JSON.stringify(state);
-    }
-
-    if (name !== undefined) {
-      updates.name = name;
-    }
-
-    const [updatedSession] = await db
-      .update(sessions)
-      .set(updates)
-      .where(eq(sessions.id, id))
-      .returning();
-
-    res.json({ session: updatedSession });
-  } catch (error) {
-    logger.error('Error updating session:', error);
-    res.status(500).json({ error: 'Failed to update session' });
-  }
-});
-
-// DELETE /api/sessions/:id - Delete session
-router.delete('/:id', optionalAuth, async (req: AuthRequest, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user?.id;
-
-    // Get session
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.id, id));
-
-    if (!session) {
-      res.status(404).json({ error: 'Session not found' });
-      return;
-    }
-
-    // Check if user has owner access
-    if (session.userId) {
-      if (!userId || session.userId !== userId) {
-        const [permission] = await db
-          .select()
-          .from(sessionPermissions)
-          .where(
-            and(
-              eq(sessionPermissions.sessionId, id),
-              eq(sessionPermissions.userId, userId!)
-            )
-          );
-
-        if (!permission || permission.accessLevel !== 'owner') {
-          res.status(403).json({ error: 'Only owner can delete session' });
-          return;
-        }
-      }
-    }
-
-    // Delete session (cascade will delete related records)
-    await db.delete(sessions).where(eq(sessions.id, id));
-
-    res.json({ success: true });
-  } catch (error) {
-    logger.error('Error deleting session:', error);
-    res.status(500).json({ error: 'Failed to delete session' });
-  }
-});
-
-// POST /api/sessions/:id/claim - Claim anonymous session
-router.post('/:id/claim', requireAuth, async (req: AuthRequest, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user!.id;
-
-    // Get session
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.id, id));
-
-    if (!session) {
-      res.status(404).json({ error: 'Session not found' });
-      return;
-    }
-
-    if (!session.isAnonymous) {
-      res.status(400).json({ error: 'Session is not anonymous' });
-      return;
-    }
-
-    // Claim session
-    const [updatedSession] = await db
-      .update(sessions)
-      .set({
-        userId,
-        isAnonymous: false,
-        updatedAt: new Date(),
-      })
-      .where(eq(sessions.id, id))
-      .returning();
-
-    // Create owner permission
-    await db.insert(sessionPermissions).values({
-      id: uuidv4(),
-      sessionId: id,
-      userId,
-      accessLevel: 'owner',
-      grantedAt: new Date(),
-      grantedBy: userId,
-    });
-
-    res.json({ session: updatedSession });
-  } catch (error) {
-    logger.error('Error claiming session:', error);
-    res.status(500).json({ error: 'Failed to claim session' });
-  }
-});
-
-// POST /api/sessions/:id/share - Share session with user
-router.post('/:id/share', requireAuth, async (req: AuthRequest, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user!.id;
-    const { email, accessLevel } = req.body;
-
-    if (!email || !accessLevel) {
-      res.status(400).json({ error: 'Email and accessLevel required' });
-      return;
-    }
-
-    if (!['viewer', 'editor'].includes(accessLevel)) {
-      res.status(400).json({ error: 'Invalid access level' });
-      return;
-    }
-
-    // Get session
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.id, id));
-
-    if (!session) {
-      res.status(404).json({ error: 'Session not found' });
-      return;
-    }
-
-    // Check if user is owner
-    if (session.userId !== userId) {
-      const [permission] = await db
-        .select()
-        .from(sessionPermissions)
-        .where(
-          and(
-            eq(sessionPermissions.sessionId, id),
-            eq(sessionPermissions.userId, userId)
-          )
-        );
-
-      if (!permission || permission.accessLevel !== 'owner') {
-        res.status(403).json({ error: 'Only owner can share session' });
-        return;
-      }
-    }
-
-    // Find user by email
-    const targetUser = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.email, email),
-    });
-
-    if (!targetUser) {
-      res.status(404).json({ error: 'User not found' });
-      return;
-    }
-
-    // Check if permission already exists
-    const [existingPermission] = await db
-      .select()
-      .from(sessionPermissions)
-      .where(
-        and(
-          eq(sessionPermissions.sessionId, id),
-          eq(sessionPermissions.userId, targetUser.id)
-        )
-      );
-
-    if (existingPermission) {
-      // Update existing permission
-      await db
-        .update(sessionPermissions)
-        .set({ accessLevel: accessLevel as 'viewer' | 'editor' })
-        .where(eq(sessionPermissions.id, existingPermission.id));
-    } else {
-      // Create new permission
-      await db.insert(sessionPermissions).values({
-        id: uuidv4(),
-        sessionId: id,
-        userId: targetUser.id,
-        accessLevel: accessLevel as 'viewer' | 'editor',
-        grantedAt: new Date(),
-        grantedBy: userId,
+      const created = await createSession(db, {
+        userId: req.user?.id ?? null,
+        name: parsed.data.name,
       });
-    }
 
-    res.json({ success: true });
-  } catch (error) {
-    logger.error('Error sharing session:', error);
-    res.status(500).json({ error: 'Failed to share session' });
-  }
-});
+      res.status(201).json({
+        session: serializeSession(created.session),
+        token: created.token,
+      });
+    }),
+  );
 
-export default router;
+  router.get(
+    '/:id',
+    auth.optionalAuth,
+    asyncHandler(async (req, res) => {
+      const id = String(String(req.params.id));
+      const access = await resolveSessionAccess(db, id, req.user?.id ?? null, req.sessionToken);
+
+      if (!access) {
+        res.status(404).json({ error: 'Session not found' });
+        return;
+      }
+
+      const session = await getSession(db, id);
+
+      if (!session) {
+        res.status(404).json({ error: 'Session not found' });
+        return;
+      }
+
+      await touchSession(db, session.id);
+
+      res.json({ session: serializeSession(session), accessLevel: access.accessLevel });
+    }),
+  );
+
+  router.patch(
+    '/:id',
+    auth.optionalAuth,
+    asyncHandler(async (req, res) => {
+      const access = await resolveSessionAccess(db, String(req.params.id), req.user?.id ?? null, req.sessionToken);
+
+      if (!canEdit(access)) {
+        res.status(access ? 403 : 404).json({ error: access ? 'Access denied' : 'Session not found' });
+        return;
+      }
+
+      const parsed = updateSessionSchema.safeParse(req.body ?? {});
+
+      if (!parsed.success || !parsed.data.name) {
+        res.status(400).json({ error: 'Invalid payload' });
+        return;
+      }
+
+      const session = await renameSession(db, String(req.params.id), parsed.data.name);
+      res.json({ session: session ? serializeSession(session) : null });
+    }),
+  );
+
+  router.delete(
+    '/:id',
+    auth.optionalAuth,
+    asyncHandler(async (req, res) => {
+      const access = await resolveSessionAccess(
+        db,
+        String(req.params.id),
+        req.user?.id ?? null,
+        req.sessionToken,
+      );
+
+      if (!canDelete(access)) {
+        res.status(access ? 403 : 404).json({ error: access ? 'Access denied' : 'Session not found' });
+        return;
+      }
+
+      await deleteSession(db, String(req.params.id));
+      res.json({ success: true });
+    }),
+  );
+
+  router.post(
+    '/:id/claim',
+    auth.requireAuth,
+    asyncHandler(async (req, res) => {
+      const userId = req.user!.id;
+      const existing = await getSession(db, String(req.params.id));
+
+      if (!existing) {
+        res.status(404).json({ error: 'Session not found' });
+        return;
+      }
+
+      if (!existing.isAnonymous) {
+        res.status(409).json({ error: 'Session is already owned' });
+        return;
+      }
+
+      const session = await claimSession(db, String(req.params.id), userId);
+      res.json({ session: session ? serializeSession(session) : null });
+    }),
+  );
+
+  router.post(
+    '/:id/share',
+    auth.requireAuth,
+    asyncHandler(async (req, res) => {
+      const access = await resolveSessionAccess(
+        db,
+        String(req.params.id),
+        req.user!.id,
+        req.sessionToken,
+      );
+
+      if (!canShare(access)) {
+        res.status(access ? 403 : 404).json({ error: access ? 'Access denied' : 'Session not found' });
+        return;
+      }
+
+      const parsed = shareSessionSchema.safeParse(req.body ?? {});
+
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Invalid payload' });
+        return;
+      }
+
+      const result = await shareSession(
+        db,
+        String(req.params.id),
+        req.user!.id,
+        parsed.data.email,
+        parsed.data.accessLevel,
+      );
+
+      if (!result.ok) {
+        const status = result.reason === 'user-not-found' ? 404 : 400;
+        res.status(status).json({ error: result.reason });
+        return;
+      }
+
+      res.json({ success: true });
+    }),
+  );
+
+  router.get(
+    '/:id/permissions',
+    auth.optionalAuth,
+    asyncHandler(async (req, res) => {
+      const access = await resolveSessionAccess(
+        db,
+        String(req.params.id),
+        req.user?.id ?? null,
+        req.sessionToken,
+      );
+
+      if (!canRead(access)) {
+        res.status(404).json({ error: 'Session not found' });
+        return;
+      }
+
+      res.json({ permissions: await listPermissions(db, String(req.params.id)) });
+    }),
+  );
+
+  router.get(
+    '/:id/state',
+    auth.optionalAuth,
+    asyncHandler(async (req, res) => {
+      const access = await resolveSessionAccess(db, String(req.params.id), req.user?.id ?? null, req.sessionToken);
+
+      if (!canRead(access)) {
+        res.status(404).json({ error: 'Session not found' });
+        return;
+      }
+
+      const snapshot = await loadSnapshot(db, String(req.params.id));
+      res.json({ snapshot });
+    }),
+  );
+
+  router.put(
+    '/:id/state',
+    auth.optionalAuth,
+    asyncHandler(async (req, res) => {
+      const access = await resolveSessionAccess(db, String(req.params.id), req.user?.id ?? null, req.sessionToken);
+
+      if (!canEdit(access)) {
+        res.status(access ? 403 : 404).json({ error: access ? 'Access denied' : 'Session not found' });
+        return;
+      }
+
+      const parsed = sessionSnapshotSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        logger.debug({ issues: parsed.error.issues }, 'Invalid snapshot payload');
+        res.status(400).json({ error: 'Invalid snapshot' });
+        return;
+      }
+
+      await storeSnapshot(db, String(req.params.id), parsed.data);
+      res.json({ success: true });
+    }),
+  );
+
+  return router;
+}
+
+function serializeSession(session: {
+  id: string;
+  userId: string | null;
+  isAnonymous: boolean;
+  name: string;
+  visibility: 'private' | 'public';
+  createdAt: Date;
+  updatedAt: Date;
+  lastAccessedAt: Date;
+}) {
+  return {
+    id: session.id,
+    userId: session.userId,
+    isAnonymous: session.isAnonymous,
+    name: session.name,
+    visibility: session.visibility,
+    createdAt: session.createdAt,
+    updatedAt: session.updatedAt,
+    lastAccessedAt: session.lastAccessedAt,
+  };
+}

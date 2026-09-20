@@ -1,20 +1,30 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
-  
-  // Preview server configuration for production testing
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    allowedHosts: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.setHeader('origin', 'http://localhost:5173');
+          });
+        },
+      },
+      '/collaboration': {
+        target: 'ws://localhost:3002',
+        ws: true,
+        changeOrigin: true,
+      },
+    },
+  },
   preview: {
     host: '0.0.0.0',
     port: 5173,
-    strictPort: true
+    strictPort: true,
   },
-  
-  // Development server configuration
-  server: {
-    host: '0.0.0.0',
-    port: 5173
-  }
-})
+});

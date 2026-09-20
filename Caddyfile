@@ -1,23 +1,25 @@
-{$MINICALEN_HOST}:443 {
-	# Handle Socket.IO WebSocket connections first (most specific)
-	handle /socket.io/* {
-		reverse_proxy {$MINICALEN_BACKEND}:3001 
-	}
-	
-	# Handle API requests
-	handle /api/* {
-		reverse_proxy {$MINICALEN_BACKEND}:3001
-	}
-	
-	# Handle health check
+{
+	auto_https off
+}
+
+:8080 {
+	encode gzip
+
 	handle /health {
-		reverse_proxy {$MINICALEN_BACKEND}:3001
+		reverse_proxy http://127.0.0.1:3001
 	}
-	
-	# Handle all other requests (frontend)
+
+	handle /api/* {
+		reverse_proxy http://127.0.0.1:3001
+	}
+
+	handle /collaboration* {
+		reverse_proxy http://127.0.0.1:3002
+	}
+
 	handle {
-		# Forward to frontend (build files or dev server)
-		reverse_proxy {$MINICALEN_FRONTEND}:5173
+		root * /app/packages/frontend/dist
+		try_files {path} /index.html
+		file_server
 	}
-	
 }

@@ -1,53 +1,26 @@
 {
   "name": "@minicalen/frontend",
-  "version": "1.5.1",
-  "description": "MiniCalen frontend application",
+  "version": "2.1.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview",
-    "type-check": "tsc --noEmit"
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@fullcalendar/core": "^6.1.18",
-    "@fullcalendar/interaction": "^6.1.18",
-    "@fullcalendar/multimonth": "^6.1.18",
-    "@fullcalendar/react": "^6.1.18",
-    "@mui/icons-material": "^7.2.0",
-    "@mui/material": "^7.2.0",
-    "@types/uuid": "^10.0.0",
-    "better-auth": "^1.4.17",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "socket.io-client": "^4.8.1",
-    "uuid": "^11.1.0"
+    "@hocuspocus/provider": "^4.7.0",
+    "@minicalen/renderer": "*",
+    "@minicalen/shared": "*",
+    "better-auth": "^1.7.5",
+    "lit": "^3.3.3",
+    "y-indexeddb": "^9.0.12",
+    "yjs": "^13.6.32"
   },
   "devDependencies": {
-    "@eslint/js": "^9.9.0",
-    "@types/react": "^18.2.66",
-    "@types/react-dom": "^18.2.22",
-    "@typescript-eslint/eslint-plugin": "^7.2.0",
-    "@typescript-eslint/parser": "^7.2.0",
-    "@vitejs/plugin-react": "^4.2.1",
-    "eslint": "^8.57.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.6",
-    "globals": "^15.9.0",
-    "typescript": "^5.2.2",
-    "typescript-eslint": "^8.0.1",
-    "vite": "^5.2.0"
-  },
-  "keywords": [
-    "calendar",
-    "react",
-    "vite",
-    "typescript",
-    "material-ui"
-  ],
-  "author": "",
-  "license": "ISC"
+    "happy-dom": "^20.14.5",
+    "vite": "^8.3.0"
+  }
 }

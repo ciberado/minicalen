@@ -1,29 +1,34 @@
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
+import path from 'node:path';
 import * as schema from './schema';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+export type AppDatabase = ReturnType<typeof createDatabase>['db'];
 
-// Ensure data directory exists
-const dataDir = path.join(__dirname, '../../data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+export function createDatabase(filename: string) {
+  if (filename !== ':memory:') {
+    fs.mkdirSync(path.dirname(path.resolve(filename)), { recursive: true });
+  }
+
+  const sqlite = new Database(filename);
+  sqlite.pragma('journal_mode = WAL');
+  sqlite.pragma('foreign_keys = ON');
+
+  const db = drizzle(sqlite, { schema });
+
+  return { db, sqlite };
 }
 
-const dbPath = path.join(dataDir, 'minicalen.db');
+export const defaultMigrationsFolder = fileURLToPath(
+  new URL('../../drizzle', import.meta.url),
+);
 
-// Create SQLite database connection
-const sqlite: Database.Database = new Database(dbPath);
-
-// Enable foreign keys
-sqlite.pragma('foreign_keys = ON');
-
-// Create Drizzle instance
-export const db = drizzle(sqlite, { schema });
-
-export { sqlite };
+export function runMigrations(
+  db: AppDatabase,
+  migrationsFolder: string = defaultMigrationsFolder,
+): void {
+  migrate(db, { migrationsFolder });
+}

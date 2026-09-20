@@ -1,231 +1,165 @@
-# MiniCalen
+# MiniCalen v2
 
-A lightweight, collaborative calendar application with real-time synchronization and user authentication.
+A lightweight, collaborative year-view calendar. See [`AGENTS.md`](AGENTS.md) for the
+architecture and contributor guidance.
 
-![Calendar Overview](docs/screenshots/calendar-main.png)
+## Direction
 
-## 📌 Project Status
+- **UI**: vanilla TypeScript + [Lit](https://lit.dev) Web Components (no React).
+- **Sync**: [Yjs](https://yjs.dev) CRDT with Hocuspocus + IndexedDB (offline-first).
+- **Persistence**: SQLite via Drizzle ORM; a single persistence path.
+- **Rendering**: custom year grid; [neatocal](https://github.com/abetusk/neatocal) (MIT)
+  forked as a reusable read-only renderer.
+- **Auth**: Better-Auth (email/password), anonymous-first.
 
-- **Version**: `1.5.1`, on branch `feat/lists`. `main` is at `1.4.2` and does **not**
-  include the authentication/sharing work.
-- **Tests**: none yet — verification is manual (`TESTING.md`).
-- **Next**: a **full reimplementation (v2)** is planned. The current code is treated as a
-  reference implementation and source of product knowledge.
-- **Where to start**: see [`AGENTS.md`](AGENTS.md) for the current architecture, commands,
-  known issues/technical debt and reimplementation guidance.
+## Packages
 
-## ✨ Features
+| Package | Responsibility |
+| --- | --- |
+| `@minicalen/shared` | Domain types, Zod schemas, Yjs document helpers |
+| `@minicalen/renderer` | Lit year grid + forked neatocal read-only view |
+| `@minicalen/frontend` | App shell, Yjs wiring, auth/session UI |
+| `@minicalen/server` | Express + Hocuspocus + Better-Auth + SQLite |
 
-### 📅 **Calendar Management**
-- **Year View**: 12-month grid layout for complete year overview
-- **Interactive Selection**: Click dates to assign categories and text labels
-- **Today Highlighting**: Current date automatically highlighted
-- **Smart Navigation**: Seamless month-to-month date handling
-
-### 🎨 **Category System**
-- **Foreground Categories**: Color-coded backgrounds (Important, Work, Personal) with customizable hex colors
-- **Text Labels**: Symbol-based tags (e.g., "Holiday [H]") that overlay on dates
-- **Multiple Categories**: Assign multiple labels to any date
-- **Visual Controls**: Toggle categories on/off with checkboxes
-
-### 🔐 **Authentication & User Management**
-- **Anonymous Sessions**: Start creating calendars immediately without signup
-- **User Accounts**: Email/password authentication powered by Better-Auth
-- **Session Ownership**: Claim anonymous calendars by signing in
-- **My Calendars Dashboard**: Manage all your calendars from one place
-
-![My Calendars](docs/screenshots/my-calendars.png)
-
-### 💾 **Session & Sharing**
-- **Persistent Storage**: SQLite database with automatic state saving
-- **Shareable URLs**: Collaborate via unique session links
-- **Permission Levels**: Owner, editor, and viewer access control
-- **State Restoration**: Complete calendar state preserved across reloads
-
-### 🔄 **Real-Time Collaboration**
-- **WebSocket Sync**: Instant updates across all connected clients
-- **Multi-User Support**: Multiple users editing simultaneously with permissions
-- **Cross-Browser**: WebSocket fallback for Firefox and all major browsers
-- **Authenticated Connections**: Socket.IO with session-based authentication
-
-### 🎛️ **User Interface**
-- **Material-UI Design**: Modern, responsive interface
-- **Sidebar Controls**: Category management with visual feedback
-- **4-Column Grid**: Optimized responsive layout
-
-### 🔧 **Technical Stack**
-- **Frontend**: React 18 + TypeScript + Vite + Material-UI
-- **Backend**: Node.js + Express + Socket.IO + Better-Auth
-- **Database**: SQLite with Drizzle ORM
-- **Deployment**: Docker + GitHub Actions CI/CD
-- **Architecture**: npm workspace monorepo
-
-## 📚 Documentation
-
-Detailed documentation available in the `docs/` folder:
-- [Authentication Guide](docs/AUTHENTICATION.md) - User authentication and session management
-- [Docker Deployment](DOCKER.md) - Container deployment instructions
-- [CI/CD Pipeline](CI-CD.md) - Automated build and deployment
-- [Logging](LOGGING.md) - Application logging configuration
-
-## 📦 Packages
-
-This is a monorepo containing two independent packages:
-
-- **[@minicalen/frontend](./packages/frontend)** - React frontend application
-- **[@minicalen/server](./packages/server)** - Node.js backend server
-
-## 🚀 Quick Start
-
-### Development
+## Commands
 
 ```bash
-# Install all dependencies
 npm install
-
-# Start both frontend and server in development mode
-npm run dev:all
-
-# Or start them separately:
-npm run dev:server  # Start backend server
-npm run dev         # Start frontend application
-```
-
-### Production Build
-
-```bash
-# Build both packages
+npm run dev:all      # server (3001/3002) + frontend (5173)
+npm run lint
+npm run type-check
+npm run test         # Vitest (unit + integration)
+npm run test:e2e     # Playwright (starts servers; reuses running ones)
 npm run build
-
-# Or build them separately:
-npm run build:frontend
-npm run build:server
-
-# Start production server
-npm run start
 ```
 
-### Docker Deployment
+## Single entry point
+
+In development the Vite server proxies `/api` (REST) and `/collaboration` (WebSocket) to the
+backend, so **one URL is enough** — including from another device over Tailscale:
+
+```
+http://vs-minicalen:5173
+```
+
+Start both processes from the repository root:
 
 ```bash
-# Using Docker Compose (recommended)
-docker-compose up -d
-
-# Or build and run manually
-docker run -d --name minicalen-server \
-  -p 3001:3001 \
-  -v $(pwd)/data:/app/data \
-  -v $(pwd)/logs:/app/logs \
-  -e BETTER_AUTH_SECRET=your-secret-key \
-  minicalen-server
+npm run dev:all
 ```
 
-**Environment Variables**:
-- `BETTER_AUTH_SECRET` - Required for authentication (min 32 characters)
-- `DATABASE_URL` - Optional SQLite database path
-- `ALLOWED_ORIGINS` - CORS origins for production
+The proxy rewrites the `Origin` header for `/api` to `http://localhost:5173`, which the
+server trusts in development. In production the container's Caddy performs the equivalent
+proxying, so the app is also reachable through a single origin.
 
-See [DOCKER.md](DOCKER.md) for complete deployment guide.
+## Docker (all-in-one image)
 
-## 🏗️ Architecture
-
-```
-minicalen/
-├── packages/
-│   ├── frontend/          # React + TypeScript + Vite
-│   │   ├── src/
-│   │   │   ├── auth/      # Better-Auth client
-│   │   │   ├── components/ # React components
-│   │   │   ├── contexts/  # React contexts
-│   │   │   └── hooks/     # Custom hooks
-│   │   └── dist/          # Production build
-│   └── server/            # Node.js + Express + Socket.IO
-│       ├── src/
-│       │   ├── auth/      # Authentication middleware
-│       │   ├── db/        # Drizzle ORM schemas
-│       │   └── routes/    # API endpoints
-│       ├── data/          # SQLite database
-│       └── logs/          # Application logs
-├── docs/                  # Documentation
-│   ├── AUTHENTICATION.md
-│   └── screenshots/
-└── docker-compose.yml     # Container orchestration
-```
-
-## 🛠️ Development Workflow
-
-Each package is independently managed with its own:
-- Dependencies (`package.json`)
-- Build configuration
-- TypeScript configuration
-- ESLint configuration
-- README documentation
-
-### Working with Packages
+A single image (`ciberado/minicalen`) runs everything: Caddy serves the SPA and proxies
+`/api` and `/collaboration` to the Node server (REST + Hocuspocus) running in the same
+container. Only port `8080` is exposed.
 
 ```bash
-# Install dependencies for a specific package
-npm install --workspace=@minicalen/frontend
-npm install --workspace=@minicalen/server
-
-# Run scripts in a specific package
-npm run build --workspace=@minicalen/frontend
-npm run dev --workspace=@minicalen/server
-
-# Add dependencies to a specific package
-npm install react --workspace=@minicalen/frontend
-npm install express --workspace=@minicalen/server
+docker compose up -d --build          # http://localhost:8080
 ```
 
-## 🌐 Environment Configuration
+Set `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` and `ALLOWED_ORIGINS` for non-local
+deployments. The SQLite database lives in the `minicalen-data` volume at `/app/data`.
 
-**Frontend** (`packages/frontend/.env`):
-- `VITE_API_URL` - Backend API URL (default: `http://localhost:3001`)
-- `VITE_WS_URL` - WebSocket URL (auto-configured in development)
+### Deployment with Tailscale
 
-**Backend** (`packages/server/.env`):
-- `BETTER_AUTH_SECRET` - Auth secret key (required, min 32 chars)
-- `DATABASE_URL` - SQLite database path (default: `./data/minicalen.db`)
-- `PORT` - Server port (default: `3001`)
-- `ALLOWED_ORIGINS` - CORS origins for production
-
-See [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md) for authentication setup details.
-
-## 🔄 CI/CD & Deployment
-
-### Automated Docker Builds
-
-Create a release tag ending with `-RELEASE` to trigger automated builds:
+`docker-compose.tailscale.yml` joins the app to a tailnet through a sidecar; no ports are
+published and no Tailscale Serve config is needed — the node is reachable by name. Copy
+`.env.example` to `.env`, fill in `CLIENT_SECRET` and `BETTER_AUTH_SECRET`, then:
 
 ```bash
-git tag v1.0.0-RELEASE
-git push origin v1.0.0-RELEASE
+cp .env.example .env
+# edit .env
+docker compose -f docker-compose.tailscale.yml up -d
 ```
 
-GitHub Actions will build and publish Docker images for both frontend and server to Docker Hub.
+By default the node joins as your own device (no ACL tags). To use a tag, set
+`TS_EXTRA_ARGS=--advertise-tags=tag:container` and create the auth key **with** that tag
+(or declare it in the ACL `tagOwners`); otherwise Tailscale rejects it with
+`requested tags ... are invalid or not permitted`.
 
-**Required GitHub Secrets**: `DOCKER_USERNAME`, `DOCKER_PASSWORD`
+> **Changing the auth key?** The sidecar persists its login state in the
+> `tailscale-data-minicalen` volume and `TS_AUTHKEY` is only used on the **first** login.
+> Replacing `CLIENT_SECRET` has no effect while that volume exists — reset it with
+> `docker compose -f docker-compose.tailscale.yml down -v` before starting again.
 
-For complete CI/CD documentation, see [CI-CD.md](CI-CD.md).
+Then a Caddy on another tailnet node (e.g. an EC2 with a public IP) exposes it:
 
-## 🔧 Available Scripts
-
-```bash
-# Development
-npm run dev:all              # Start both frontend and backend
-npm run dev                  # Start frontend only
-npm run dev:server           # Start backend only
-
-# Building
-npm run build                # Build both packages
-npm run build:frontend       # Build frontend only
-npm run build:server         # Build server only
-
-# Docker
-npm run build:frontend:docker  # Build frontend Docker image
-npm run build:server:docker    # Build server Docker image
+```
+minicalen.mininube.com {
+    encode gzip
+    reverse_proxy http://minicalen:8080
+}
 ```
 
-## 📄 License
+Caddy handles the `/collaboration` WebSocket upgrade automatically, and the container's
+internal Caddy routes `/api` and `/collaboration` to the local server.
 
-MIT License - See individual package READMEs for details.
+## Status
+
+All planned phases are complete at `2.1.0`:
+
+- Phase 0 (scaffold) — done
+- Phase 1 (`shared` domain + Yjs helpers) — done
+- Phase 2 (server: auth, REST, Hocuspocus, SQLite) — done
+- Phase 3 (frontend: Lit shell, Yjs + IndexedDB, auth/session UI) — done
+- Phase 4 (interactive `<year-grid>`) — done
+- Phase 5 (forked neatocal read-only view) — done
+- Phase 6 (awareness/presence + read-only enforcement) — done
+- Phase 7 (Docker/CI, docs, final verification) — done
+
+## Printing
+
+The Print button in the sidebar prints the **current view** (grid or sheet) on
+**A4 landscape** and **in colour**, fitted to one page, with the calendar title (and year) at
+the top. This is driven by `@page { size: A4 landscape; margin: 6mm }` and
+`print-color-adjust: exact` in `styles/global.css`, plus compact `@media print` rules inside
+the app shell (which shows the title and hides the sidebar, dialogs and toasts),
+`<year-grid>` and `<neatocal-view>`.
+
+## Testing
+
+- **Vitest** — `shared` (domain, Zod, Yjs helpers, dates), `renderer` (year grid,
+  neatocal) and `server` (authz, REST via Supertest, persistence, collaboration
+  integration).
+- **Playwright** — `e2e/` covers the anonymous calendar persistence flow and the
+  sign-up flow.
+
+## Architecture notes
+
+- The calendar state is a single `Y.Doc`: `categories` and `dateMarks` maps plus a `meta`
+  map with `schemaVersion`. `@minicalen/shared` owns the document helpers and migrations.
+- A `DateMark` holds up to two foreground `categoryIds` and any number of `textCategoryIds`.
+  Two categories render as a bottom-left → top-right diagonal split (lower `order` on the
+  top-left); the day number uses contrast-computed ink. Schema `v1 → v2` migration runs on
+  document load (server and client).
+- Day cells stack the number and text symbols in normal flow and use a responsive height
+  (`clamp(30px, 3.6vh, 52px)`), so symbols never overlap the number and months use available
+  vertical space without stretching.
+- The server persists encoded Yjs updates in `session_documents` (snapshot per session)
+  through Hocuspocus `onLoadDocument`/`onStoreDocument`.
+- Authorization is deny-by-default in `authz.ts`, shared by REST and Hocuspocus. Anonymous
+  creators get a per-session token (hashed at rest) stored in the browser and sent as a
+  bearer token / provider token.
+- Presence uses Yjs awareness; viewers connect with `readOnly` enforced by the server.
+
+## NeatoCal attribution
+
+`@minicalen/renderer` includes a focused TypeScript adaptation of the
+[NeatoCal](https://github.com/abetusk/neatocal) `aligned-weekdays` and `default` layouts
+(MIT). See `packages/renderer/src/neatocal/LICENSE`. Moon phases, ICS import and other
+NeatoCal features are intentionally omitted.
+
+See `CHANGELOG.md` for details.
+
+## Server layout
+
+- REST API on `PORT` (default 3001): `/api/auth/*`, `/api/sessions/*`, `/health`.
+- Collaboration WebSocket on `COLLAB_PORT` (default 3002) via Hocuspocus.
+
+The server runs with `tsx` (TypeScript source). Database migrations live in
+`packages/server/drizzle/` and are applied automatically on startup.

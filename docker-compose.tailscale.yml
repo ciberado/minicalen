@@ -1,65 +1,50 @@
-services:
+# Example deployment: a single all-in-one MiniCalen container joined to a
+# Tailscale tailnet through a sidecar. Caddy running elsewhere on the tailnet
+# (e.g. an EC2 with a public IP) can then reverse-proxy to http://minicalen:8080.
+#
+# No ports need to be published and no Tailscale Serve config is required: the
+# node is reachable by name inside the tailnet.
+#
+# Copy `.env.example` to `.env`, fill it in, then:
+#   docker compose -f docker-compose.tailscale.yml up -d
 
-  server:
-    image: ciberado/minicalen-server
+services:
+  minicalen:
+    image: ciberado/minicalen:${IMAGE_TAG:-latest}
     network_mode: service:minicalen-ts
-    # ports:
-    #  - "3001:3001"
-    volumes:
-      - minicalen-data:/app/data
-      - minicalen-logs:/app/logs
     environment:
       - NODE_ENV=production
-      - PORT=3001
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 10s
-
-
-  frontend:
-    image: ciberado/minicalen-frontend
-    network_mode: service:minicalen-ts
-    # ports:
-    #  - "8080:8080"
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-https://minicalen.mininube.com}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://minicalen.mininube.com}
+    volumes:
+      - ${DATA_DIR:-/home/javi/services/minicalen/data}:/app/data
     depends_on:
-      - server
+      - minicalen-ts
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 10s
 
   minicalen-ts:
     hostname: minicalen
     container_name: minicalen_ts
     image: tailscale/tailscale:latest
-    ports:
-      - 3001:3001
-      - 8080:8080
     environment:
-      - TS_AUTHKEY=$CLIENT_SECRET
-      - TS_EXTRA_ARGS=--advertise-tags=tag:container
+      - TS_AUTHKEY=${CLIENT_SECRET:?set CLIENT_SECRET}
+      - TS_EXTRA_ARGS=${TS_EXTRA_ARGS:-}
       - TS_STATE_DIR=/var/lib/tailscale
-      - TS_SERVE_CONFIG=/config/ts.json
     volumes:
+      # Login state is persisted here. TS_AUTHKEY is only used on the first
+      # login, so changing CLIENT_SECRET has no effect while this volume exists.
+      # To re-authenticate with a new key: `docker compose down -v`.
       - tailscale-data-minicalen:/var/lib/tailscale
-      - /home/javi/services/minicalen/ts/config:/config
       - /dev/net/tun:/dev/net/tun
+    # Uncomment to reach the app from the Docker host as well.
+    # ports:
+    #   - '8080:8080'
     cap_add:
       - net_admin
       - sys_module
     restart: unless-stopped
-    
+
 volumes:
-  minicalen-data:
-    driver: local
-  minicalen-logs:
-    driver: local
   tailscale-data-minicalen:
     driver: local
