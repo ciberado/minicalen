@@ -493,7 +493,7 @@ docker compose up -d --build   # frontend on :8080, server on :3001/:3002
 6. Awareness/presence + read-only enforcement — **done**
 7. Docker/CI, docs, final verification — **done**
 
-All planned phases are complete at `2.0.0-beta.0`.
+All planned phases are complete at `2.0.0`.
 
 ### v2 conventions
 
@@ -502,8 +502,8 @@ All planned phases are complete at `2.0.0-beta.0`.
   supports up to two foreground categories rendered as a diagonal split, plus text symbols.
   Bump `SCHEMA_VERSION` and add a migration in `shared/src/ydoc.ts` when changing the model.
 - **No comments** unless requested; 2-space indent, single quotes, TypeScript.
-- Commit regularly with Conventional Commits; semantic versioning (started at
-  `2.0.0-alpha.0`).
+- Commit regularly with **Conventional Commits**; clean **Semantic Versioning** (no
+  pre-release suffixes).
 - `shared`/`renderer` are consumed as TypeScript source via workspace `exports`; the
   server runs with `tsx`.
 - Note: this environment's npm blocks lifecycle scripts; approve `better-sqlite3`

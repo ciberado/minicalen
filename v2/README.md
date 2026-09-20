@@ -64,7 +64,7 @@ The frontend nginx container serves the SPA and proxies `/api` to the server and
 
 ## Status
 
-All planned phases are complete at `2.0.0-beta.0`:
+All planned phases are complete at `2.0.0`:
 
 - Phase 0 (scaffold) — done
 - Phase 1 (`shared` domain + Yjs helpers) — done
@@ -78,10 +78,11 @@ All planned phases are complete at `2.0.0-beta.0`:
 ## Printing
 
 The Print button in the sidebar prints the **current view** (grid or sheet) on
-**A4 landscape** and **in colour**, fitted to one page. This is driven by
-`@page { size: A4 landscape; margin: 6mm }` and `print-color-adjust: exact` in
-`styles/global.css`, plus compact `@media print` rules inside the app shell (which hides the
-sidebar, dialogs and toasts), `<year-grid>` and `<neatocal-view>`.
+**A4 landscape** and **in colour**, fitted to one page, with the calendar title (and year) at
+the top. This is driven by `@page { size: A4 landscape; margin: 6mm }` and
+`print-color-adjust: exact` in `styles/global.css`, plus compact `@media print` rules inside
+the app shell (which shows the title and hides the sidebar, dialogs and toasts),
+`<year-grid>` and `<neatocal-view>`.
 
 ## Testing
 
