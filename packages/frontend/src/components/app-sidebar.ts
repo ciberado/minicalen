@@ -236,6 +236,38 @@ export class AppSidebar extends StoreElement {
       box-shadow: var(--zen-shadow-sm);
     }
 
+    .year-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      margin: -8px 0 16px;
+      color: var(--zen-ink-faint);
+    }
+
+    .year-nav button {
+      border: none;
+      background: none;
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+      font-size: 14px;
+      line-height: 1;
+      padding: 5px 8px;
+      border-radius: var(--zen-radius-sm);
+      transition: background var(--zen-transition), color var(--zen-transition);
+    }
+
+    .year-nav button:hover {
+      background: var(--zen-accent-soft);
+      color: var(--zen-accent-strong);
+    }
+
+    .year-nav__label {
+      font-weight: 600;
+      letter-spacing: 0.08em;
+    }
+
     .status {
       margin-top: 16px;
       font-size: 11px;
@@ -358,6 +390,20 @@ export class AppSidebar extends StoreElement {
           Print
         </button>
       </div>
+
+      ${state.view === 'months'
+        ? ''
+        : html`<div class="year-nav">
+            <button title="Previous year" @click=${() => appStore.prevYear()}>‹</button>
+            <button
+              class="year-nav__label"
+              title="Go to current year"
+              @click=${() => appStore.goToCurrentYear()}
+            >
+              ${state.year}
+            </button>
+            <button title="Next year" @click=${() => appStore.nextYear()}>›</button>
+          </div>`}
 
       <category-list type="foreground"></category-list>
       <category-list type="text"></category-list>

@@ -114,38 +114,6 @@ export class AppShell extends StoreElement {
       white-space: nowrap;
     }
 
-    .year-nav {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 2px;
-      margin-bottom: 12px;
-      color: var(--zen-ink-faint);
-    }
-
-    .year-nav button {
-      border: none;
-      background: none;
-      color: inherit;
-      cursor: pointer;
-      font: inherit;
-      font-size: 14px;
-      line-height: 1;
-      padding: 5px 8px;
-      border-radius: var(--zen-radius-sm);
-      transition: background var(--zen-transition), color var(--zen-transition);
-    }
-
-    .year-nav button:hover {
-      background: var(--zen-accent-soft);
-      color: var(--zen-accent-strong);
-    }
-
-    .year-nav__label {
-      font-weight: 600;
-      letter-spacing: 0.08em;
-    }
-
     @media (pointer: coarse) and (max-width: 900px) {
       main {
         padding: 16px 14px 28px;
@@ -194,7 +162,6 @@ export class AppShell extends StoreElement {
       share-dialog,
       .mobile-bar,
       .backdrop,
-      .year-nav,
       .toast {
         display: none !important;
       }
@@ -249,20 +216,6 @@ export class AppShell extends StoreElement {
     ></year-grid>`;
   }
 
-  private renderYearNav(state: AppState) {
-    if (state.view === 'months') {
-      return '';
-    }
-
-    return html`<div class="year-nav">
-      <button title="Previous year" @click=${() => appStore.prevYear()}>‹</button>
-      <button class="year-nav__label" title="Go to current year" @click=${() => appStore.goToCurrentYear()}>
-        ${state.year}
-      </button>
-      <button title="Next year" @click=${() => appStore.nextYear()}>›</button>
-    </div>`;
-  }
-
   render() {
     const state: AppState = appStore.getState();
 
@@ -293,7 +246,7 @@ export class AppShell extends StoreElement {
             <span class="print-title__name">${state.sessionName}</span>
             <span class="print-title__year">${state.year}</span>
           </div>
-          ${this.renderYearNav(state)} ${this.renderView(state)}
+          ${this.renderView(state)}
         </main>
       </div>
       <auth-dialog .open=${state.showAuthDialog}></auth-dialog>
