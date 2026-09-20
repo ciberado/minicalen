@@ -5,6 +5,26 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-09-20
+
+### Added
+
+- **New calendar** button in the sidebar: signed-in users create a fresh owned calendar;
+  anonymous users reset to a clean local calendar.
+- **Subtle year navigation** (`‹ year ›`) in the grid and print views, with a click on the
+  year jumping back to the current year. The mobile two-month view now paginates across year
+  boundaries.
+- **Magic-link sharing for anonymous sessions**: saving a calendar appends the anonymous
+  token to the URL fragment (`#<id>?k=<token>`), so opening the link on another device grants
+  access and syncs in real time.
+
+### Fixed
+
+- Loading a session by changing the URL hash (e.g. pasting a link into an already-open tab)
+  now works; previously only a full page load honored the hash.
+- `/health` reports the real app version; `APP_VERSION` is read from the root `package.json`
+  instead of being hardcoded.
+
 ## [2.3.0] - 2026-09-20
 
 ### Added
