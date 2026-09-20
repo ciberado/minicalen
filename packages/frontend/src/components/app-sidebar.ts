@@ -269,6 +269,14 @@ export class AppSidebar extends StoreElement {
     return html`
       <header>
         <h1>MiniCalen</h1>
+        <button
+          class="icon-button"
+          title="New calendar"
+          ?disabled=${state.busy}
+          @click=${() => appStore.newCalendar()}
+        >
+          ＋
+        </button>
         <button class="icon-button" title="Print" @click=${() => window.print()}>
           <svg
             width="16"

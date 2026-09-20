@@ -7,7 +7,7 @@ import {
   generateSymbol,
   isEmptySnapshot,
 } from '@minicalen/shared';
-import { api, loadSessionToken, type SessionSummary } from '../api/client';
+import { api, loadSessionToken, saveSessionToken, type SessionSummary } from '../api/client';
 import {
   fetchCurrentUser,
   signInWithEmail,
@@ -25,6 +25,20 @@ const MONTH_PAIR_SIZE = 2;
 function currentMonthPair(): number {
   const month = new Date().getMonth();
   return month - (month % MONTH_PAIR_SIZE);
+}
+
+export function parseSessionHash(hash: string): { id: string; token: string | null } {
+  const raw = hash.replace(/^#/, '');
+
+  if (!raw) {
+    return { id: '', token: null };
+  }
+
+  const separator = raw.indexOf('?');
+  const id = separator === -1 ? raw : raw.slice(0, separator);
+  const token = new URLSearchParams(separator === -1 ? '' : raw.slice(separator + 1)).get('k');
+
+  return { id, token };
 }
 
 const PALETTE = [
@@ -49,7 +63,9 @@ export interface AppState {
   isAnonymous: boolean;
   accessLevel: AccessLevel | null;
   view: AppView;
+  year: number;
   viewport: ViewportState;
+  mobileYear: number;
   mobileMonthStart: number;
   sidebarOpen: boolean;
   selectedCategoryId: string | null;
@@ -74,7 +90,9 @@ class AppStore {
     isAnonymous: true,
     accessLevel: null,
     view: 'grid',
+    year: new Date().getFullYear(),
     viewport: readViewport(),
+    mobileYear: new Date().getFullYear(),
     mobileMonthStart: currentMonthPair(),
     sidebarOpen: false,
     selectedCategoryId: null,
@@ -87,6 +105,7 @@ class AppStore {
   };
 
   private viewUserChosen = false;
+  private hashListenerBound = false;
 
   constructor() {
     sessionStore.subscribe(() => this.syncSession());
@@ -130,16 +149,66 @@ class AppStore {
   async init(): Promise<void> {
     await this.refreshUser();
 
-    const hash = window.location.hash.replace('#', '');
+    if (!this.hashListenerBound) {
+      this.hashListenerBound = true;
+      window.addEventListener('hashchange', () => void this.handleHashChange());
+    }
 
-    if (hash) {
-      await this.openSession(hash);
+    const { id, token } = parseSessionHash(window.location.hash);
+
+    if (id && token) {
+      saveSessionToken(id, token);
+    }
+
+    if (id) {
+      await this.openSession(id);
     } else {
-      await sessionStore.loadLocal();
-      await this.seedDefaultsIfEmpty();
+      await this.loadLocalCalendar();
     }
 
     this.setState({ ready: true });
+  }
+
+  private async loadLocalCalendar(): Promise<void> {
+    await sessionStore.loadLocal();
+    this.setState({ sessionName: 'Untitled Calendar', isAnonymous: true, accessLevel: null });
+    await this.seedDefaultsIfEmpty();
+  }
+
+  private sessionHash(id: string): string {
+    const token = loadSessionToken(id);
+    return token ? `#${id}?k=${token}` : `#${id}`;
+  }
+
+  private setHash(id: string | null): void {
+    const hash = id ? this.sessionHash(id) : '';
+    const target = hash || window.location.pathname + window.location.search;
+
+    if ((window.location.hash || '') === hash) {
+      return;
+    }
+
+    window.history.replaceState(null, '', target);
+  }
+
+  private async handleHashChange(): Promise<void> {
+    const { id, token } = parseSessionHash(window.location.hash);
+
+    if (id && token) {
+      saveSessionToken(id, token);
+    }
+
+    const current = this.state.session.sessionId ?? '';
+
+    if (id === current) {
+      return;
+    }
+
+    if (id) {
+      await this.openSession(id);
+    } else {
+      await this.loadLocalCalendar();
+    }
   }
 
   private async seedDefaultsIfEmpty(): Promise<void> {
@@ -226,31 +295,47 @@ class AppStore {
     this.setState({ view });
   }
 
-  get canGoPrevMonthPair(): boolean {
-    return this.state.mobileMonthStart > 0;
+  prevYear(): void {
+    this.setState({ year: this.state.year - 1 });
   }
 
-  get canGoNextMonthPair(): boolean {
-    return this.state.mobileMonthStart + MONTH_PAIR_SIZE < MONTH_NAMES.length;
+  nextYear(): void {
+    this.setState({ year: this.state.year + 1 });
+  }
+
+  goToCurrentYear(): void {
+    this.setState({ year: new Date().getFullYear() });
   }
 
   nextMonthPair(): void {
-    this.setState({
-      mobileMonthStart: Math.min(
-        this.state.mobileMonthStart + MONTH_PAIR_SIZE,
-        MONTH_NAMES.length - MONTH_PAIR_SIZE,
-      ),
-    });
+    const start = this.state.mobileMonthStart;
+
+    if (start + MONTH_PAIR_SIZE >= MONTH_NAMES.length) {
+      this.setState({ mobileMonthStart: 0, mobileYear: this.state.mobileYear + 1 });
+    } else {
+      this.setState({ mobileMonthStart: start + MONTH_PAIR_SIZE });
+    }
   }
 
   prevMonthPair(): void {
-    this.setState({
-      mobileMonthStart: Math.max(this.state.mobileMonthStart - MONTH_PAIR_SIZE, 0),
-    });
+    const start = this.state.mobileMonthStart;
+
+    if (start - MONTH_PAIR_SIZE < 0) {
+      this.setState({
+        mobileMonthStart: MONTH_NAMES.length - MONTH_PAIR_SIZE,
+        mobileYear: this.state.mobileYear - 1,
+      });
+    } else {
+      this.setState({ mobileMonthStart: start - MONTH_PAIR_SIZE });
+    }
   }
 
   goToToday(): void {
-    this.setState({ mobileMonthStart: currentMonthPair() });
+    this.setState({
+      mobileYear: new Date().getFullYear(),
+      mobileMonthStart: currentMonthPair(),
+      year: new Date().getFullYear(),
+    });
   }
 
   toggleSidebar(): void {
@@ -305,13 +390,8 @@ class AppStore {
       await signOutUser();
       sessionStore.setLocalUser(null);
       await this.refreshUser();
-      window.location.hash = '';
-      await sessionStore.loadLocal();
-      this.setState({
-        sessionName: 'Untitled Calendar',
-        isAnonymous: true,
-        accessLevel: null,
-      });
+      this.setHash(null);
+      await this.loadLocalCalendar();
     } catch (error) {
       this.setError(error);
     } finally {
@@ -327,7 +407,7 @@ class AppStore {
         readOnly: accessLevel === 'viewer',
         token: loadSessionToken(id),
       });
-      window.location.hash = id;
+      this.setHash(id);
       this.setState({
         sessionName: session.name,
         isAnonymous: session.isAnonymous,
@@ -359,6 +439,30 @@ class AppStore {
     }
   }
 
+  async newCalendar(): Promise<void> {
+    if (this.state.user) {
+      await this.createSession('New Calendar');
+      return;
+    }
+
+    try {
+      this.setState({ busy: true, error: null });
+      this.setHash(null);
+      await sessionStore.resetLocal();
+      this.setState({
+        sessionName: 'Untitled Calendar',
+        isAnonymous: true,
+        accessLevel: null,
+        selectedCategoryId: null,
+        notice: 'New calendar',
+      });
+    } catch (error) {
+      this.setError(error);
+    } finally {
+      this.setState({ busy: false });
+    }
+  }
+
   async renameSession(name: string): Promise<void> {
     const id = this.state.session.sessionId;
 
@@ -380,9 +484,8 @@ class AppStore {
       await api.deleteSession(id);
 
       if (id === this.state.session.sessionId) {
-        window.location.hash = '';
-        await sessionStore.loadLocal();
-        this.setState({ sessionName: 'Untitled Calendar', isAnonymous: true, accessLevel: null });
+        this.setHash(null);
+        await this.loadLocalCalendar();
       }
     } catch (error) {
       this.setError(error);
@@ -402,7 +505,7 @@ class AppStore {
       }
 
       await api.putState(id, snapshot);
-      window.location.hash = id;
+      this.setHash(id);
       this.setState({ notice: 'Saved' });
 
       if (id !== currentId) {

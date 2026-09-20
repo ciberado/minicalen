@@ -88,7 +88,12 @@ Agent shortcuts:
 - State lives in a `Y.Doc`: `categories` and `dateMarks` maps plus a `meta` map with
   `schemaVersion`. `@minicalen/shared` owns the document helpers and migrations.
 - `appStore` is a small observable singleton consumed by Lit `StoreElement` subclasses.
-- Grid and sheet views; a Print button prints the current view (see Printing below).
+- Grid and sheet views; a Print button prints the current view (see Printing below). The grid
+  and print views share an `appStore.year` cursor with a subtle `‹ year ›` control.
+- **New calendar**: the sidebar button creates a fresh owned calendar when signed in, or
+  resets the local anonymous calendar to defaults otherwise.
+- **Sharing**: signed-in owners share by email; anonymous sessions are shared by a magic link
+  that carries the per-session token in the URL fragment (`#<id>?k=<token>`).
 - **Mobile two-month view**: `appStore` tracks a `viewport` (`matchMedia` on
   `(pointer: coarse) and (max-width: 900px)` plus orientation) and defaults to the `months`
   view on smartphones, paginating two months at a time (stacked in portrait, side by side in

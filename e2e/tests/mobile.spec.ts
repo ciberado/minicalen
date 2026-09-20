@@ -8,32 +8,30 @@ test('defaults to the two-month view on a smartphone', async ({ page }) => {
   await expect(page.locator('app-sidebar')).not.toHaveAttribute('open', '');
 });
 
-test('navigates month pairs with the prev/next controls', async ({ page }) => {
+test('paginates month pairs across year boundaries', async ({ page }) => {
   await page.goto('/');
 
   const range = page.locator('mobile-year-view .range');
   const next = page.locator('mobile-year-view button[title="Next months"]');
   const prev = page.locator('mobile-year-view button[title="Previous months"]');
 
-  for (let index = 0; index < 8; index += 1) {
-    if (await next.isDisabled()) {
+  for (let index = 0; index < 6; index += 1) {
+    if ((await range.textContent())?.includes('November')) {
       break;
     }
     await next.click();
   }
 
-  await expect(next).toBeDisabled();
-  await expect(range).toContainText('December');
+  await expect(range).toContainText('November');
+  const endYear = Number((await range.textContent())?.match(/(\d{4})/)?.[1]);
 
-  for (let index = 0; index < 8; index += 1) {
-    if (await prev.isDisabled()) {
-      break;
-    }
-    await prev.click();
-  }
-
-  await expect(prev).toBeDisabled();
+  await next.click();
   await expect(range).toContainText('January');
+  await expect(range).toContainText(String(endYear + 1));
+
+  await prev.click();
+  await expect(range).toContainText('November');
+  await expect(range).toContainText(String(endYear));
 });
 
 test('opens the sidebar drawer and marks a day', async ({ page }) => {

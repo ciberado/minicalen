@@ -1,6 +1,21 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
-export const APP_VERSION = '2.2.0';
+function resolveAppVersion(): string {
+  try {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const manifest = JSON.parse(readFileSync(resolve(here, '../../../package.json'), 'utf8')) as {
+      version?: string;
+    };
+    return manifest.version ?? '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+}
+
+export const APP_VERSION = resolveAppVersion();
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),

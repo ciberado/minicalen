@@ -1,5 +1,23 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { parseSessionHash } from './app-store';
 import { MOBILE_QUERY } from './viewport';
+
+describe('parseSessionHash', () => {
+  it('returns an empty id for an empty hash', () => {
+    expect(parseSessionHash('')).toEqual({ id: '', token: null });
+  });
+
+  it('parses a plain session id', () => {
+    expect(parseSessionHash('#abc-123')).toEqual({ id: 'abc-123', token: null });
+  });
+
+  it('parses a magic link with a token', () => {
+    expect(parseSessionHash('#abc-123?k=secret-token')).toEqual({
+      id: 'abc-123',
+      token: 'secret-token',
+    });
+  });
+});
 
 type ChangeListener = (event: MediaQueryListEvent) => void;
 
@@ -84,34 +102,48 @@ describe('app-store month pair navigation', () => {
     const month = new Date().getMonth();
 
     expect(appStore.getState().mobileMonthStart).toBe(month - (month % 2));
+    expect(appStore.getState().mobileYear).toBe(new Date().getFullYear());
   });
 
-  it('advances and clamps at the last pair', async () => {
+  it('advances a pair at a time within the year', async () => {
     const { appStore } = await loadStore({ mobile: true });
+    appStore.goToToday();
+    const year = appStore.getState().mobileYear;
 
-    for (let index = 0; index < 12; index += 1) {
+    appStore.nextMonthPair();
+
+    expect(appStore.getState().mobileYear).toBe(year);
+    expect(appStore.getState().mobileMonthStart).toBe(
+      (new Date().getMonth() - (new Date().getMonth() % 2) + 2) % 12,
+    );
+  });
+
+  it('rolls over to the next year after November-December', async () => {
+    const { appStore } = await loadStore({ mobile: true });
+    const year = appStore.getState().mobileYear;
+
+    while (appStore.getState().mobileMonthStart !== 10) {
       appStore.nextMonthPair();
     }
 
-    expect(appStore.getState().mobileMonthStart).toBe(10);
-    expect(appStore.canGoNextMonthPair).toBe(false);
-
     appStore.nextMonthPair();
-    expect(appStore.getState().mobileMonthStart).toBe(10);
+
+    expect(appStore.getState().mobileMonthStart).toBe(0);
+    expect(appStore.getState().mobileYear).toBe(year + 1);
   });
 
-  it('goes back to the first pair and clamps', async () => {
+  it('rolls back to the previous year before January-February', async () => {
     const { appStore } = await loadStore({ mobile: true });
+    const year = appStore.getState().mobileYear;
 
-    for (let index = 0; index < 12; index += 1) {
+    while (appStore.getState().mobileMonthStart !== 0) {
       appStore.prevMonthPair();
     }
 
-    expect(appStore.getState().mobileMonthStart).toBe(0);
-    expect(appStore.canGoPrevMonthPair).toBe(false);
-
     appStore.prevMonthPair();
-    expect(appStore.getState().mobileMonthStart).toBe(0);
+
+    expect(appStore.getState().mobileMonthStart).toBe(10);
+    expect(appStore.getState().mobileYear).toBe(year - 1);
   });
 
   it('jumps back to the pair containing today', async () => {
@@ -122,6 +154,26 @@ describe('app-store month pair navigation', () => {
 
     const month = new Date().getMonth();
     expect(appStore.getState().mobileMonthStart).toBe(month - (month % 2));
+    expect(appStore.getState().mobileYear).toBe(new Date().getFullYear());
+  });
+});
+
+describe('app-store year navigation', () => {
+  it('moves between years and returns to the current year', async () => {
+    const { appStore } = await loadStore({ mobile: false });
+    const current = new Date().getFullYear();
+
+    expect(appStore.getState().year).toBe(current);
+
+    appStore.nextYear();
+    expect(appStore.getState().year).toBe(current + 1);
+
+    appStore.prevYear();
+    appStore.prevYear();
+    expect(appStore.getState().year).toBe(current - 1);
+
+    appStore.goToCurrentYear();
+    expect(appStore.getState().year).toBe(current);
   });
 });
 

@@ -2,8 +2,10 @@ import { HocuspocusProvider } from '@hocuspocus/provider';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import * as Y from 'yjs';
 import {
+  SCHEMA_VERSION,
   applySnapshot,
   createSessionDocument,
+  defaultCategories,
   migrateSessionDocument,
   getCategories,
   getDateMark,
@@ -102,6 +104,15 @@ export class SessionStore {
     await this.indexeddb.whenSynced;
     this.migrateDocument();
     this.setState({ sessionId: null, status: 'local', readOnly: false });
+  }
+
+  async resetLocal(): Promise<void> {
+    await this.loadLocal();
+    await this.applyRemoteSnapshot({
+      schemaVersion: SCHEMA_VERSION,
+      categories: defaultCategories(),
+      dateMarks: {},
+    });
   }
 
   async connect(

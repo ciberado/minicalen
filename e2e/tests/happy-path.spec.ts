@@ -48,6 +48,87 @@ test('adds, removes and combines two categories on a day', async ({ page }) => {
   await expect(day).toHaveAttribute('style', /4caf50/i);
 });
 
+test('switches sessions when the hash changes without a full reload', async ({ page }) => {
+  await page.goto('/');
+
+  const status = page.locator('app-sidebar .status');
+
+  await page.locator('button[title="Save"]').click();
+  await expect(page).toHaveURL(/#[0-9a-f-]{36}/);
+  await expect(status).toContainText('connected');
+
+  const sessionId = new URL(page.url()).hash.slice(1);
+
+  await page.evaluate(() => {
+    window.location.hash = '';
+  });
+  await expect(status).toContainText('local');
+
+  await page.evaluate((id) => {
+    window.location.hash = id;
+  }, sessionId);
+  await expect(status).toContainText('connected');
+});
+
+test('an anonymous session opened from the magic link syncs on another device', async ({
+  page,
+  browser,
+}) => {
+  await page.goto('/');
+  await page.locator('app-sidebar [title="Select Important"]').click();
+  await page.locator('year-grid [data-date="2026-06-10"]').click();
+  await page.locator('button[title="Save"]').click();
+  await expect(page).toHaveURL(/#[0-9a-f-]{36}\?k=/);
+
+  const shareUrl = page.url();
+
+  const other = await browser.newContext();
+  const otherPage = await other.newPage();
+  await otherPage.goto(shareUrl);
+
+  await expect(otherPage.locator('app-sidebar .status')).toContainText('connected');
+  await expect(otherPage.locator('year-grid [data-date="2026-06-10"]')).toHaveAttribute(
+    'style',
+    /f44336/i,
+  );
+
+  await otherPage.locator('app-sidebar [title="Select Important"]').click();
+  await otherPage.locator('year-grid [data-date="2026-06-11"]').click();
+  await expect(page.locator('year-grid [data-date="2026-06-11"]')).toHaveAttribute(
+    'style',
+    /f44336/i,
+  );
+
+  await other.close();
+});
+
+test('navigates between years with the subtle year control', async ({ page }) => {
+  await page.goto('/');
+
+  const yearLabel = page.locator('.year-nav__label');
+  const current = new Date().getFullYear();
+
+  await expect(yearLabel).toHaveText(String(current));
+
+  await page.locator('.year-nav button[title="Next year"]').click();
+  await expect(yearLabel).toHaveText(String(current + 1));
+
+  await yearLabel.click();
+  await expect(yearLabel).toHaveText(String(current));
+});
+
+test('new calendar starts from a clean slate', async ({ page }) => {
+  await page.goto('/');
+
+  await page.locator('app-sidebar [title="Select Important"]').click();
+  const day = page.locator('year-grid [data-date="2026-07-10"]');
+  await day.click();
+  await expect(day).toHaveAttribute('style', /f44336/i);
+
+  await page.locator('app-sidebar [title="New calendar"]').click();
+  await expect(day).not.toHaveAttribute('style', /f44336/i);
+});
+
 test('print button triggers the browser print dialog', async ({ page }) => {
   await page.addInitScript(() => {
     (window as unknown as { __printed?: boolean }).__printed = false;

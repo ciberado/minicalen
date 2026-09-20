@@ -76,26 +76,16 @@ export class MobileYearView extends StoreElement {
   render() {
     const state = appStore.getState();
     const start = state.mobileMonthStart;
-    const year = new Date().getFullYear();
+    const year = state.mobileYear;
     const label = `${MONTH_NAMES[start]} – ${MONTH_NAMES[start + 1]} ${year}`;
 
     return html`
       <div class="months-nav">
-        <button
-          class="nav"
-          title="Previous months"
-          ?disabled=${!appStore.canGoPrevMonthPair}
-          @click=${() => appStore.prevMonthPair()}
-        >
+        <button class="nav" title="Previous months" @click=${() => appStore.prevMonthPair()}>
           ‹
         </button>
         <span class="range">${label}</span>
-        <button
-          class="nav"
-          title="Next months"
-          ?disabled=${!appStore.canGoNextMonthPair}
-          @click=${() => appStore.nextMonthPair()}
-        >
+        <button class="nav" title="Next months" @click=${() => appStore.nextMonthPair()}>
           ›
         </button>
         <button class="today" @click=${() => appStore.goToToday()}>Today</button>
