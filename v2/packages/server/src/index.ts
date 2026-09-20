@@ -13,8 +13,8 @@ runMigrations(db);
 
 const auth = createAuth(db, config);
 const app = createApp({ db, auth, config, logger });
-const httpServer = app.listen(config.port, () => {
-  logger.info(`MiniCalen v2 API listening on http://localhost:${config.port}`);
+const httpServer = app.listen(config.port, config.host, () => {
+  logger.info(`MiniCalen v2 API listening on http://${config.host}:${config.port}`);
 });
 
 const collaboration = createCollaborationServer({ db, auth, config, logger });

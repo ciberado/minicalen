@@ -21,6 +21,10 @@ export function createApp({ db, auth, config, logger }: AppDeps) {
   const app = express();
   const middleware = createAuthMiddleware(auth);
 
+  if (config.nodeEnv === 'production') {
+    app.set('trust proxy', 1);
+  }
+
   app.use(
     cors({
       origin: config.trustedOrigins.length > 0 ? config.trustedOrigins : true,

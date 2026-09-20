@@ -23,7 +23,7 @@ interface CollaborationDeps {
 export function createCollaborationServer({ db, auth, config, logger }: CollaborationDeps) {
   return new Server<CollaborationContext>({
     port: config.collabPort,
-    address: '0.0.0.0',
+    address: config.host,
     quiet: true,
     debounce: 2000,
     maxDebounce: 10000,

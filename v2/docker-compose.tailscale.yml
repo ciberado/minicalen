@@ -1,0 +1,47 @@
+# Example deployment: a single all-in-one MiniCalen container joined to a
+# Tailscale tailnet through a sidecar. Caddy running elsewhere on the tailnet
+# (e.g. an EC2 with a public IP) can then reverse-proxy to http://minicalen:8080.
+#
+# No ports need to be published and no Tailscale Serve config is required: the
+# node is reachable by name inside the tailnet.
+#
+#   CLIENT_SECRET=tskey-auth-... BETTER_AUTH_SECRET=$(openssl rand -hex 32) \
+#     docker compose -f docker-compose.tailscale.yml up -d
+
+services:
+  minicalen:
+    image: ciberado/minicalen:latest
+    network_mode: service:minicalen-ts
+    environment:
+      - NODE_ENV=production
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=https://minicalen.mininube.com
+      - ALLOWED_ORIGINS=https://minicalen.mininube.com
+    volumes:
+      - /home/javi/services/minicalen/data:/app/data
+    depends_on:
+      - minicalen-ts
+    restart: unless-stopped
+
+  minicalen-ts:
+    hostname: minicalen
+    container_name: minicalen_ts
+    image: tailscale/tailscale:latest
+    environment:
+      - TS_AUTHKEY=${CLIENT_SECRET:?set CLIENT_SECRET}
+      - TS_EXTRA_ARGS=--advertise-tags=tag:container
+      - TS_STATE_DIR=/var/lib/tailscale
+    volumes:
+      - tailscale-data-minicalen:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    # Uncomment to reach the app from the Docker host as well.
+    # ports:
+    #   - '8080:8080'
+    cap_add:
+      - net_admin
+      - sys_module
+    restart: unless-stopped
+
+volumes:
+  tailscale-data-minicalen:
+    driver: local

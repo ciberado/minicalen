@@ -1,9 +1,10 @@
 import { z } from 'zod';
 
-export const APP_VERSION = '2.0.0';
+export const APP_VERSION = '2.1.0';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  HOST: z.string().min(1).default('0.0.0.0'),
   PORT: z.coerce.number().int().positive().default(3001),
   COLLAB_PORT: z.coerce.number().int().positive().default(3002),
   DATABASE_URL: z.string().min(1).default('./data/minicalen.db'),
@@ -17,6 +18,7 @@ export type NodeEnv = 'development' | 'test' | 'production';
 
 export interface AppConfig {
   nodeEnv: NodeEnv;
+  host: string;
   port: number;
   collabPort: number;
   databaseUrl: string;
@@ -61,6 +63,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
 
   return {
     nodeEnv: parsed.NODE_ENV,
+    host: parsed.HOST,
     port: parsed.PORT,
     collabPort: parsed.COLLAB_PORT,
     databaseUrl: parsed.DATABASE_URL,
