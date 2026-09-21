@@ -3,9 +3,8 @@ import { property } from 'lit/decorators.js';
 import {
   MONTH_NAMES,
   WEEKDAY_NAMES,
-  dateKeyFromParts,
   generateSymbol,
-  monthCells,
+  monthGrid,
   toDateKey,
   type Category,
   type DateMarkMap,
@@ -119,12 +118,15 @@ export class YearGrid extends LitElement {
       transition: background 140ms ease, box-shadow 140ms ease, transform 140ms ease;
     }
 
-    .day.blank {
-      cursor: default;
-      background: transparent;
+    .day.outside {
+      opacity: 0.38;
     }
 
-    .day:not(.blank):hover {
+    .day.outside:hover {
+      opacity: 0.75;
+    }
+
+    .day:hover {
       background: var(--zen-accent-soft, #e6efe9);
       box-shadow: inset 0 0 0 1px var(--zen-accent-ring, rgba(111, 147, 132, 0.35));
     }
@@ -218,7 +220,7 @@ export class YearGrid extends LitElement {
         padding: 0.4mm 0.6mm;
       }
 
-      .day:not(.blank):hover {
+      .day:hover {
         background: transparent;
         box-shadow: none;
       }
@@ -392,16 +394,12 @@ export class YearGrid extends LitElement {
           ${WEEKDAY_NAMES.map((weekday) => html`<div class="weekday">${weekday.charAt(0)}</div>`)}
         </div>
         <div class="days">
-          ${monthCells(this.year, monthIndex).map((day) => {
-            if (day === null) {
-              return html`<div class="day blank"></div>`;
-            }
-
-            const dateKey = dateKeyFromParts(this.year, monthIndex, day);
-            const style = this.dayStyle(dateKey);
+          ${monthGrid(this.year, monthIndex).map((cell) => {
+            const style = this.dayStyle(cell.dateKey);
             const classes = [
               'day',
-              dateKey === todayKey ? 'today' : '',
+              cell.monthOffset !== 0 ? 'outside' : '',
+              cell.dateKey === todayKey ? 'today' : '',
               style ? 'marked' : '',
             ]
               .filter(Boolean)
@@ -409,12 +407,12 @@ export class YearGrid extends LitElement {
 
             return html`<div
               class=${classes}
-              data-date=${dateKey}
+              data-date=${cell.dateKey}
               style=${style ? `background:${style.background}` : ''}
-              @click=${() => this.handleDayClick(dateKey, selected)}
+              @click=${() => this.handleDayClick(cell.dateKey, selected)}
             >
-              <span class="number" style=${style ? `color:${style.ink}` : ''}>${day}</span>
-              ${this.renderSymbols(dateKey)}
+              <span class="number" style=${style ? `color:${style.ink}` : ''}>${cell.day}</span>
+              ${this.renderSymbols(cell.dateKey)}
             </div>`;
           })}
         </div>

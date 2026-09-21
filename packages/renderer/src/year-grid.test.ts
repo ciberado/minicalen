@@ -143,6 +143,29 @@ describe('year-grid', () => {
     expect(day(element, '2026-02-01')).toBeDefined();
   });
 
+  it('repeats adjacent-month days as translucent outside cells', async () => {
+    const element = await mount();
+
+    const cells = element.shadowRoot?.querySelectorAll('[data-date="2026-01-31"]');
+    expect(cells).toHaveLength(2);
+    expect(
+      Array.from(cells ?? []).filter((cell) => cell.classList.contains('outside')),
+    ).toHaveLength(1);
+    expect(element.shadowRoot?.querySelectorAll('.day.blank')).toHaveLength(0);
+  });
+
+  it('emits date-click from an outside cell using the real date', async () => {
+    const element = await mount({ categories: [foreground], selectedCategoryId: 'fg' });
+    const events: string[] = [];
+    element.addEventListener('date-click', (event) => {
+      events.push((event as CustomEvent<{ date: string }>).detail.date);
+    });
+
+    element.shadowRoot?.querySelector<HTMLElement>('[data-date="2026-01-31"].outside')?.click();
+
+    expect(events).toEqual(['2026-01-31']);
+  });
+
   it('applies a single foreground category with contrasting ink', async () => {
     const element = await mount({
       categories: [foreground],

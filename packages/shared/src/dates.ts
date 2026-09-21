@@ -30,24 +30,50 @@ export function mondayFirstOffset(year: number, monthIndex: number): number {
   return (new Date(year, monthIndex, 1).getDay() + 6) % 7;
 }
 
-export function monthCells(year: number, monthIndex: number): Array<number | null> {
+export interface MonthCell {
+  dateKey: string;
+  day: number;
+  monthOffset: -1 | 0 | 1;
+}
+
+export function monthGrid(year: number, monthIndex: number): MonthCell[] {
   const offset = mondayFirstOffset(year, monthIndex);
   const total = daysInMonth(year, monthIndex);
-  const cells: Array<number | null> = [];
+  const previousMonthDays = daysInMonth(
+    monthIndex === 0 ? year - 1 : year,
+    (monthIndex + 11) % 12,
+  );
+  const cells: MonthCell[] = [];
 
-  for (let index = 0; index < offset; index += 1) {
-    cells.push(null);
+  for (let index = offset; index > 0; index -= 1) {
+    const day = previousMonthDays - index + 1;
+    cells.push({
+      dateKey: dateKeyFromParts(year, monthIndex - 1, day),
+      day,
+      monthOffset: -1,
+    });
   }
 
   for (let day = 1; day <= total; day += 1) {
-    cells.push(day);
+    cells.push({ dateKey: dateKeyFromParts(year, monthIndex, day), day, monthOffset: 0 });
   }
 
+  let nextDay = 1;
+
   while (cells.length % 7 !== 0) {
-    cells.push(null);
+    cells.push({
+      dateKey: dateKeyFromParts(year, monthIndex + 1, nextDay),
+      day: nextDay,
+      monthOffset: 1,
+    });
+    nextDay += 1;
   }
 
   return cells;
+}
+
+export function monthCells(year: number, monthIndex: number): Array<number | null> {
+  return monthGrid(year, monthIndex).map((cell) => (cell.monthOffset === 0 ? cell.day : null));
 }
 
 export function dateKeyFromParts(year: number, monthIndex: number, day: number): string {

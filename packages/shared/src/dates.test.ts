@@ -4,6 +4,7 @@ import {
   daysInMonth,
   mondayFirstOffset,
   monthCells,
+  monthGrid,
   toDateKey,
 } from './dates';
 
@@ -37,6 +38,35 @@ describe('monthCells', () => {
   });
 
   it('returns nulls for leading blanks', () => {
+    const cells = monthCells(2026, 0);
+    expect(cells.slice(0, 3)).toEqual([null, null, null]);
+    expect(cells[3]).toBe(1);
+  });
+});
+
+describe('monthGrid', () => {
+  it('fills leading and trailing cells with adjacent-month dates', () => {
+    const cells = monthGrid(2026, 0);
+
+    expect(cells.length % 7).toBe(0);
+    expect(cells[0]).toEqual({ dateKey: '2025-12-29', day: 29, monthOffset: -1 });
+    expect(cells[2]).toEqual({ dateKey: '2025-12-31', day: 31, monthOffset: -1 });
+    expect(cells[3]).toEqual({ dateKey: '2026-01-01', day: 1, monthOffset: 0 });
+
+    const last = cells[cells.length - 1];
+    expect(last.monthOffset).toBe(1);
+    expect(last.dateKey.startsWith('2026-02')).toBe(true);
+  });
+
+  it('wraps into the next year in December', () => {
+    const cells = monthGrid(2026, 11);
+    const last = cells[cells.length - 1];
+
+    expect(last.monthOffset).toBe(1);
+    expect(last.dateKey.startsWith('2027-01')).toBe(true);
+  });
+
+  it('keeps monthCells as the in-month projection', () => {
     const cells = monthCells(2026, 0);
     expect(cells.slice(0, 3)).toEqual([null, null, null]);
     expect(cells[3]).toBe(1);
