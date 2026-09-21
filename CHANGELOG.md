@@ -5,6 +5,14 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2026-09-20
+
+### Added
+
+- Month cards now fill their leading and trailing cells with the adjacent month's days,
+  rendered translucent, instead of empty gaps. Every cell is a real date, so a day can appear
+  in two cards and both representations stay in sync (including clicks).
+
 ## [2.6.1] - 2026-09-20
 
 ### Changed
