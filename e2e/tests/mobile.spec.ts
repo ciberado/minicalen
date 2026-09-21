@@ -39,6 +39,7 @@ test('opens the sidebar drawer and marks a day', async ({ page }) => {
 
   await page.locator('.mobile-bar__menu').click();
   await expect(page.locator('app-sidebar')).toHaveAttribute('open', '');
+  await expect(page.getByRole('button', { name: 'Months' })).toBeVisible();
 
   await page.locator('app-sidebar [title="Select Important"]').click();
   await expect(page.locator('app-sidebar')).not.toHaveAttribute('open', '');

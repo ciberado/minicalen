@@ -377,12 +377,14 @@ export class AppSidebar extends StoreElement {
         >
           Grid
         </button>
-        <button
-          class=${state.view === 'months' ? 'active' : ''}
-          @click=${() => appStore.setView('months')}
-        >
-          Months
-        </button>
+        ${state.viewport.isMobile
+          ? html`<button
+              class=${state.view === 'months' ? 'active' : ''}
+              @click=${() => appStore.setView('months')}
+            >
+              Months
+            </button>`
+          : ''}
         <button
           class=${state.view === 'print' ? 'active' : ''}
           @click=${() => appStore.setView('print')}

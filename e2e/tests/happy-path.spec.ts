@@ -116,6 +116,15 @@ test('prints the year grid on a single page', async ({ page }) => {
   expect(pages).toBe(1);
 });
 
+test('does not offer the months view on desktop', async ({ page }) => {
+  await page.goto('/');
+
+  const viewSwitch = page.locator('.view-switch');
+  await expect(viewSwitch.getByRole('button', { name: 'Grid' })).toBeVisible();
+  await expect(viewSwitch.getByRole('button', { name: 'Print' })).toBeVisible();
+  await expect(viewSwitch.getByRole('button', { name: 'Months' })).toHaveCount(0);
+});
+
 test('scales the year grid down on short viewports instead of overflowing', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 620 });
   await page.goto('/');
