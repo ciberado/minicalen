@@ -42,16 +42,16 @@ export function parseSessionHash(hash: string): { id: string; token: string | nu
 }
 
 const PALETTE = [
-  '#F44336',
-  '#E91E63',
-  '#9C27B0',
-  '#673AB7',
-  '#3F51B5',
-  '#2196F3',
-  '#00BCD4',
-  '#009688',
-  '#4CAF50',
-  '#FF9800',
+  '#E0A097',
+  '#E8B98E',
+  '#E2CF95',
+  '#C2CE9C',
+  '#A6C4A0',
+  '#9FC7B6',
+  '#9FBED6',
+  '#AEB3D7',
+  '#C6A9CD',
+  '#D8A7B7',
 ];
 
 export interface AppState {

@@ -8,7 +8,7 @@ test('anonymous calendar marks a date and keeps it after reload', async ({ page 
 
   const day = page.locator('year-grid [data-date="2026-03-10"]');
   await day.click();
-  await expect(day).toHaveAttribute('style', /f44336/i);
+  await expect(day).toHaveAttribute('style', /e0a097/i);
 
   await page.locator('button[title="Save"]').click();
   await expect(page).toHaveURL(/#[0-9a-f-]{36}/);
@@ -16,7 +16,7 @@ test('anonymous calendar marks a date and keeps it after reload', async ({ page 
   await page.reload();
   await expect(page.locator('year-grid [data-date="2026-03-10"]')).toHaveAttribute(
     'style',
-    /f44336/i,
+    /e0a097/i,
   );
 });
 
@@ -28,24 +28,24 @@ test('adds, removes and combines two categories on a day', async ({ page }) => {
 
   await select('Important').click();
   await day.click();
-  await expect(day).toHaveAttribute('style', /f44336/i);
+  await expect(day).toHaveAttribute('style', /e0a097/i);
 
   await day.click();
-  await expect(day).not.toHaveAttribute('style', /f44336/i);
+  await expect(day).not.toHaveAttribute('style', /e0a097/i);
 
   await day.click();
   await select('Work').click();
   await day.click();
   await expect(day).toHaveAttribute('style', /linear-gradient/i);
-  await expect(day).toHaveAttribute('style', /f44336/i);
-  await expect(day).toHaveAttribute('style', /2196f3/i);
+  await expect(day).toHaveAttribute('style', /e0a097/i);
+  await expect(day).toHaveAttribute('style', /9fbed6/i);
 
   await select('Personal').click();
   await day.click();
   await expect(day).toHaveAttribute('style', /linear-gradient/i);
-  await expect(day).not.toHaveAttribute('style', /f44336/i);
-  await expect(day).toHaveAttribute('style', /2196f3/i);
-  await expect(day).toHaveAttribute('style', /4caf50/i);
+  await expect(day).not.toHaveAttribute('style', /e0a097/i);
+  await expect(day).toHaveAttribute('style', /9fbed6/i);
+  await expect(day).toHaveAttribute('style', /a6c4a0/i);
 });
 
 test('switches sessions when the hash changes without a full reload', async ({ page }) => {
@@ -89,17 +89,31 @@ test('an anonymous session opened from the magic link syncs on another device', 
   await expect(otherPage.locator('app-sidebar .status')).toContainText('connected');
   await expect(otherPage.locator('year-grid [data-date="2026-06-10"]')).toHaveAttribute(
     'style',
-    /f44336/i,
+    /e0a097/i,
   );
 
   await otherPage.locator('app-sidebar [title="Select Important"]').click();
   await otherPage.locator('year-grid [data-date="2026-06-11"]').click();
   await expect(page.locator('year-grid [data-date="2026-06-11"]')).toHaveAttribute(
     'style',
-    /f44336/i,
+    /e0a097/i,
   );
 
   await other.close();
+});
+
+test('prints the year grid on a single page', async ({ page }) => {
+  await page.goto('/');
+
+  const pdf = await page.pdf({
+    format: 'A4',
+    landscape: true,
+    printBackground: true,
+    margin: { top: '6mm', bottom: '6mm', left: '6mm', right: '6mm' },
+  });
+
+  const pages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length;
+  expect(pages).toBe(1);
 });
 
 test('scales the year grid down on short viewports instead of overflowing', async ({ page }) => {
@@ -137,10 +151,10 @@ test('new calendar starts from a clean slate', async ({ page }) => {
   await page.locator('app-sidebar [title="Select Important"]').click();
   const day = page.locator('year-grid [data-date="2026-07-10"]');
   await day.click();
-  await expect(day).toHaveAttribute('style', /f44336/i);
+  await expect(day).toHaveAttribute('style', /e0a097/i);
 
   await page.locator('app-sidebar [title="New calendar"]').click();
-  await expect(day).not.toHaveAttribute('style', /f44336/i);
+  await expect(day).not.toHaveAttribute('style', /e0a097/i);
 });
 
 test('print button triggers the browser print dialog', async ({ page }) => {

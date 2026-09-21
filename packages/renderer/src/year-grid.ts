@@ -40,13 +40,13 @@ export class YearGrid extends LitElement {
       gap: 16px;
     }
 
-    @media (max-width: 1100px) {
+    @media screen and (max-width: 1100px) {
       .months.auto {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
 
-    @media (max-width: 820px) {
+    @media screen and (max-width: 820px) {
       .months.auto {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }

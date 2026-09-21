@@ -48,7 +48,7 @@ test('opens the sidebar drawer and marks a day', async ({ page }) => {
   const day = page.locator(`year-grid [data-date="${dateKey}"]`);
 
   await day.click();
-  await expect(day).toHaveAttribute('style', /f44336/i);
+  await expect(day).toHaveAttribute('style', /e0a097/i);
 });
 
 test('stacks months in portrait and pairs them in landscape', async ({ page }) => {
