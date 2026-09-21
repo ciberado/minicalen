@@ -5,6 +5,20 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-09-20
+
+### Changed
+
+- Replaced the default category colors with a **pastel palette** (dusty rose, apricot, sand,
+  olive, sage, mint, sky, periwinkle, lilac and pink) that harmonizes with the zen theme.
+  Existing calendars keep their colors; new ones use the palette.
+
+### Fixed
+
+- Printing the year grid now uses a single A4 landscape page again. The responsive
+  `.months.auto` width media queries outranked the print rule by specificity, so print fell
+  back to three columns (four rows); they are now scoped to `screen`.
+
 ## [2.5.0] - 2026-09-20
 
 ### Added
