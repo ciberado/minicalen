@@ -5,6 +5,13 @@ All notable changes to MiniCalen v2 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.1] - 2026-09-20
+
+### Changed
+
+- Removed the **Months** view button on desktop; the two-month view stays available on
+  smartphones and in the mobile drawer.
+
 ## [2.6.0] - 2026-09-20
 
 ### Changed
