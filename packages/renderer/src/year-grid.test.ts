@@ -154,6 +154,15 @@ describe('year-grid', () => {
     expect(element.shadowRoot?.querySelectorAll('.day.blank')).toHaveLength(0);
   });
 
+  it('can hide the adjacent-month days', async () => {
+    const element = await mount({ showAdjacentDays: false });
+
+    expect(element.shadowRoot?.querySelectorAll('[data-date="2026-01-31"]')).toHaveLength(1);
+    expect(
+      (element.shadowRoot?.querySelectorAll('.day.blank').length ?? 0) > 0,
+    ).toBe(true);
+  });
+
   it('emits date-click from an outside cell using the real date', async () => {
     const element = await mount({ categories: [foreground], selectedCategoryId: 'fg' });
     const events: string[] = [];

@@ -125,6 +125,18 @@ test('does not offer the months view on desktop', async ({ page }) => {
   await expect(viewSwitch.getByRole('button', { name: 'Months' })).toHaveCount(0);
 });
 
+test('can hide the adjacent month days', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(page.locator('year-grid .day.outside').first()).toBeVisible();
+
+  await page.locator('app-sidebar .setting input[type="checkbox"]').click();
+  await expect(page.locator('year-grid .day.outside')).toHaveCount(0);
+
+  await page.reload();
+  await expect(page.locator('year-grid .day.outside')).toHaveCount(0);
+});
+
 test('scales the year grid down on short viewports instead of overflowing', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 620 });
   await page.goto('/');

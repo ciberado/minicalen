@@ -232,6 +232,7 @@ export class AppShell extends StoreElement {
         .dateMarks=${state.session.dateMarks}
         .readOnly=${!appStore.canEdit}
         .selectedCategoryId=${state.selectedCategoryId}
+        .showAdjacentDays=${state.showAdjacentDays}
         @date-click=${(event: CustomEvent<{ date: string }>) => this.handleDateClick(event)}
       ></year-grid>
     </div>`;

@@ -99,6 +99,7 @@ export class MobileYearView extends StoreElement {
         .dateMarks=${state.session.dateMarks}
         .readOnly=${!appStore.canEdit}
         .selectedCategoryId=${state.selectedCategoryId}
+        .showAdjacentDays=${state.showAdjacentDays}
       ></year-grid>
     `;
   }

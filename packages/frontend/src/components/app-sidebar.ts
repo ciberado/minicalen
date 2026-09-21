@@ -268,6 +268,22 @@ export class AppSidebar extends StoreElement {
       letter-spacing: 0.08em;
     }
 
+    .setting {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: var(--zen-ink-soft);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .setting input {
+      accent-color: var(--zen-accent);
+      cursor: pointer;
+    }
+
     .status {
       margin-top: 16px;
       font-size: 11px;
@@ -409,6 +425,16 @@ export class AppSidebar extends StoreElement {
 
       <category-list type="foreground"></category-list>
       <category-list type="text"></category-list>
+
+      <label class="setting" title="Repeat the previous and next month days in the grid">
+        <input
+          type="checkbox"
+          .checked=${state.showAdjacentDays}
+          @change=${(event: Event) =>
+            appStore.setShowAdjacentDays((event.target as HTMLInputElement).checked)}
+        />
+        <span>Adjacent month days</span>
+      </label>
 
       <div class="status">
         ${state.session.status}${state.accessLevel ? ` · ${state.accessLevel}` : ''}

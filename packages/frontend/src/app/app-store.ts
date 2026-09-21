@@ -27,6 +27,16 @@ function currentMonthPair(): number {
   return month - (month % MONTH_PAIR_SIZE);
 }
 
+const ADJACENT_DAYS_KEY = 'minicalen-show-adjacent-days';
+
+function loadAdjacentDaysPreference(): boolean {
+  try {
+    return localStorage.getItem(ADJACENT_DAYS_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+}
+
 export function parseSessionHash(hash: string): { id: string; token: string | null } {
   const raw = hash.replace(/^#/, '');
 
@@ -64,6 +74,7 @@ export interface AppState {
   accessLevel: AccessLevel | null;
   view: AppView;
   year: number;
+  showAdjacentDays: boolean;
   viewport: ViewportState;
   mobileYear: number;
   mobileMonthStart: number;
@@ -91,6 +102,7 @@ class AppStore {
     accessLevel: null,
     view: 'grid',
     year: new Date().getFullYear(),
+    showAdjacentDays: loadAdjacentDaysPreference(),
     viewport: readViewport(),
     mobileYear: new Date().getFullYear(),
     mobileMonthStart: currentMonthPair(),
@@ -305,6 +317,16 @@ class AppStore {
 
   goToCurrentYear(): void {
     this.setState({ year: new Date().getFullYear() });
+  }
+
+  setShowAdjacentDays(value: boolean): void {
+    try {
+      localStorage.setItem(ADJACENT_DAYS_KEY, String(value));
+    } catch {
+      // ignore storage failures
+    }
+
+    this.setState({ showAdjacentDays: value });
   }
 
   nextMonthPair(): void {

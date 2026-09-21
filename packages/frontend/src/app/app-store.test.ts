@@ -68,6 +68,7 @@ async function loadStore(options: { mobile?: boolean } = {}) {
 }
 
 afterEach(() => {
+  localStorage.clear();
   vi.unstubAllGlobals();
 });
 
@@ -155,6 +156,24 @@ describe('app-store month pair navigation', () => {
     const month = new Date().getMonth();
     expect(appStore.getState().mobileMonthStart).toBe(month - (month % 2));
     expect(appStore.getState().mobileYear).toBe(new Date().getFullYear());
+  });
+});
+
+describe('app-store adjacent days preference', () => {
+  it('defaults to showing adjacent month days', async () => {
+    const { appStore } = await loadStore({ mobile: false });
+    expect(appStore.getState().showAdjacentDays).toBe(true);
+  });
+
+  it('persists the preference across loads', async () => {
+    const { appStore } = await loadStore({ mobile: false });
+
+    appStore.setShowAdjacentDays(false);
+    expect(appStore.getState().showAdjacentDays).toBe(false);
+    expect(localStorage.getItem('minicalen-show-adjacent-days')).toBe('false');
+
+    const { appStore: reloaded } = await loadStore({ mobile: false });
+    expect(reloaded.getState().showAdjacentDays).toBe(false);
   });
 });
 

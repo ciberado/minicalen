@@ -24,6 +24,7 @@ export class YearGrid extends LitElement {
   @property({ type: Number }) startMonth = 0;
   @property({ type: Number }) monthCount = MONTH_NAMES.length;
   @property({ type: Number }) columns = 0;
+  @property({ type: Boolean }) showAdjacentDays = true;
 
   static styles = css`
     :host {
@@ -118,12 +119,17 @@ export class YearGrid extends LitElement {
       transition: background 140ms ease, box-shadow 140ms ease, transform 140ms ease;
     }
 
+    .day.blank {
+      cursor: default;
+      background: transparent;
+    }
+
     .day.outside {
-      opacity: 0.38;
+      opacity: 0.2;
     }
 
     .day.outside:hover {
-      opacity: 0.75;
+      opacity: 0.55;
     }
 
     .day:hover {
@@ -395,6 +401,10 @@ export class YearGrid extends LitElement {
         </div>
         <div class="days">
           ${monthGrid(this.year, monthIndex).map((cell) => {
+            if (!this.showAdjacentDays && cell.monthOffset !== 0) {
+              return html`<div class="day blank"></div>`;
+            }
+
             const style = this.dayStyle(cell.dateKey);
             const classes = [
               'day',
